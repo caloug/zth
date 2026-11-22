@@ -1,8 +1,8 @@
 // Registers the ZTH bot's slash commands with Discord. Run once (and again whenever
 // the commands below change):  node bot/register.js
 // Needs env vars DISCORD_APP_ID and DISCORD_BOT_TOKEN.
-const APP = process.env.DISCORD_APP_ID, TOKEN = process.env.DISCORD_BOT_TOKEN;
-if (!APP || !TOKEN) { console.error('Set DISCORD_APP_ID and DISCORD_BOT_TOKEN'); process.exit(1); }
+const APP = process.env.DISCORD_APP_ID || '1574075870379778159', TOKEN = process.env.DISCORD_BOT_TOKEN;
+if (!TOKEN) { console.error('Set DISCORD_BOT_TOKEN (PowerShell: $env:DISCORD_BOT_TOKEN="...")'); process.exit(1); }
 
 const players = [
   { name: 'C.A', value: '8JL8YC98' },

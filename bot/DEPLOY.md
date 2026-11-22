@@ -13,7 +13,7 @@ Tu auras besoin de 3 choses, gratuites : une **application Discord**, un compte 
 
 1. Va sur https://discord.com/developers/applications → **New Application**, nomme-la « ZTH Bot », **Create**.
 2. Onglet **Bot** → **Reset Token** → **Copy** : garde ce token de côté (c'est le `DISCORD_BOT_TOKEN`).
-3. Onglet **General Information** : copie **Application ID** (`DISCORD_APP_ID`) et **Public Key** (`DISCORD_PUBLIC_KEY`).
+3. (Application ID et Public Key déjà pré-remplis dans les fichiers du bot — rien à faire ici.)
 4. Onglet **Installation** → Install Link = **Discord Provided Link**. Sous **Default Install Settings**, scopes : `applications.commands` et `bot`. Copie le lien d'installation, ouvre-le, et ajoute le bot à ton serveur.
 
 ## 2. Installer les outils (une fois)
@@ -29,9 +29,8 @@ Dans **PowerShell** :
 
 Dans PowerShell, dans le dossier `bot` :
 
-1. `$env:DISCORD_APP_ID="ton_app_id"`
-2. `$env:DISCORD_BOT_TOKEN="ton_token_bot"`
-3. `node register.js`  → doit afficher `✅ Commandes enregistrées`
+1. `$env:DISCORD_BOT_TOKEN="ton_token_bot"`  (le token de l'onglet Bot)
+2. `node register.js`  → doit afficher `✅ Commandes enregistrées`
 
 ## 4. Créer le stockage de config (KV)
 
@@ -46,23 +45,18 @@ Dans PowerShell, dans le dossier `bot` :
 4. Génère et copie le token.
 5. Dans PowerShell : `npx wrangler secret put GH_TOKEN` puis colle le token.
 
-## 6. La clé publique Discord
-
-1. `npx wrangler secret put DISCORD_PUBLIC_KEY` puis colle la **Public Key** de l'étape 1.3.
-   (ou mets-la en variable dans le dashboard Cloudflare → Workers → zth-bot → Settings → Variables.)
-
-## 7. Déployer
+## 6. Déployer
 
 1. `npx wrangler deploy`
 2. Ça affiche l'URL du worker, du genre `https://zth-bot.ton-compte.workers.dev`. **Copie-la.**
 
-## 8. Connecter Discord au worker
+## 7. Connecter Discord au worker
 
 1. Retourne sur https://discord.com/developers/applications → ton app → **General Information**.
-2. **Interactions Endpoint URL** : colle l'URL du worker (étape 7) et **Save**.
+2. **Interactions Endpoint URL** : colle l'URL du worker (étape 6) et **Save**.
    Discord envoie un test ; s'il accepte, c'est bon. (Si erreur : vérifie que `DISCORD_PUBLIC_KEY` est bien la bonne.)
 
-## 9. Relier les notifications au bouton on/off (optionnel mais recommandé)
+## 8. Relier les notifications au bouton on/off (optionnel mais recommandé)
 
 Pour que `/notifs off` coupe vraiment les alertes :
 

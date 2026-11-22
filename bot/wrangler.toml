@@ -6,6 +6,10 @@ compatibility_date = "2024-09-23"
 [triggers]
 crons = ["*/5 * * * *"]
 
+# Public key of the Discord app (not secret) — verifies Discord's signatures.
+[vars]
+DISCORD_PUBLIC_KEY = "cf2ca5738055897a5d80424a2c114cebed7a8cde690b643b449701f61a4aed51"
+
 # Stores the bot config (notifications on/off). Create it with:
 #   npx wrangler kv namespace create CONFIG
 # then paste the printed id below.
@@ -13,5 +17,4 @@ crons = ["*/5 * * * *"]
 binding = "CONFIG"
 id = "PASTE_KV_ID_HERE"
 
-# DISCORD_PUBLIC_KEY is set as a plain variable (dashboard → Settings → Variables),
-# GH_TOKEN as an encrypted secret (npx wrangler secret put GH_TOKEN).
+# GH_TOKEN is set as an encrypted secret (npx wrangler secret put GH_TOKEN).
