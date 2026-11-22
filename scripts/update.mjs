@@ -7,6 +7,7 @@
 // Set BS_API_BASE to use another server (default: RoyaleAPI proxy).
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { notify } from './notify.mjs';
 const DUMP = process.env.BS_DUMP_DIR; // when set, save every raw API answer there (for offline tests)
 
 const API = process.env.BS_API_BASE || 'https://bsproxy.royaleapi.dev/v1';
@@ -308,6 +309,7 @@ async function main() {
   await writeFile(OUT, JSON.stringify(out, null, 1));
   await writeFile(BAT_OUT, JSON.stringify({ updatedAt: out.updatedAt, battles: store }));
   console.log(`Battles: ${store.length} saved (${newBattles.length} in this run's logs)`);
+  await notify(out);
   await writeFile(HIST_OUT, JSON.stringify({ updatedAt: out.updatedAt, points }));
   console.log(`History: ${points.length} points`);
   console.log(`Wrote ${OUT} with ${players.length} players${failed.length ? `, failed: ${failed.join(', ')}` : ''}`);

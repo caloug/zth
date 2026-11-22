@@ -32,6 +32,7 @@ jobs:
       - name: Fetch stats from the Brawl Stars API
         env:
           BS_API_KEY: ${{ secrets.BS_API_KEY }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: node scripts/update.mjs
 
       - uses: actions/configure-pages@v5
