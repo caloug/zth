@@ -105,6 +105,30 @@
   .race-mk { position: absolute; top: -3px; bottom: -3px; width: 3px; border-radius: 2px; background: var(--y); }
   .foot { text-align: center; color: var(--muted); font-size: 12px; margin: 8px 0 24px; }
   .err { color: var(--bad); }
+  .gsec { display: flex; flex-direction: column; gap: 12px; }
+  .gsec > h2 { margin: 4px 0 0; font-size: 20px; }
+  .chart { position: relative; width: 100%; min-height: 60px; touch-action: pan-y; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart text { font-family: inherit; }
+  .ghead { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .ghead h2 { margin: 0; }
+  .rng { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+  .rng button { font: inherit; font-size: 12px; padding: 5px 10px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+  .rng button[aria-pressed="true"] { background: var(--purple); color: #fff; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .tip { position: absolute; pointer-events: none; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 10px; padding: 6px 9px;
+         font-size: 12px; line-height: 1.45; white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,.25); z-index: 5; transform: translate(-50%, calc(-100% - 10px)); }
+  .tip b { font-weight: 700; }
+  .empty { color: var(--muted); font-size: 13px; padding: 26px 8px; text-align: center; border: 1px dashed var(--line); border-radius: 12px; }
+  .sq { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 8px; }
+  .sq span { width: 13px; height: 13px; border-radius: 3px; display: inline-block; cursor: default; }
+  .donut { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .donut .chart { width: 150px; flex: none; }
+  .donut .legend { flex-direction: column; margin: 0; flex: 1; min-width: 150px; }
+  .donut .legend > span { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; }
+  .donut .legend b { color: var(--fg); white-space: nowrap; }
   .empty { color: var(--muted); font-size: 13px; }
 </style>
 </head>
@@ -149,6 +173,28 @@
     <h2>Classé : qui est devant ?</h2>
     <div class="bars" id="race"></div>
     <p class="note">Points de classé actuels. Le trait jaune montre le record absolu de chaque joueur.</p>
+  </section>
+
+  <section class="gsec" id="graphs">
+    <h2>📈 Graphiques</h2>
+    <div class="card">
+      <div class="ghead"><h2>Trophées dans le temps</h2><div class="rng" data-rng></div></div>
+      <div class="chart" id="gTro"></div><div class="legend" id="gTroL"></div>
+    </div>
+    <div class="card" id="gEloCard">
+      <div class="ghead"><h2>Points de classé dans le temps</h2><div class="rng" data-rng></div></div>
+      <div class="chart" id="gElo"></div><div class="legend" id="gEloL"></div>
+    </div>
+    <div class="two">
+      <div class="card"><h2 id="gBatT">Les 25 derniers combats</h2><div class="chart" id="gBat"></div><div class="sq" id="gBatSq"></div>
+        <p class="note">Trophées gagnés ou perdus, cumulés du plus ancien au plus récent. Carrés : <span style="color:var(--ok)">■</span> victoire · <span style="color:var(--bad)">■</span> défaite · <span style="color:var(--muted)">■</span> autre.</p></div>
+      <div class="card"><h2>Modes joués par l'équipe</h2><div class="donut"><div class="chart" id="gMod"></div><div class="legend" id="gModL"></div></div>
+        <p class="note">Sur les derniers combats des trois joueurs.</p></div>
+    </div>
+    <div class="two">
+      <div class="card"><h2 id="gDistT">Répartition des trophées des brawlers</h2><div class="chart" id="gDist"></div><p class="note">Nombre de brawlers par tranche de trophées.</p></div>
+      <div class="card"><h2 id="gPowT">Niveaux de puissance</h2><div class="chart" id="gPow"></div><p class="note">Nombre de brawlers à chaque niveau. Le niveau 11 est en jaune.</p></div>
+    </div>
   </section>
 
   <section class="card">
@@ -249,6 +295,192 @@
   const elo = (x) => x.ranked && x.ranked.rankedElo != null ? x.ranked.rankedElo : null;
 
   let data = null;
+  let hist = null;      // history.json ({points:[{t, p:{tag:{tr, elo}}}]}), may stay null
+  let range = '7j';     // range for the "dans le temps" charts
+  const NS = 'http://www.w3.org/2000/svg';
+  const sv = (tag, attrs, style) => { const e = document.createElementNS(NS, tag); for (const k in attrs || {}) e.setAttribute(k, attrs[k]); if (style) Object.assign(e.style, style); return e; };
+  const svText = (x, y, txt, attrs, style) => { const t = sv('text', Object.assign({ x, y, 'font-size': 11 }, attrs), Object.assign({ fill: 'var(--muted)' }, style)); t.textContent = txt; return t; };
+  const DT = new Intl.DateTimeFormat('fr-CH', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const DD = new Intl.DateTimeFormat('fr-CH', { day: 'numeric', month: 'short' });
+  const DH = new Intl.DateTimeFormat('fr-CH', { hour: '2-digit', minute: '2-digit' });
+  const battleDate = (s) => s && /^\d{8}T/.test(s) ? new Date(s.replace(/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)/, '$1-$2-$3T$4:$5:$6')) : new Date(s);
+  const empty = (box, msg) => { box.replaceChildren(el('div', 'empty', msg)); };
+  const PCOL = (i) => ['var(--y)', 'var(--pink)', 'var(--purple)'][i] || PAL[i % PAL.length];
+  const PHEX = (i) => ['#FFC93C', '#FF3D7F', '#6C3BFF'][i] || PAL[i % PAL.length];
+
+  // Nice round tick values between lo and hi
+  const niceTicks = (lo, hi, n = 4) => {
+    const span = hi - lo || 1; const raw = span / n; const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((x) => x >= raw) || raw;
+    const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(Math.round(v * 100) / 100 || 0); return out;
+  };
+
+  // Tooltip that follows pointer/touch; `pick(xPx)` returns {x, lines:[[color, text]...], marks:[[y, color]...]} or null
+  const attachTip = (box, svg, W, H, pick) => {
+    const tip = el('div', 'tip'); tip.hidden = true; box.append(tip);
+    const vline = sv('line', { y1: 8, y2: H - 22, 'stroke-width': 1 }, { stroke: 'var(--muted)', opacity: 0, strokeDasharray: '3 3' });
+    const marks = sv('g'); svg.append(vline, marks);
+    const move = (ev) => {
+      const r = svg.getBoundingClientRect(); const xPx = (ev.clientX - r.left) * W / r.width;
+      const hit = pick(xPx); if (!hit) return hide();
+      vline.setAttribute('x1', hit.x); vline.setAttribute('x2', hit.x); vline.style.opacity = hit.noLine ? 0 : .6;
+      marks.replaceChildren(...(hit.marks || []).map(([y, c]) => sv('circle', { cx: hit.x, cy: y, r: 4.5, 'stroke-width': 2 }, { fill: c, stroke: 'var(--panel)' })));
+      tip.replaceChildren(...hit.lines.map(([c, t], i) => { const d = el('div'); if (c) { const k = el('span'); k.textContent = '● '; k.style.color = c; d.append(k); } d.append(i === 0 && !c ? Object.assign(el('b'), { textContent: t }) : t); return d; }));
+      tip.hidden = false;
+      const px = hit.x * r.width / W; const tw = tip.offsetWidth;
+      tip.style.left = Math.min(Math.max(px, tw / 2 + 2), r.width - tw / 2 - 2) + 'px';
+      tip.style.top = Math.max(0, (hit.top ?? 20) * r.height / H) + 'px';
+    };
+    const hide = () => { tip.hidden = true; vline.style.opacity = 0; marks.replaceChildren(); };
+    svg.addEventListener('pointermove', move); svg.addEventListener('pointerdown', move); svg.addEventListener('pointerleave', hide);
+  };
+
+  // Line chart. series: [{name, color, pts:[[x, y|null], ...]}]; opts: {time, height, fmtX(x), tipTitle(x), tipVal(v)}
+  function lineChart(box, series, opts = {}) {
+    box.replaceChildren();
+    const W = Math.max(280, Math.round(box.clientWidth || 340)), H = opts.height || 220, L = 54, R = 10, T = 10, B = 24;
+    const xs = series.flatMap((s) => s.pts.map((p) => p[0])), ys = series.flatMap((s) => s.pts.map((p) => p[1]).filter((v) => v != null));
+    if (!ys.length) return;
+    let x0 = Math.min(...xs), x1 = Math.max(...xs); if (x0 === x1) { x0 -= 1; x1 += 1; }
+    let y0 = Math.min(...ys), y1 = Math.max(...ys); if (opts.zero) { y0 = Math.min(0, y0); y1 = Math.max(0, y1); }
+    const pad = (y1 - y0) * 0.08 || Math.max(5, Math.abs(y1) * 0.002); y0 -= pad; y1 += pad;
+    const X = (x) => L + (x - x0) / (x1 - x0) * (W - L - R), Y = (y) => T + (1 - (y - y0) / (y1 - y0)) * (H - T - B);
+    const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.label || 'Graphique' });
+    niceTicks(y0, y1).forEach((v) => { svg.append(sv('line', { x1: L, x2: W - R, y1: Y(v), y2: Y(v) }, { stroke: 'var(--grid)' })); svg.append(svText(L - 6, Y(v) + 4, F(v), { 'text-anchor': 'end' })); });
+    if (opts.zero && y0 < 0) svg.append(sv('line', { x1: L, x2: W - R, y1: Y(0), y2: Y(0), 'stroke-width': 1.5 }, { stroke: 'var(--muted)', opacity: .6 }));
+    // x ticks
+    const nT = Math.max(2, Math.min(5, Math.floor((W - L) / 90)));
+    for (let i = 0; i <= nT; i++) { const x = x0 + (x1 - x0) * i / nT; svg.append(svText(X(x), H - 6, opts.fmtX ? opts.fmtX(x) : String(Math.round(x)), { 'text-anchor': i === 0 ? 'start' : i === nT ? 'end' : 'middle' })); }
+    series.forEach((s) => {
+      let d = '', pen = false; s.pts.forEach(([x, y]) => { if (y == null) { pen = false; return; } d += (pen ? 'L' : 'M') + X(x).toFixed(1) + ' ' + Y(y).toFixed(1); pen = true; });
+      svg.append(sv('path', { d, fill: 'none', 'stroke-width': 2.4, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, { stroke: s.color }));
+      const last = [...s.pts].reverse().find((p) => p[1] != null); if (last) svg.append(sv('circle', { cx: X(last[0]), cy: Y(last[1]), r: 3.5 }, { fill: s.color }));
+    });
+    box.append(svg);
+    attachTip(box, svg, W, H, (xPx) => {
+      if (xPx < L - 10 || xPx > W - R + 10) return null;
+      const xv = x0 + (xPx - L) / (W - L - R) * (x1 - x0);
+      let best = null; xs.forEach((x) => { if (best == null || Math.abs(x - xv) < Math.abs(best - xv)) best = x; });
+      const lines = [[null, opts.tipTitle ? opts.tipTitle(best) : String(best)]], marks = [];
+      series.forEach((s) => { const p = s.pts.find((q) => q[0] === best); if (p && p[1] != null) { lines.push([s.color, (series.length > 1 || s.name ? s.name + ' · ' : '') + (opts.tipVal ? opts.tipVal(p[1], p) : F(p[1]))]); marks.push([Y(p[1]), s.color]); } });
+      if (lines.length < 2) return null;
+      return { x: X(best), lines, marks, top: Math.min(...marks.map((m) => m[0])) };
+    });
+    return { svg, X, Y, W, H };
+  }
+
+  // Vertical bar chart. items: [{label, value, color, tip}]
+  function barChart(box, items, opts = {}) {
+    box.replaceChildren();
+    const W = Math.max(280, Math.round(box.clientWidth || 340)), H = opts.height || 190, L = 30, R = 6, T = 16, B = 34;
+    const max = Math.max(1, ...items.map((i) => i.value)); const n = items.length; const slot = (W - L - R) / n; const bw = Math.min(46, slot * 0.72);
+    const Y = (v) => T + (1 - v / max) * (H - T - B);
+    const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.label || 'Graphique en barres' });
+    niceTicks(0, max, 3).filter((v) => Number.isInteger(v)).forEach((v) => { svg.append(sv('line', { x1: L, x2: W - R, y1: Y(v), y2: Y(v) }, { stroke: 'var(--grid)' })); svg.append(svText(L - 5, Y(v) + 4, F(v), { 'text-anchor': 'end' })); });
+    const every = Math.ceil(n / Math.max(1, Math.floor((W - L) / 44)));
+    items.forEach((it, i) => {
+      const cx = L + slot * (i + .5); const h = Y(0) - Y(it.value);
+      svg.append(sv('rect', { x: cx - bw / 2, y: Y(it.value), width: bw, height: Math.max(0, h), rx: 4 }, { fill: it.color || 'var(--purple)' }));
+      if (it.value) svg.append(svText(cx, Y(it.value) - 4, F(it.value), { 'text-anchor': 'middle', 'font-weight': 700 }, { fill: 'var(--fg)' }));
+      if (i % every === 0) svg.append(svText(cx, H - 18, it.label, { 'text-anchor': 'middle', 'font-size': 10.5 }));
+      if (it.sub && i % every === 0) svg.append(svText(cx, H - 6, it.sub, { 'text-anchor': 'middle', 'font-size': 9.5 }));
+    });
+    box.append(svg);
+    attachTip(box, svg, W, H, (xPx) => { const i = Math.floor((xPx - L) / slot); const it = items[i]; if (!it) return null;
+      return { x: L + slot * (i + .5), noLine: true, lines: [[null, it.tip || it.label], ['', F(it.value) + ' brawler' + (it.value > 1 ? 's' : '')]], top: Y(it.value) }; });
+  }
+
+  // Donut. items: [{label, value, color}]
+  function donutChart(box, legend, items) {
+    box.replaceChildren(); legend.replaceChildren();
+    const tot = items.reduce((s, i) => s + i.value, 0); if (!tot) return empty(box, 'Pas encore de combats.');
+    const S = 150, R = 56, C = 2 * Math.PI * R; const svg = sv('svg', { viewBox: `0 0 ${S} ${S}`, role: 'img', 'aria-label': 'Modes joués par l\'équipe' });
+    svg.append(sv('circle', { cx: S / 2, cy: S / 2, r: R, fill: 'none', 'stroke-width': 22 }, { stroke: 'var(--grid)' }));
+    let acc = 0;
+    items.forEach((it) => {
+      const len = it.value / tot * C; const c = sv('circle', { cx: S / 2, cy: S / 2, r: R, fill: 'none', 'stroke-width': 22, 'stroke-dasharray': `${Math.max(0, len - 1.5)} ${C}`, 'stroke-dashoffset': -acc, transform: `rotate(-90 ${S / 2} ${S / 2})` }, { stroke: it.color });
+      const tt = sv('title'); tt.textContent = `${it.label} · ${Math.round(it.value / tot * 100)} %`; c.append(tt); svg.append(c); acc += len;
+      const lg = el('span'); const k = el('i'); k.style.background = it.color; lg.append(k, el('span', null, it.label), Object.assign(el('b'), { textContent: Math.round(it.value / tot * 100) + ' %' })); legend.append(lg);
+    });
+    const t1 = svText(S / 2, S / 2 + 2, F(tot), { 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 800 }, { fill: 'var(--fg)' });
+    const t2 = svText(S / 2, S / 2 + 20, 'combats', { 'text-anchor': 'middle', 'font-size': 11 });
+    svg.append(t1, t2); box.append(svg);
+  }
+
+  // ---------- graphs ----------
+  const RANGES = [['24h', '24 h', 864e5], ['7j', '7 j', 6048e5], ['30j', '30 j', 2592e6], ['all', 'Tout', Infinity]];
+  function drawGraphs() {
+    if (!data) return;
+    const ps = data.players; const p = player(); const pi = ps.indexOf(p);
+    // range buttons
+    document.querySelectorAll('[data-rng]').forEach((g) => { g.replaceChildren(...RANGES.map(([k, lab]) => { const b = el('button', null, lab); b.type = 'button'; b.setAttribute('aria-pressed', k === range); b.onclick = () => { range = k; drawGraphs(); }; return b; })); });
+    const pts = (hist && hist.points) || []; const span = RANGES.find((r) => r[0] === range)[2];
+    const tEnd = pts.length ? new Date(pts[pts.length - 1].t).getTime() : Date.now();
+    const win = pts.filter((q) => tEnd - new Date(q.t).getTime() <= span);
+    const shortSpan = win.length > 1 && (new Date(win[win.length - 1].t) - new Date(win[0].t)) <= 1.6 * 864e5;
+    const timeOpts = (unit) => ({ fmtX: (x) => (shortSpan ? DH : DD).format(new Date(x)), tipTitle: (x) => DT.format(new Date(x)), tipVal: (v) => F(v) + unit });
+    const mk = (key) => ps.map((x, i) => ({ name: x.name, color: PCOL(i), hex: PHEX(i), pts: win.map((q) => [new Date(q.t).getTime(), q.p[x.tag] ? q.p[x.tag][key] ?? null : null]) }));
+    const legend = (id, ser) => { const l = $(id); l.replaceChildren(...ser.map((s) => { const sp = el('span'); const k = el('i'); k.style.background = s.color; sp.append(k, s.name); return sp; })); };
+    const MSG = "L'historique se remplit… revenez dans quelques heures.";
+    // A. trophies
+    const sT = mk('tr'); const nT = Math.max(0, ...sT.map((s) => s.pts.filter((q) => q[1] != null).length));
+    if (nT < 2) { empty($('gTro'), MSG); $('gTroL').replaceChildren(); }
+    else {
+      // Trophy counts are very different (50 000 vs 140 000): show each player as change since the start of the range when the gap is large.
+      const firsts = sT.map((s) => (s.pts.find((q) => q[1] != null) || [0, null])[1]).filter((v) => v != null);
+      const spread = Math.max(...firsts) - Math.min(...firsts); const rel = firsts.length > 1 && spread > 5000;
+      const ser = rel ? sT.map((s) => { const b = (s.pts.find((q) => q[1] != null) || [0, 0])[1]; return Object.assign({}, s, { abs: s.pts, pts: s.pts.map(([x, y]) => [x, y == null ? null : y - b]) }); }) : sT;
+      lineChart($('gTro'), ser, Object.assign(timeOpts(' 🏆'), { label: 'Trophées dans le temps', zero: rel,
+        tipVal: rel ? (v, q) => { const s = ser.find((z) => z.pts.includes(q)); const a = s.abs[s.pts.indexOf(q)][1]; return F(a) + ' 🏆 (' + (v >= 0 ? '+' : '') + F(v) + ')'; } : (v) => F(v) + ' 🏆' }));
+      legend('gTroL', ser);
+      if (rel) $('gTroL').append(el('span', null, '· gain depuis le début de la période'));
+    }
+    // B. ranked points
+    const hasElo = ps.some((x) => elo(x) != null) || pts.some((q) => Object.values(q.p).some((v) => v.elo != null));
+    $('gEloCard').hidden = !hasElo;
+    if (hasElo) {
+      const sE = mk('elo'); const nE = Math.max(0, ...sE.map((s) => s.pts.filter((q) => q[1] != null).length));
+      if (nE < 2) { empty($('gElo'), MSG); $('gEloL').replaceChildren(); }
+      else { lineChart($('gElo'), sE.filter((s) => s.pts.some((q) => q[1] != null)), Object.assign(timeOpts(' pts'), { label: 'Points de classé dans le temps' })); legend('gEloL', sE.filter((s) => s.pts.some((q) => q[1] != null))); }
+    }
+    // C. last 25 battles (selected player)
+    $('gBatT').textContent = 'Les 25 derniers combats · ' + p.name;
+    const list = (p.recent && p.recent.list) || [];
+    if (!list.length) { empty($('gBat'), 'Pas de combats récents.'); $('gBatSq').replaceChildren(); }
+    else {
+      let cum = 0; const cpts = [[0, 0], ...list.map((b, i) => [i + 1, (cum += b.trophyChange || 0)])];
+      const col = cum >= 0 ? 'var(--ok)' : 'var(--bad)';
+      const desc = (b) => mode(b.mode || 'unknown') + (b.brawler ? ' · ' + b.brawler : '');
+      const res = (b) => b.result === 'win' ? 'Victoire' : b.result === 'loss' ? 'Défaite' : 'Autre';
+      const tc = (b) => b.trophyChange == null ? '' : ' · ' + (b.trophyChange >= 0 ? '+' : '') + b.trophyChange + ' 🏆';
+      lineChart($('gBat'), [{ name: '', color: col, pts: cpts }], { height: 180, zero: true, label: 'Trophées cumulés sur les 25 derniers combats',
+        fmtX: (x) => x === 0 ? 'plus ancien' : x >= list.length ? 'récent' : '', tipTitle: (x) => x === 0 ? 'Départ' : desc(list[x - 1]),
+        tipVal: (v, q) => q[0] === 0 ? '0' : res(list[q[0] - 1]) + tc(list[q[0] - 1]) + ' · total ' + (v >= 0 ? '+' : '') + F(v) });
+      const sq = $('gBatSq'); sq.replaceChildren(...list.map((b) => { const d = el('span'); d.style.background = b.result === 'win' ? 'var(--ok)' : b.result === 'loss' ? 'var(--bad)' : 'var(--muted)'; d.title = res(b) + ' · ' + desc(b) + tc(b); return d; }));
+    }
+    // D. brawler trophy spread (selected player)
+    $('gDistT').textContent = 'Trophées des brawlers · ' + p.name;
+    const bt = p.brawlerTrophies || [];
+    if (!bt.length) empty($('gDist'), 'Pas de données.');
+    else {
+      const mx = Math.max(...bt); const raw = mx / 8; const step = [100, 250, 500, 750, 1000, 1500, 2000].find((x) => x >= raw) || 2500;
+      const nb = Math.min(10, Math.max(1, Math.floor(mx / step) + 1)); const items = Array.from({ length: nb }, (_, i) => ({ value: 0, i }));
+      bt.forEach((v) => items[Math.min(nb - 1, Math.floor(v / step))].value++);
+      const lab = (v) => v >= 1000 ? (v / 1000).toLocaleString('fr-CH', { maximumFractionDigits: 2 }) + 'k' : String(v);
+      items.forEach((it) => { const a = it.i * step, b = a + step - 1; const last = it.i === nb - 1 && mx > b; it.label = last ? lab(a) + '+' : lab(a); it.tip = last ? F(a) + ' trophées et plus' : F(a) + ' – ' + F(b) + ' trophées'; it.color = PHEX(pi); });
+      barChart($('gDist'), items, { label: 'Répartition des trophées des brawlers' });
+    }
+    // E. power levels (selected player)
+    $('gPowT').textContent = 'Niveaux de puissance · ' + p.name;
+    const pl = p.powerLevels || [];
+    if (!pl.length) empty($('gPow'), 'Pas de données.');
+    else barChart($('gPow'), pl.map((v, i) => ({ label: String(i + 1), value: v, color: i === 10 ? 'var(--y)' : 'var(--purple)', tip: 'Niveau ' + (i + 1) })), { label: 'Niveaux de puissance' });
+    // F. team modes donut
+    const sqM = sumBy(ps.flatMap((x) => x.recent.modes.map((m) => [m.name, m.battles, x.tag])));
+    const top = sqM.slice(0, 6); const rest = sqM.slice(6).reduce((s, m) => s + m.n, 0);
+    const items = top.map((m, i) => ({ label: mode(m.k), value: m.n, color: MCOL[m.k] || PAL[(i + 3) % PAL.length] })); if (rest) items.push({ label: 'Autres', value: rest, color: '#8A8FA8' });
+    donutChart($('gMod'), $('gModL'), items);
+  }
   let sel = null; try { sel = localStorage.getItem('cf-player'); } catch (_) {}
   let A = null, B = null;
 
@@ -256,7 +488,7 @@
   const setTheme = (light) => { document.body.classList.toggle('light', light); $('theme').textContent = light ? '🌙 Sombre' : '☀️ Clair'; };
   let light = false; try { light = localStorage.getItem('cf-theme') === 'light'; } catch (_) {}
   setTheme(light);
-  $('theme').onclick = () => { light = !light; setTheme(light); try { localStorage.setItem('cf-theme', light ? 'light' : 'dark'); } catch (_) {} };
+  $('theme').onclick = () => { light = !light; setTheme(light); if (data) drawGraphs(); try { localStorage.setItem('cf-theme', light ? 'light' : 'dark'); } catch (_) {} };
 
   // ---------- helpers ----------
   const barRow = (label, value, max, color, valText) => {
@@ -464,6 +696,7 @@
       tr.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tr.onclick(); } };
       cb.append(tr);
     });
+    try { drawGraphs(); } catch (e) { console.warn('graphs', e); }
     tick();
   }
 
@@ -477,7 +710,16 @@
   }
 
   // ---------- load + auto-refresh every minute (data changes every ~5 min) ----------
+  let rz; let lastW = innerWidth; addEventListener('resize', () => { if (innerWidth === lastW) return; lastW = innerWidth; clearTimeout(rz); rz = setTimeout(() => data && drawGraphs(), 150); });
+  async function loadHistory() {
+    try {
+      const r = await fetch('history.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return; const h = await r.json();
+      if (!hist || h.updatedAt !== hist.updatedAt) { hist = h; if (data) drawGraphs(); }
+    } catch (_) { /* history is optional */ }
+  }
   async function load() {
+    loadHistory();
     try {
       const r = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) throw new Error(r.status);

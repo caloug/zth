@@ -78,3 +78,9 @@ Tags without `#`. The site updates within ~5 minutes.
 - **Missing star powers and gadgets are listed by name**, straight from the API.
 - The site is public: anyone with the link can see the squad's stats. No daily trophy history is stored.
 - Unofficial fan site. Not made, endorsed or sponsored by Supercell (see https://supercell.com/fan-content-policy).
+
+## Graphiques & historique / Graphs & history
+
+**FR —** Chaque mise à jour ajoute un point à `history.json` (trophées et points de classé de chaque joueur). Le script télécharge la version publiée sur le site, ajoute le point et la republie : pas de commit en plus, pas de secret en plus. Tous les points des 48 dernières heures sont gardés, puis 1 par heure jusqu'à 30 jours, puis 1 par jour (400 jours max). Si le téléchargement échoue (sauf 404 au tout début), la mise à jour s'arrête pour ne jamais effacer l'historique.
+
+**EN —** Every run adds one point to `history.json` (trophies + ranked points per player). The script downloads the published copy from the live site, appends, thins it (all points for 48 h, hourly to 30 days, daily after, max 400 days) and publishes it again. If the download fails for any reason other than a first-time 404, the run stops without deploying so history is never wiped. The page draws 6 graphs from it and from `data.json` (inline SVG, no libraries).
