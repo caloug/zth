@@ -223,6 +223,7 @@
 <div class="wrap">
   <div class="bar">
     <span class="left"><span class="brand"><b>ZTH</b> Stats</span><span class="live"></span>mis à jour <span id="ago">…</span></span>
+    <button class="btn" id="share">🔗 Partager ce joueur</button>
     <button class="btn" id="reload">⟳ Actualiser</button>
     <button class="btn" id="theme">☀️ Clair</button>
   </div>
@@ -770,7 +771,13 @@
     const items = top.map((m, i) => ({ label: mode(m.k), value: m.n, color: MCOL[m.k] || PAL[(i + 3) % PAL.length] })); if (rest) items.push({ label: 'Autres', value: rest, color: '#8A8FA8' });
     donutChart($('gMod'), $('gModL'), items);
   }
-  let sel = null; try { sel = localStorage.getItem('cf-player'); } catch (_) {}
+  const normTag = (t) => (t || '').replace(/^#/, '').toUpperCase();
+  let sel = null;
+  try { sel = normTag(new URLSearchParams(location.search).get('p')); } catch (_) {}
+  if (!sel) { try { sel = localStorage.getItem('cf-player'); } catch (_) {} }
+  // Change the selected player everywhere: state, saved choice, and the address bar (so the link is shareable).
+  const setSel = (tag) => { sel = tag; try { localStorage.setItem('cf-player', tag); } catch (_) {}
+    try { const u = new URL(location.href); u.searchParams.set('p', tag); history.replaceState(null, '', u); } catch (_) {} render(); };
   let A = null, B = null;
 
   // ---------- theme ----------
@@ -826,7 +833,7 @@
 
     // chips
     const ch = $('chips'); ch.replaceChildren();
-    ps.forEach((x) => { const b = el('button', 'chip'); if (x.icon) b.append(img(IMG.icon(x.icon), null, '')); b.append(x.name + ' · ' + F(x.trophies) + ' 🏆'); b.setAttribute('aria-pressed', x.tag === p.tag); b.onclick = () => { sel = x.tag; try { localStorage.setItem('cf-player', sel); } catch (_) {} render(); }; ch.append(b); });
+    ps.forEach((x) => { const b = el('button', 'chip'); if (x.icon) b.append(img(IMG.icon(x.icon), null, '')); b.append(x.name + ' · ' + F(x.trophies) + ' 🏆'); b.setAttribute('aria-pressed', x.tag === p.tag); b.onclick = () => setSel(x.tag); ch.append(b); });
 
     // KPIs
     const w = $('kWr'); w.replaceChildren();
@@ -994,7 +1001,7 @@
       [x.name, '#' + x.tag, F(x.trophies), F(x.highestTrophies), F(x.wins3v3), x.recent.winRate == null ? '—' : x.recent.winRate + ' %', x.topBrawler ? x.topBrawler.name : '—']
         .forEach((v, i) => tr.append(el('td', i >= 2 && i <= 5 ? 'num' : '', v)));
       tr.tabIndex = 0; tr.setAttribute('aria-label', 'Voir ' + x.name);
-      tr.onclick = () => { sel = x.tag; try { localStorage.setItem('cf-player', sel); } catch (_) {} render(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+      tr.onclick = () => { setSel(x.tag); window.scrollTo({ top: 0, behavior: 'smooth' }); };
       tr.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tr.onclick(); } };
       cb.append(tr);
     });
@@ -1030,6 +1037,13 @@
       $('loadErr').hidden = true;
     } catch (e) { $('loadErr').hidden = false; }
   }
+  $('share').onclick = async () => {
+    const p = data && player(); if (!p) return;
+    let url; try { const u = new URL(location.href); u.searchParams.set('p', p.tag); url = u.href; } catch (_) { url = location.href; }
+    const txt = p.name; const btn = $('share'); const done = (ok) => { btn.textContent = ok ? '✓ Lien copié !' : url; setTimeout(() => { btn.textContent = '🔗 Partager ce joueur'; }, 2500); };
+    try { if (navigator.share) { await navigator.share({ title: 'Stats de ' + txt, url }); return; } } catch (_) { return; }
+    try { await navigator.clipboard.writeText(url); done(true); } catch (_) { done(false); }
+  };
   $('reload').onclick = load;
   load();
   setInterval(load, 60 * 1000);
