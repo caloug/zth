@@ -90,11 +90,16 @@ async function send(msg) {
 export async function notify(out) {
   if (!WEBHOOK && !DRY && !STATE_FILE) { console.log('notify: no DISCORD_WEBHOOK, skipping'); return; }
   try {
+    // The Discord panel can switch notifications off (bot /config.json). When off, we still
+    // advance the state (so turning it back on later doesn't dump a backlog), just send nothing.
+    let on = true;
+    if (process.env.BOT_CONFIG_URL) { try { const r = await fetch(process.env.BOT_CONFIG_URL + '?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const c = await r.json(); on = c.notifs !== false; } } catch (e) { console.warn('notify: config fetch failed (' + e.message + '), assuming on'); } }
     const prev = await loadState();
     const { msgs, state, fresh } = computeMessages(prev, out);
-    for (const m of msgs) { try { await send(m); await new Promise((r) => setTimeout(r, 600)); } catch (e) { console.warn('notify send failed: ' + e.message); } }
+    if (on) { for (const m of msgs) { try { await send(m); await new Promise((r) => setTimeout(r, 600)); } catch (e) { console.warn('notify send failed: ' + e.message); } } }
+    else if (msgs.length) console.log('notify: ' + msgs.length + ' message(s) suppressed (notifications off via panel)');
     const outFile = process.env.NOTIFY_STATE_OUT || STATE_OUT;
     await writeFile(outFile, JSON.stringify(state));
-    console.log(`notify: ${fresh ? 'first run (state initialized)' : msgs.length + ' message(s)'}`);
+    console.log(`notify: ${fresh ? 'first run (state initialized)' : msgs.length + ' message(s)' + (on ? '' : ' (suppressed, off)')}`);
   } catch (e) { console.warn('notify error: ' + e.message); }
 }

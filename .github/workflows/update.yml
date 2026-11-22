@@ -33,6 +33,7 @@ jobs:
         env:
           BS_API_KEY: ${{ secrets.BS_API_KEY }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          BOT_CONFIG_URL: ${{ vars.BOT_CONFIG_URL }}
         run: node scripts/update.mjs
 
       - uses: actions/configure-pages@v5
