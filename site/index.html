@@ -89,6 +89,10 @@
   td.num, th.num { text-align: right; }
   tr.sel td { background: color-mix(in srgb, var(--purple) 14%, transparent); }
   tbody tr { cursor: pointer; }
+  #ranked { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+  .rk { display: flex; gap: 10px; align-items: center; border-radius: var(--r); padding: 12px; color: #fff; }
+  .rk-l { font-size: 12px; opacity: .85; margin: 0; } .rk-n { font-weight: 800; font-size: 18px; margin: 3px 0 1px; } .rk-p { font-size: 13px; opacity: .9; font-variant-numeric: tabular-nums; }
+  .race-mk { position: absolute; top: -3px; bottom: -3px; width: 3px; border-radius: 2px; background: var(--y); }
   .foot { text-align: center; color: var(--muted); font-size: 12px; margin: 8px 0 24px; }
   .err { color: var(--bad); }
   .empty { color: var(--muted); font-size: 13px; }
@@ -138,6 +142,12 @@
   <section class="card" id="rankedCard" hidden>
     <h2>Classé</h2>
     <div id="ranked"></div>
+  </section>
+
+  <section class="card" id="raceCard" hidden>
+    <h2>Classé : qui est devant ?</h2>
+    <div class="bars" id="race"></div>
+    <p class="note">Points de classé actuels. Le trait jaune montre le record absolu de chaque joueur.</p>
   </section>
 
   <section class="two">
@@ -193,6 +203,40 @@
     soloShowdown: '#3CB371', duoShowdown: '#2E9E5E', trioShowdown: '#258A52', duels: '#F2B705' };
   const PAL = ['#FFC93C', '#FF3D7F', '#6C3BFF', '#3D8BFF', '#3CB371', '#FF8A2B', '#2EC5D9', '#B57BFF', '#E5484D', '#F2B705'];
   const mode = (m) => MODES[m] || m.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+
+  // Ranked: rank number 1-22 → tier + division (1 = Bronze I … 19 = Maître I, 22 = Pro)
+  const TIERS = [
+    ['Bronze', 'linear-gradient(135deg,#7A3610,#D07A34)', '#A64A16', '#F7A452', 'M8 6 L40 6 L40 24 Q40 38 24 45 Q8 38 8 24 Z'],
+    ['Argent', 'linear-gradient(135deg,#2C4A82,#7E9FD6)', '#3F64A8', '#B4CDF4', 'M8 6 L40 6 L40 24 Q40 38 24 45 Q8 38 8 24 Z'],
+    ['Or', 'linear-gradient(135deg,#8E5C00,#E0B320)', '#B87700', '#FFDC4E', 'M8 6 L40 6 L40 24 Q40 38 24 45 Q8 38 8 24 Z'],
+    ['Diamant', 'linear-gradient(135deg,#0A4FA6,#2FB8E8)', '#0C63CC', '#52E6FF', 'M24 3 L44 22 L24 45 L4 22 Z'],
+    ['Mythique', 'linear-gradient(135deg,#5A0F78,#D23DBE)', '#8A1AAE', '#FF6BE6', 'M24 3 L42 13 L42 35 L24 45 L6 35 L6 13 Z'],
+    ['Légendaire', 'linear-gradient(135deg,#5E070B,#D0261E)', '#8A0B10', '#FF4A3A', 'M24 3 L29 17 L44 17 L32 26 L37 41 L24 32 L11 41 L16 26 L4 17 L19 17 Z'],
+    ['Maître', 'linear-gradient(135deg,#0A4D1C,#3FAE2A)', '#0B6B25', '#8CF25E', 'M24 4 L30 12 L40 8 L38 20 L44 28 L34 32 L32 44 L24 38 L16 44 L14 32 L4 28 L10 20 L8 8 L18 12 Z'],
+    ['Pro', 'linear-gradient(135deg,#2E3036,#8D929C)', '#5C606B', '#F4F4F4', 'M24 3 L44 14 L44 34 L24 45 L4 34 L4 14 Z'],
+  ];
+  const rankTier = (n) => {
+    const i = Math.min(7, Math.max(0, Math.floor((n - 1) / 3)));
+    const div = i === 7 ? '' : ['I', 'II', 'III'][(n - 1) % 3];
+    const [name, bg, c1, c2, path] = TIERS[i];
+    return { i, name: (name + ' ' + div).trim(), bg, c1, c2, path, div: i === 7 ? '' : String(((n - 1) % 3) + 1) };
+  };
+  const emblemSvg = (t) => {
+    const id = 'em' + t.i + Math.random().toString(36).slice(2, 7);
+    const sparkles = [[1, 3], [47, 3], [1, 45], [47, 45]].slice(0, Math.max(0, t.i - 3))
+      .map(([x, y]) => `<path d="M${x} ${y - 4} L${x + 1.2} ${y - 1.2} L${x + 4} ${y} L${x + 1.2} ${y + 1.2} L${x} ${y + 4} L${x - 1.2} ${y + 1.2} L${x - 4} ${y} L${x - 1.2} ${y - 1.2} Z" fill="#FFF6C8" stroke="${t.c1}" stroke-width=".6"/>`).join('');
+    return `<svg width="52" height="52" viewBox="-4 -4 56 56" role="img" aria-label="Emblème ${t.name}" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))">
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t.c2}"/><stop offset="1" stop-color="${t.c1}"/></linearGradient>
+      <radialGradient id="${id}g"><stop offset=".4" stop-color="${t.c2}" stop-opacity=".55"/><stop offset="1" stop-color="${t.c2}" stop-opacity="0"/></radialGradient>
+      <linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <clipPath id="${id}c"><path d="${t.path}"/></clipPath></defs>
+      <circle cx="24" cy="24" r="28" fill="url(#${id}g)"/>
+      <path d="${t.path}" fill="url(#${id})" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
+      <rect x="0" y="0" width="48" height="20" fill="url(#${id}s)" clip-path="url(#${id}c)"/>
+      <path d="${t.path}" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.5" transform="translate(24 24) scale(.74) translate(-24 -24)"/>
+      ${sparkles}${t.div ? `<text x="24" y="30" text-anchor="middle" font-size="17" font-weight="900" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" paint-order="stroke" font-family="system-ui,sans-serif">${t.div}</text>` : ''}</svg>`;
+  };
+  const elo = (x) => x.ranked && x.ranked.rankedElo != null ? x.ranked.rankedElo : null;
 
   let data = null;
   let sel = localStorage.getItem('cf-player');
@@ -270,16 +314,39 @@
       const d = el('details'); d.append(el('summary', null, title + ' (' + items.length + ')'));
       const tg = el('div', 'tags'); items.forEach((x) => { const s = el('span', 'tag'); fmt(s, x); tg.append(s); }); d.append(tg); ml.append(d);
     };
-    listBlock('Voir les pouvoirs stellaires manquants', p.missing.starPowers, (s, x) => { s.append(x.name + ' '); s.append(el('small', null, '· ' + x.brawler + (x.power < 9 ? ' (niv. ' + x.power + ')' : ''))); });
-    listBlock('Voir les gadgets manquants', p.missing.gadgets, (s, x) => { s.append(x.name + ' '); s.append(el('small', null, '· ' + x.brawler + (x.power < 7 ? ' (niv. ' + x.power + ')' : ''))); });
+    listBlock('Voir les pouvoirs stellaires manquants (brawlers débloqués)', p.missing.starPowers, (s, x) => { s.append(x.name + ' '); s.append(el('small', null, '· ' + x.brawler + (x.power < 9 ? ' (niv. ' + x.power + ')' : ''))); });
+    listBlock('Voir les gadgets manquants (brawlers débloqués)', p.missing.gadgets, (s, x) => { s.append(x.name + ' '); s.append(el('small', null, '· ' + x.brawler + (x.power < 7 ? ' (niv. ' + x.power + ')' : ''))); });
     listBlock('Voir les brawlers manquants', p.missing.brawlers.map((n) => ({ n })), (s, x) => { s.textContent = x.n; });
     const cp = $('completion'); cp.replaceChildren();
     ps.map((x) => ({ x, c: completion(x) })).sort((a, b) => b.c - a.c).forEach(({ x, c }, i) => cp.append(barRow((['🥇 ', '🥈 ', '🥉 '][i] || '') + x.name, c, 100, 'linear-gradient(90deg,#FFC93C,#FF9F1C)', c + ' %')));
 
-    // ranked (only if the API gives it)
-    const rk = Object.entries(p.ranked || {});
-    $('rankedCard').hidden = !rk.length;
-    if (rk.length) { const r = $('ranked'); r.replaceChildren(); rk.forEach(([k, v]) => r.append(barRow(k, 1, 1, 'var(--pink)', String(v)))); }
+    // ranked
+    const R = p.ranked || {};
+    const hasRk = R.rankedElo != null;
+    $('rankedCard').hidden = !hasRk;
+    if (hasRk) {
+      const r = $('ranked'); r.replaceChildren();
+      [['Actuel', R.rankedRank, R.rankedElo], ['Record de la saison', R.highestSeasonRankedRank, R.highestSeasonRankedElo], ['Record absolu', R.highestAllTimeRankedRank, R.highestAllTimeRankedElo]]
+        .filter(([, n, e]) => n != null && e != null).forEach(([lab, n, elo]) => {
+          const t = rankTier(n); const c = el('div', 'rk'); c.style.background = t.bg;
+          const em = el('div'); em.innerHTML = emblemSvg(t); const info = el('div');
+          info.append(el('p', 'rk-l', lab), el('div', 'rk-n', t.name), el('div', 'rk-p', F(elo) + ' pts'));
+          c.append(em, info); r.append(c);
+        });
+    }
+
+    // ranked race
+    const rr = ps.filter((x) => elo(x) != null).sort((a, b) => elo(b) - elo(a));
+    $('raceCard').hidden = rr.length < 2;
+    const race = $('race'); race.replaceChildren();
+    const rmax = Math.max(1, ...rr.map((x) => Math.max(elo(x), x.ranked.highestAllTimeRankedElo || 0)));
+    rr.forEach((x, i) => {
+      const t = rankTier(x.ranked.rankedRank);
+      const row = barRow((i === 0 ? '👑 ' : '') + x.name, elo(x), rmax, t.bg, t.name + ' · ' + F(elo(x)));
+      const tr = row.querySelector('.track'); tr.style.overflow = 'visible';
+      if (x.ranked.highestAllTimeRankedElo) { const mk = el('div', 'race-mk'); mk.style.left = `calc(${x.ranked.highestAllTimeRankedElo / rmax * 100}% - 1px)`; tr.append(mk); }
+      race.append(row);
+    });
 
     // modes / brawlers
     const md = $('modes'); md.replaceChildren(); const mMax = Math.max(1, ...rc.modes.map((m) => m.battles));
@@ -297,6 +364,7 @@
       const c = el('div', 'award'); c.append(el('div', 'e', emoji), el('p', 't', title), el('div', 'n', who), el('div', 'v', F(best) + ' ' + unit)); aw.append(c);
     };
     award('Roi des trophées', '🏆', (x) => x.trophies, 'trophées');
+    award('Boss du classé', '👑', (x) => elo(x), 'points de classé');
     award('En feu', '🔥', (x) => x.recent.winRate, '% de victoires récentes');
     award('Joueur d\'équipe', '🤝', (x) => x.wins3v3, 'victoires 3c3');
     award('Star du Survivant', '💀', (x) => (x.soloWins || 0) + (x.duoWins || 0), 'victoires au Survivant');
@@ -315,6 +383,12 @@
     const byT = [...ps].sort((a, b) => b.trophies - a.trophies);
     if (byT.length >= 2) { const rest = byT.slice(1).reduce((s, x) => s + x.trophies, 0);
       add('🏆', byT[0].trophies > rest ? `${byT[0].name} a plus de trophées que tous les autres réunis (${F(byT[0].trophies)} contre ${F(rest)}).` : `${byT[0].name} mène aux trophées avec ${F(byT[0].trophies)}, soit ${F(byT[0].trophies - byT[1].trophies)} de plus que ${byT[1].name}.`); }
+    if (rr.length >= 2) {
+      const first = rr[0], last = rr[rr.length - 1];
+      add('⚔️', `Seulement ${F(elo(first) - elo(last))} points de classé séparent le premier (${first.name}, ${rankTier(first.ranked.rankedRank).name}) du dernier (${last.name}, ${rankTier(last.ranked.rankedRank).name}).`);
+      const masters = ps.filter((x) => (x.ranked?.highestAllTimeRankedRank || 0) >= 19).length;
+      if (masters) add('🟢', masters === ps.length ? 'Vous avez tous déjà atteint Maître ou plus à votre meilleur niveau.' : `${masters} joueurs sur ${ps.length} ont déjà atteint Maître ou plus.`);
+    }
     const sqM = sumBy(ps.flatMap((x) => x.recent.modes.map((m) => [m.name, m.battles, x.tag])));
     if (sqM.length) { const tied = sqM.filter((m) => m.n === sqM[0].n).map((m) => mode(m.k)); add('🎮', tied.length > 1 ? `Les modes préférés de l'équipe en ce moment : ${tied.slice(0, -1).join(', ') + ' et ' + tied[tied.length - 1]} (${sqM[0].n} combats récents chacun).` : `Le mode préféré de l'équipe en ce moment : ${tied[0]} (${sqM[0].n} combats récents).`); }
     const sqB = sumBy(ps.flatMap((x) => x.recent.brawlers.map((m) => [m.name, m.battles, x.tag])));
@@ -341,7 +415,7 @@
     const a = ps.find((x) => x.tag === A), b = ps.find((x) => x.tag === B); const h = $('h2h'); h.replaceChildren();
     const head = el('div', 'h2h-row'); const ha = el('div', 'win', a.name); ha.style.cssText = 'text-align:right;color:#FFC93C';
     const hb = el('div', 'win', b.name); hb.style.color = '#FF3D7F'; head.append(ha, el('div', 'h2h-l', 'contre'), hb); h.append(head);
-    [['Trophées', (x) => x.trophies], ['Record de trophées', (x) => x.highestTrophies], ['Victoires 3c3', (x) => x.wins3v3], ['Victoires solo', (x) => x.soloWins],
+    [['Trophées', (x) => x.trophies], ['Record de trophées', (x) => x.highestTrophies], ['Points de classé', (x) => elo(x)], ['Record classé', (x) => x.ranked?.highestAllTimeRankedElo], ['Victoires 3c3', (x) => x.wins3v3], ['Victoires solo', (x) => x.soloWins],
      ['Victoires duo', (x) => x.duoWins], ['% victoires récentes', (x) => x.recent.winRate, ' %'], ['Brawlers niveau 11', (x) => x.maxPower], ['Meilleur brawler 🏆', (x) => x.topBrawler?.trophies]]
       .forEach(([lab, get, suf]) => {
         const va = get(a), vb = get(b), mx = Math.max(va || 0, vb || 0) || 1;
