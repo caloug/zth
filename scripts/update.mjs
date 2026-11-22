@@ -14,6 +14,9 @@ const KEY = process.env.BS_API_KEY;
 const OUT = process.env.OUT_FILE || 'site/data.json';
 const HIST_OUT = process.env.HISTORY_OUT || OUT.replace(/[^/]+$/, 'history.json');
 const HIST_URL = process.env.HISTORY_URL || 'https://caloug.github.io/zth/history.json';
+const BAT_OUT = OUT.replace(/[^/]+$/, 'battles.json');
+const BAT_URL = process.env.BATTLES_URL || 'https://caloug.github.io/zth/battles.json';
+const BAT_DAYS = 60;
 
 if (!KEY && !process.env.BS_MOCK_DIR) {
   console.error('Missing BS_API_KEY secret.');
@@ -69,25 +72,54 @@ function findMe(item, tag) {
 }
 
 // ---- history: download the published copy, add a point, thin it out ----
-async function loadHistory() {
-  if (process.env.BS_MOCK_DIR || process.env.HISTORY_FILE) {
-    if (!process.env.HISTORY_FILE) return [];
-    try { return JSON.parse(await readFile(process.env.HISTORY_FILE, 'utf8')).points || []; }
+// Download a store (history.json / battles.json) that the previous run published.
+// Any error except 404 stops the run, so a bad download never wipes the saved data.
+async function loadStore(url, key, fileEnv) {
+  if (process.env.BS_MOCK_DIR || process.env[fileEnv]) {
+    if (!process.env[fileEnv]) return [];
+    try { return JSON.parse(await readFile(process.env[fileEnv], 'utf8'))[key] || []; }
     catch (e) { if (e.code === 'ENOENT') return []; throw e; }
   }
-  // Any error except 404 stops the run, so a bad download never wipes the history.
   let lastErr;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(HIST_URL + '?t=' + Date.now(), { cache: 'no-store' });
-      if (res.status === 404) { console.log('No history yet, starting a new one.'); return []; }
-      if (!res.ok) throw new Error(`history.json HTTP ${res.status}`);
+      const res = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
+      if (res.status === 404) { console.log(`No ${key} yet at ${url}, starting fresh.`); return []; }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json();
-      if (!Array.isArray(j.points)) throw new Error('history.json has no points array');
-      return j.points;
+      if (!Array.isArray(j[key])) throw new Error(`no ${key} array`);
+      return j[key];
     } catch (e) { lastErr = e; await new Promise((r) => setTimeout(r, 2000 * attempt)); }
   }
-  throw new Error(`Could not download history (${lastErr.message}); stopping so it is not wiped.`);
+  throw new Error(`Could not download ${url} (${lastErr.message}); stopping so it is not wiped.`);
+}
+const loadHistory = () => loadStore(HIST_URL, 'points', 'HISTORY_FILE');
+
+// ---- battle store → per-map win rates and the weekly summary ----
+const bDate = (s) => new Date(/^\d{8}T/.test(s) ? s.replace(/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)/, '$1-$2-$3T$4:$5:$6') : s);
+function mapStats(bs) {
+  const m = new Map();
+  for (const b of bs) {
+    if (!b.id && !b.mp) continue;
+    const k = b.id || b.mp; const x = m.get(k) || { mapId: b.id || null, map: b.mp, mode: b.m, modeId: b.mi ?? null, n: 0, w: 0, l: 0 };
+    x.n++; if (b.r === 'win') x.w++; else if (b.r === 'loss') x.l++; m.set(k, x);
+  }
+  return [...m.values()].map((x) => ({ ...x, wr: x.w + x.l ? Math.round(x.w / (x.w + x.l) * 100) : null })).sort((a, z) => z.n - a.n);
+}
+function weekSummary(tag, bs, history, now) {
+  const from = now - 7 * 864e5;
+  const wk = bs.filter((b) => bDate(b.t).getTime() >= from);
+  const dec = wk.filter((b) => b.r === 'win' || b.r === 'loss'); const wins = dec.filter((b) => b.r === 'win').length;
+  const pts = history.filter((q) => q.p[tag] && new Date(q.t).getTime() >= from).sort((a, z) => new Date(a.t) - new Date(z.t));
+  const first = pts[0], last = pts.at(-1);
+  const delta = (k) => first && last && first.p[tag][k] != null && last.p[tag][k] != null ? last.p[tag][k] - first.p[tag][k] : null;
+  const br = new Map(); for (const b of wk) if (b.b) { const x = br.get(b.b) || { name: b.b, id: b.bi, n: 0, w: 0 }; x.n++; if (b.r === 'win') x.w++; br.set(b.b, x); }
+  const topB = [...br.values()].sort((a, z) => z.n - a.n || z.w - a.w)[0] || null;
+  const maps = mapStats(wk).filter((x) => x.wr != null && x.w + x.l >= 3).sort((a, z) => z.wr - a.wr || z.n - a.n);
+  const tc = wk.filter((b) => typeof b.tc === 'number').reduce((s, b) => s + b.tc, 0);
+  return { since: first ? first.t : null, battles: wk.length, wins, decided: dec.length, winRate: dec.length ? Math.round(wins / dec.length * 100) : null,
+    ranked: wk.filter((b) => b.ty === 'soloRanked' || b.ty === 'teamRanked').length, trophies: delta('tr') ?? (wk.length ? tc : null), elo: delta('elo'),
+    brawler: topB, bestMap: maps[0] || null, days: new Set(wk.map((b) => bDate(b.t).toISOString().slice(0, 10))).size };
 }
 
 // Keep every point from the last 48 h, the last point of each hour up to 30 days,
@@ -107,6 +139,8 @@ function thin(points, now = Date.now()) {
 
 async function main() {
   const history = await loadHistory();
+  const oldBattles = await loadStore(BAT_URL, 'battles', 'BATTLES_FILE');
+  const newBattles = [];
   const { players: tags } = JSON.parse(await readFile('players.json', 'utf8'));
   const catalog = await api('/brawlers?limit=200');
   const all = catalog.items || [];
@@ -139,6 +173,7 @@ async function main() {
           brawler: me?.brawler?.name || (me?.brawlers?.[0]?.name) || null,
         };
       });
+      for (const b of battles) newBattles.push({ g: tag, t: b.time, m: b.mode, mi: b.modeId, mp: b.map, id: b.mapId, ty: b.type, r: b.result, k: b.rank, tc: b.trophyChange, b: b.brawler, bi: b.brawlerId });
       const count = (arr, key) => Object.entries(arr.reduce((m, x) => { if (x[key]) m[x[key]] = (m[x[key]] || 0) + 1; return m; }, {}))
         .map(([k, n]) => ({ name: k, battles: n })).sort((a, b) => b.battles - a.battles);
       const decided = battles.filter((b) => b.result === 'win' || b.result === 'loss');
@@ -251,12 +286,28 @@ async function main() {
   players.forEach((pl) => pl.chBrawlers && pl.chBrawlers.sort((a, z) => a.rank - z.rank));
   const allBrawlers = all.map((b) => ({ id: b.id, name: b.name }));
 
-  const out = { updatedAt: new Date().toISOString(), players, failed, clubs, rotation, boards, brawlerBoards, allBrawlers };
+  // ---- battle store: merge, dedupe, keep BAT_DAYS days ----
+  const nowMs = Date.now(); const seen = new Set(); const store = [];
+  for (const b of [...newBattles, ...oldBattles]) { const k = b.g + b.t; if (seen.has(k) || !b.t || nowMs - bDate(b.t).getTime() > BAT_DAYS * 864e5) continue; seen.add(k); store.push(b); }
+  store.sort((a, z) => bDate(a.t) - bDate(z.t));
+  const tracked = store.length ? store[0].t : null;
+  const team = { maps: mapStats(store).slice(0, 40) };
+  for (const pl of players) {
+    const mine = store.filter((b) => b.g === pl.tag);
+    pl.maps = mapStats(mine).slice(0, 40);
+    pl.mapBattles = mine.length;
+  }
+
+  const out = { updatedAt: new Date().toISOString(), players, failed, clubs, rotation, boards, brawlerBoards, allBrawlers, team, tracked };
   await mkdir(OUT.replace(/\/[^/]+$/, ''), { recursive: true });
   await writeFile(OUT, JSON.stringify(out, null, 1));
   const pt = { t: out.updatedAt, p: {} };
   for (const pl of players) pt.p[pl.tag] = { tr: pl.trophies, elo: typeof pl.ranked?.rankedElo === 'number' ? pl.ranked.rankedElo : null };
   const points = thin([...history, pt]);
+  for (const pl of players) pl.week = weekSummary(pl.tag, store.filter((b) => b.g === pl.tag), points, nowMs);
+  await writeFile(OUT, JSON.stringify(out, null, 1));
+  await writeFile(BAT_OUT, JSON.stringify({ updatedAt: out.updatedAt, battles: store }));
+  console.log(`Battles: ${store.length} saved (${newBattles.length} in this run's logs)`);
   await writeFile(HIST_OUT, JSON.stringify({ updatedAt: out.updatedAt, points }));
   console.log(`History: ${points.length} points`);
   console.log(`Wrote ${OUT} with ${players.length} players${failed.length ? `, failed: ${failed.join(', ')}` : ''}`);

@@ -202,6 +202,20 @@
   .bdg b { color: var(--y); }
   body.light .bdg b { color: #9A5B00; }
   .legal { font-size: 11.5px; }
+  /* week + maps */
+  #wkHi { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  @media (max-width: 600px) { #wkHi { grid-template-columns: 1fr 1fr; } #wkHi .award .e { font-size: 20px; } }
+  .wk-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 12px; }
+  .wk { border-radius: var(--r); padding: 12px; background: color-mix(in srgb, var(--purple) 10%, var(--panel)); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 7px; font-size: 13px; }
+  .wk-h { display: flex; align-items: center; gap: 8px; } .wk-h img { width: 34px; height: 34px; border-radius: 9px; } .wk-h b { font-family: "Lilita One", sans-serif; font-weight: 400; font-size: 17px; }
+  .wk-l { display: flex; align-items: center; gap: 7px; } .wk-l img { width: 24px; height: 24px; object-fit: contain; border-radius: 6px; }
+  .wk-l .up { color: var(--ok); font-weight: 700; } .wk-l .dn { color: var(--bad); font-weight: 700; }
+  .mp { display: grid; grid-template-columns: 46px minmax(0, 1fr) minmax(48px, 30%) auto; gap: 10px; align-items: center; font-size: 13px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .mp:last-child { border-bottom: 0; }
+  .mp-i { position: relative; width: 46px; height: 46px; } .mp-i .mm { width: 46px; height: 46px; object-fit: cover; border-radius: 9px; background: var(--grid); }
+  .mp-i .mo { position: absolute; right: -5px; bottom: -5px; width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(0,0,0,.6)); }
+  .mp-n { min-width: 0; } .mp-n b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .mp-n small { color: var(--muted); }
+  .mp-v { text-align: right; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; } .mp-v small { display: block; font-weight: 400; color: var(--muted); }
   @media (max-width: 600px) { .tro { text-align: left; } .tro-num { justify-content: flex-start; } .name { font-size: 34px; } .avatar { width: 64px; height: 64px; } }
 </style>
 </head>
@@ -253,10 +267,25 @@
     <p class="note">Points de classé actuels. Le trait jaune montre le record absolu de chaque joueur.</p>
   </section>
 
+  <section class="card" id="wkCard">
+    <h2>📅 Résumé de la semaine</h2>
+    <div class="awards" id="wkHi"></div>
+    <div class="wk-cards" id="wkC"></div>
+    <p class="note" id="wkN"></p>
+  </section>
+
   <section class="card">
     <div class="ghead"><h2 id="batT">🕹️ Derniers combats</h2><div class="flt" id="batF"></div></div>
     <div class="bl" id="batL"></div>
     <button class="btn more" id="batMore" hidden>Afficher plus</button>
+  </section>
+
+  <section class="card">
+    <div class="ghead"><h2 id="mpT">🗺️ Taux de victoire par map</h2>
+      <div class="ctl" style="margin:0"><div class="flt" id="mpScope"></div><select id="mpS" aria-label="Trier les maps"><option value="n">Plus jouées</option><option value="best">Meilleur %</option><option value="worst">Pire %</option></select></div></div>
+    <div id="mpL"></div>
+    <button class="btn more" id="mpMore" hidden>Afficher plus</button>
+    <p class="note" id="mpN"></p>
   </section>
 
   <section class="card" id="evCard" hidden>
@@ -417,7 +446,8 @@
   const until = (s) => { const ms = battleDate(s) - Date.now(); if (ms <= 0) return 'terminé'; const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `encore ${h} h ${String(m).padStart(2, '0')}` : `encore ${m} min`; };
   const ago = (s) => { const m = Math.round((Date.now() - battleDate(s)) / 6e4); return m < 60 ? `il y a ${Math.max(1, m)} min` : m < 1440 ? `il y a ${Math.round(m / 60)} h` : `il y a ${Math.round(m / 1440)} j`; };
   const TYPES = { soloRanked: ['Classé', 'rk2'], teamRanked: ['Classé', 'rk2'], ranked: ['Trophées', ''], friendly: ['Amical', ''], challenge: ['Défi', ''], tournament: ['Tournoi', ''], championshipChallenge: ['Championnat', 'rk2'] };
-  let batFilter = 'all', batAll = false, bgSort = 'tr', bgAll = false;
+  let batFilter = 'all', batAll = false, bgSort = 'tr', bgAll = false, mpSort = 'n', mpScope = 'me', mpAll = false;
+  const DDay = new Intl.DateTimeFormat('fr-CH', { weekday: 'long', day: 'numeric', month: 'long' });
 
   let data = null;
   let hist = null;      // history.json ({points:[{t, p:{tag:{tr, elo}}}]}), may stay null
@@ -534,6 +564,53 @@
 
   // ---------- battles, events, club, Swiss ranks, brawler grid ----------
   function renderExtras(p, ps) {
+    // ---- weekly summary (whole team, last 7 days) ----
+    const wks = ps.filter((x) => x.week);
+    $('wkCard').hidden = !wks.length;
+    if (wks.length) {
+      const sg = (v, suf) => v == null ? '—' : (v > 0 ? '+' : '') + F(v) + suf;
+      const hi = $('wkHi'); hi.replaceChildren();
+      const award = (t, e, x, v) => { if (!x) return; const a = el('div', 'award'); a.append(el('div', 'e', e), el('div', 't', t), el('div', 'n', x.name), el('div', 'v', v)); hi.append(a); };
+      const best = (f, ok = () => true) => [...wks].filter((x) => ok(x) && f(x) != null).sort((a, b) => f(b) - f(a))[0];
+      const mvp = best((x) => x.week.trophies, (x) => x.week.trophies > 0); award('MVP trophées', '🏆', mvp, mvp && sg(mvp.week.trophies, ' trophées'));
+      const act = best((x) => x.week.battles, (x) => x.week.battles > 0); award('Le plus actif', '🎮', act, act && F(act.week.battles) + ' combats');
+      const acc = best((x) => x.week.winRate, (x) => x.week.decided >= 5); award('Meilleur % de victoires', '🎯', acc, acc && acc.week.winRate + ' % sur ' + acc.week.decided + ' combats');
+      const rk = best((x) => x.week.elo, (x) => x.week.elo > 0); award('Plus gros gain en classé', '⚔️', rk, rk && sg(rk.week.elo, ' points'));
+      const wc = $('wkC'); wc.replaceChildren();
+      wks.forEach((x) => {
+        const w = x.week; const c = el('div', 'wk'); const h = el('div', 'wk-h'); if (x.icon) h.append(img(IMG.icon(x.icon), null, '')); h.append(el('b', null, x.name)); c.append(h);
+        const line = (icon, ...parts) => { const l = el('div', 'wk-l'); if (icon) l.append(typeof icon === 'string' && icon.startsWith('http') || (typeof icon === 'string' && icon.startsWith('/')) ? img(icon, null, '') : el('span', null, icon)); const tx = el('span'); parts.forEach((pt) => tx.append(pt)); l.append(tx); c.append(l); return l; };
+        const num = (v, suf) => el('span', v == null ? '' : v >= 0 ? 'up' : 'dn', sg(v, suf));
+        line('🏆', num(w.trophies, ' trophées'));
+        if (w.elo != null) line('⚔️', num(w.elo, ' points de classé'));
+        line('🎮', `${F(w.battles)} combats${w.ranked ? ' (dont ' + w.ranked + ' en classé)' : ''}${w.winRate != null ? ' · ' + w.winRate + ' % de victoires' : ''}`);
+        if (w.brawler) line(w.brawler.id ? IMG.brawler(w.brawler.id) : '🧍', 'Brawler de la semaine : ', Object.assign(el('b'), { textContent: w.brawler.name }), ` (${w.brawler.n} combats, ${w.brawler.w} V)`);
+        if (w.bestMap) line(w.bestMap.modeId != null ? IMG.mode(w.bestMap.modeId) : '🗺️', 'Meilleure map : ', Object.assign(el('b'), { textContent: w.bestMap.map }), ` (${w.bestMap.wr} %)`);
+        wc.append(c);
+      });
+      const since = data.tracked ? battleDate(data.tracked) : null;
+      $('wkN').textContent = '7 derniers jours.' + (since && Date.now() - since < 7 * 864e5 ? ` Les combats sont enregistrés depuis ${DDay.format(since)} : le résumé se complète jour après jour.` : '');
+    }
+
+    // ---- win rate per map ----
+    const scopes = [['me', p.name], ['team', 'Équipe']];
+    $('mpScope').replaceChildren(...scopes.map(([k, lab]) => { const b = el('button', null, lab); b.type = 'button'; b.setAttribute('aria-pressed', mpScope === k); b.onclick = () => { mpScope = k; mpAll = false; renderExtras(p, ps); }; return b; }));
+    $('mpS').value = mpSort; $('mpS').onchange = (e) => { mpSort = e.target.value; mpAll = false; renderExtras(p, ps); };
+    let maps = [...((mpScope === 'team' ? data.team && data.team.maps : p.maps) || [])];
+    if (mpSort !== 'n') maps = maps.filter((m) => m.w + m.l >= 3).sort((a, b) => mpSort === 'best' ? b.wr - a.wr || b.n - a.n : a.wr - b.wr || b.n - a.n);
+    const ml = $('mpL'); ml.replaceChildren();
+    if (!maps.length) ml.append(el('div', 'empty', mpSort === 'n' ? 'Pas encore de combats enregistrés.' : 'Il faut au moins 3 combats sur une map pour la classer. Revenez plus tard !'));
+    maps.slice(0, mpAll ? 40 : 10).forEach((m) => {
+      const r = el('div', 'mp'); const ic = el('div', 'mp-i'); if (m.mapId) ic.append(img(IMG.map(m.mapId), 'mm', m.map)); if (m.modeId != null) ic.append(img(IMG.mode(m.modeId), 'mo', ''));
+      const n = el('div', 'mp-n'); n.append(el('b', null, m.map || '—'), el('small', null, mode(m.mode || 'unknown') + ' · ' + m.n + ' combat' + (m.n > 1 ? 's' : '')));
+      const col = m.wr == null ? 'var(--muted)' : m.wr >= 55 ? 'var(--ok)' : m.wr < 45 ? 'var(--bad)' : 'var(--y)';
+      const t = el('div', 'track'); const f = el('div', 'fill'); f.style.width = (m.wr || 0) + '%'; f.style.background = col; t.append(f);
+      const v = el('div', 'mp-v', m.wr == null ? '—' : m.wr + ' %'); v.style.color = col; v.append(el('small', null, `${m.w} V · ${m.l} D`));
+      r.append(ic, n, t, v); ml.append(r);
+    });
+    const mm = $('mpMore'); mm.hidden = mpAll || maps.length <= 10; mm.textContent = `Afficher les ${Math.min(40, maps.length)} maps`; mm.onclick = () => { mpAll = true; renderExtras(p, ps); };
+    $('mpN').textContent = (mpScope === 'team' ? 'Toute l’équipe' : p.name) + (data.tracked ? ` · combats enregistrés depuis ${DDay.format(battleDate(data.tracked))}` : '') + '. Au Survivant, une victoire = finir dans la première moitié.';
+
     // recent battles
     $('batT').textContent = '🕹️ Derniers combats · ' + p.name;
     const list = [...((p.recent && p.recent.list) || [])].reverse(); // newest first
