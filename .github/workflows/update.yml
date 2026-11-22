@@ -35,11 +35,6 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: node scripts/update.mjs
 
-      - name: One-off test notification
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: node scripts/testnotify.mjs
-
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
