@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Caleb's Friends — Brawl Stars</title>
 <meta name="description" content="Stats Brawl Stars de l'équipe, mises à jour toutes les 5 minutes.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caloug.github.io/zth/">
+<meta property="og:title" content="ZTH · Caleb's Friends — Stats Brawl Stars">
+<meta property="og:description" content="Trophées, classé, face-à-face et records de l'équipe. Mis à jour toutes les 5 minutes.">
+<meta property="og:image" content="https://caloug.github.io/zth/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17l-6 3.3 1.3-6.7-5-4.6 6.8-.8z' fill='%23FFC93C' stroke='%232A1600' stroke-width='1.5'/%3E%3C/svg%3E">
 <style>
   :root { --y: #FFC93C; --pink: #FF3D7F; --purple: #6C3BFF; --ok: #3DDC84; --bad: #FF5C6C;
@@ -17,6 +24,8 @@
   .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 18px; }
   .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
   .bar .left { margin-right: auto; }
+  .live.warn { background: #FF9F1C; box-shadow: 0 0 8px #FF9F1C; } .live.dead { background: var(--bad); box-shadow: 0 0 8px var(--bad); }
+  body.loading .wrap > section, body.loading .chips { opacity: .35; }
   .live { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); margin-right: 6px; box-shadow: 0 0 8px var(--ok); }
   .btn { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
   .hero { position: relative; overflow: hidden; border-radius: 22px; padding: 24px 20px; color: #fff;
@@ -89,6 +98,7 @@
   td.num, th.num { text-align: right; }
   tr.sel td { background: color-mix(in srgb, var(--purple) 14%, transparent); }
   tbody tr { cursor: pointer; }
+  tbody tr:focus-visible { outline: 2px solid var(--y); outline-offset: -2px; }
   #ranked { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
   .rk { display: flex; gap: 10px; align-items: center; border-radius: var(--r); padding: 12px; color: #fff; }
   .rk-l { font-size: 12px; opacity: .85; margin: 0; } .rk-n { font-weight: 800; font-size: 18px; margin: 3px 0 1px; } .rk-p { font-size: 13px; opacity: .9; font-variant-numeric: tabular-nums; }
@@ -98,10 +108,10 @@
   .empty { color: var(--muted); font-size: 13px; }
 </style>
 </head>
-<body>
+<body class="loading">
 <div class="wrap">
   <div class="bar">
-    <span class="left"><span class="live"></span>Caleb's Friends · mis à jour <span id="ago">—</span></span>
+    <span class="left"><span class="live"></span>Caleb's Friends · mis à jour <span id="ago">…</span></span>
     <button class="btn" id="reload">⟳ Actualiser</button>
     <button class="btn" id="theme">☀️ Clair</button>
   </div>
@@ -111,8 +121,8 @@
     <div class="hero-top">
       <div>
         <p class="kicker">★ Joueur Brawl Stars</p>
-        <h1 class="name" id="hName">—</h1>
-        <p class="meta" id="hMeta">—</p>
+        <h1 class="name" id="hName">Chargement…</h1>
+        <p class="meta" id="hMeta">Récupération des stats de l'équipe</p>
       </div>
       <div class="tro"><div class="tro-num" id="hTro">—</div><p class="tro-lbl">trophées</p></div>
     </div>
@@ -130,15 +140,6 @@
     <div class="card acc" style="--c: var(--y)"><p class="lbl">Collection</p><div class="big" id="kOwn">—</div><p class="note" id="kMax">—</p></div>
   </section>
 
-  <section class="card">
-    <h2>🧩 Ce qui manque</h2>
-    <div class="miss-grid" id="missBars"></div>
-    <div id="missLists"></div>
-    <h3>Progression de l'équipe</h3>
-    <div class="bars" id="completion"></div>
-    <p class="note">Moyenne des pourcentages : pouvoirs stellaires, gadgets, brawlers et brawlers niveau 11.</p>
-  </section>
-
   <section class="card" id="rankedCard" hidden>
     <h2>Classé</h2>
     <div id="ranked"></div>
@@ -148,6 +149,15 @@
     <h2>Classé : qui est devant ?</h2>
     <div class="bars" id="race"></div>
     <p class="note">Points de classé actuels. Le trait jaune montre le record absolu de chaque joueur.</p>
+  </section>
+
+  <section class="card">
+    <h2>🧩 Ce qui manque</h2>
+    <div class="miss-grid" id="missBars"></div>
+    <div id="missLists"></div>
+    <h3>Progression de l'équipe</h3>
+    <div class="bars" id="completion"></div>
+    <p class="note">Moyenne des pourcentages : pouvoirs stellaires, gadgets, brawlers et brawlers niveau 11.</p>
   </section>
 
   <section class="two">
@@ -239,7 +249,7 @@
   const elo = (x) => x.ranked && x.ranked.rankedElo != null ? x.ranked.rankedElo : null;
 
   let data = null;
-  let sel = localStorage.getItem('cf-player');
+  let sel = null; try { sel = localStorage.getItem('cf-player'); } catch (_) {}
   let A = null, B = null;
 
   // ---------- theme ----------
@@ -268,9 +278,17 @@
     $('hName').textContent = p.name;
     $('hMeta').textContent = '#' + p.tag + (p.club ? ' · Club ' + p.club : ' · Sans club') + ' · Niveau ' + F(p.expLevel);
     $('hTro').textContent = F(p.trophies);
-    $('hFill').style.width = (p.highestTrophies ? p.trophies / p.highestTrophies * 100 : 0) + '%';
-    $('hBest').textContent = 'Record ' + F(p.highestTrophies);
-    $('hLvl').textContent = p.highestTrophies > p.trophies ? 'À ' + F(p.highestTrophies - p.trophies) + ' du record' : 'Au record ! 🔥';
+    const nearRec = !p.highestTrophies || p.trophies / p.highestTrophies >= 0.99;
+    if (nearRec) {
+      const step = p.trophies >= 100000 ? 10000 : 5000, nx = Math.floor(p.trophies / step) * step + step;
+      $('hFill').style.width = ((p.trophies - (nx - step)) / step * 100) + '%';
+      $('hBest').textContent = (p.trophies >= p.highestTrophies ? 'Au record ! 🔥' : 'Record ' + F(p.highestTrophies)) + ' · Prochain palier ' + F(nx);
+      $('hLvl').textContent = 'encore ' + F(nx - p.trophies);
+    } else {
+      $('hFill').style.width = (p.trophies / p.highestTrophies * 100) + '%';
+      $('hBest').textContent = 'Record ' + F(p.highestTrophies);
+      $('hLvl').textContent = 'À ' + F(p.highestTrophies - p.trophies) + ' du record';
+    }
     const tk = $('hTake'); tk.replaceChildren();
     const rc = p.recent;
     if (rc.battles) {
@@ -304,9 +322,11 @@
     const mb = $('missBars'); mb.replaceChildren();
     [['⭐ Pouvoirs stellaires', p.progress.starPowers], ['🔧 Gadgets', p.progress.gadgets], ['🧍 Brawlers', p.progress.brawlers], ['💪 Brawlers niveau 11', p.progress.maxPower]].forEach(([name, o]) => {
       const it = el('div', 'miss-item'); const top = el('div', 'miss-top'); const miss = o.total - o.owned;
+      const onOwned = name.includes('stellaires') ? p.missing.starPowers.length : name.includes('Gadgets') ? p.missing.gadgets.length : null;
+      const locked = onOwned == null ? 0 : Math.max(0, miss - onOwned);
       top.append(el('b', null, name), miss > 0 ? el('span', 'miss-n', F(miss) + ' manquant' + (miss > 1 ? 's' : '')) : el('span', 'done', '✓ Complet'));
       const t = el('div', 'track'); const f = el('div', 'fill'); f.style.width = pct(o) + '%'; f.style.background = miss > 0 ? 'linear-gradient(90deg,#6C3BFF,#FF3D7F)' : 'var(--ok)'; t.append(f);
-      it.append(top, t, el('div', 'note', F(o.owned) + ' / ' + F(o.total) + ' · ' + Math.round(pct(o)) + ' %')); mb.append(it);
+      it.append(top, t, el('div', 'note', F(o.owned) + ' / ' + F(o.total) + ' · ' + Math.round(pct(o)) + ' %' + (locked ? ' · dont ' + F(locked) + ' sur des brawlers pas encore débloqués' : ''))); mb.append(it);
     });
     const ml = $('missLists'); ml.replaceChildren();
     const listBlock = (title, items, fmt) => {
@@ -411,7 +431,10 @@
     const fillSel = (s, v) => { s.replaceChildren(...ps.map((x) => new Option(x.name, x.tag))); s.value = v; };
     if (!ps.find((x) => x.tag === A)) A = ps[0].tag; if (!ps.find((x) => x.tag === B)) B = (ps[1] || ps[0]).tag;
     fillSel($('hA'), A); fillSel($('hB'), B);
-    $('hA').onchange = (e) => { A = e.target.value; render(); }; $('hB').onchange = (e) => { B = e.target.value; render(); };
+    if (A === B && ps.length > 1) B = ps.find((x) => x.tag !== A).tag;
+    fillSel($('hB'), B);
+    $('hA').onchange = (e) => { const old = A; A = e.target.value; if (A === B) B = old; render(); };
+    $('hB').onchange = (e) => { const old = B; B = e.target.value; if (A === B) A = old; render(); };
     const a = ps.find((x) => x.tag === A), b = ps.find((x) => x.tag === B); const h = $('h2h'); h.replaceChildren();
     const head = el('div', 'h2h-row'); const ha = el('div', 'win', a.name); ha.style.cssText = 'text-align:right;color:#FFC93C';
     const hb = el('div', 'win', b.name); hb.style.color = '#FF3D7F'; head.append(ha, el('div', 'h2h-l', 'contre'), hb); h.append(head);
@@ -436,7 +459,9 @@
       const tr = el('tr', x.tag === p.tag ? 'sel' : '');
       [x.name, '#' + x.tag, F(x.trophies), F(x.highestTrophies), F(x.wins3v3), x.recent.winRate == null ? '—' : x.recent.winRate + ' %', x.topBrawler ? x.topBrawler.name : '—']
         .forEach((v, i) => tr.append(el('td', i >= 2 && i <= 5 ? 'num' : '', v)));
+      tr.tabIndex = 0; tr.setAttribute('aria-label', 'Voir ' + x.name);
       tr.onclick = () => { sel = x.tag; try { localStorage.setItem('cf-player', sel); } catch (_) {} render(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+      tr.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tr.onclick(); } };
       cb.append(tr);
     });
     tick();
@@ -446,6 +471,8 @@
   function tick() {
     if (!data) return;
     const mins = Math.max(0, Math.round((Date.now() - new Date(data.updatedAt)) / 60000));
+    const lv = document.querySelector('.live'); lv.classList.toggle('warn', mins >= 20 && mins < 60); lv.classList.toggle('dead', mins >= 60);
+    lv.title = mins >= 60 ? 'Plus de mise à jour depuis plus d\'une heure' : mins >= 20 ? 'Mise à jour en retard' : 'En direct';
     $('ago').textContent = mins < 1 ? "à l'instant" : mins < 60 ? `il y a ${mins} min` : `il y a ${Math.round(mins / 60)} h`;
   }
 
@@ -455,7 +482,7 @@
       const r = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) throw new Error(r.status);
       const d = await r.json();
-      if (!data || d.updatedAt !== data.updatedAt) { data = d; render(); }
+      if (!data || d.updatedAt !== data.updatedAt) { data = d; render(); document.body.classList.remove('loading'); }
       $('loadErr').hidden = true;
     } catch (e) { $('loadErr').hidden = false; }
   }

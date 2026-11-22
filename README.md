@@ -17,7 +17,7 @@ site/index.html              ← the website (French)
 1. Go to **https://developer.brawlstars.com** and click **Register** (this is a developer account, not your game account).
 2. Log in, then click your name at the top right → **My Account** → **Create New Key**.
 3. Fill in:
-   - **Key Name:** `calebs-friends`
+   - **Key Name:** `zth`
    - **Description:** `GitHub site`
    - **Allowed IP Addresses:** `45.79.218.79`  ← important: this is the RoyaleAPI proxy the site goes through
 4. Click **Create Key**, open the key and **copy the long token**. Keep it secret.
@@ -26,7 +26,7 @@ site/index.html              ← the website (French)
 
 1. Log in to **https://github.com** (create a free account if needed).
 2. Click **+** (top right) → **New repository**.
-   - Name: `calebs-friends`
+   - Name: `zth`
    - **Public** (free GitHub Pages needs a public repo; the API key stays hidden in a secret)
    - Do **not** add a README
    - Click **Create repository**
@@ -39,12 +39,12 @@ site/index.html              ← the website (French)
 
 Unzip `this repo`, then open **PowerShell** and run, one by one (replace `YOUR-USERNAME`):
 
-1. `cd $HOME\Downloads\calebs-friends`
+1. `cd $HOME\Downloads\zth`
 2. `git init`
 3. `git add .`
 4. `git commit -m "Caleb's Friends site"`
 5. `git branch -M main`
-6. `git remote add origin https://github.com/YOUR-USERNAME/calebs-friends.git`
+6. `git remote add origin https://github.com/YOUR-USERNAME/zth.git`
 7. `git push -u origin main`
 
 (If Git isn't installed: `winget install --id Git.Git -e`, then close and reopen PowerShell.)
