@@ -14,6 +14,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17l-6 3.3 1.3-6.7-5-4.6 6.8-.8z' fill='%23FFC93C' stroke='%232A1600' stroke-width='1.5'/%3E%3C/svg%3E">
 <style>
+  @font-face { font-family: "Lilita One"; src: url("fonts/LilitaOne.woff2") format("woff2"); font-display: swap; }
   :root { --y: #FFC93C; --pink: #FF3D7F; --purple: #6C3BFF; --ok: #3DDC84; --bad: #FF5C6C;
           --fg: #F3F0FF; --muted: #A9A3C4; --bg: #0E0A1F; --panel: #1A1433; --line: #2E2550; --grid: #2A2245; --r: 14px; }
   body.light { --fg: #1B1530; --muted: #5E5878; --bg: #F6F4FC; --panel: #FFFFFF; --line: #E2DDF2; --grid: #ECE8F7; --ok: #1E9E5A; --bad: #D93A4A; }
@@ -89,7 +90,7 @@
   .miss-n { color: var(--pink); font-weight: 700; } .done { color: var(--ok); font-weight: 700; }
   details { margin-top: 8px; font-size: 13px; } summary { cursor: pointer; color: var(--y); font-weight: 600; }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .tag { font-size: 12px; padding: 4px 9px; border-radius: 99px; background: var(--grid); border: 1px solid var(--line); }
+  .tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 4px 9px; border-radius: 99px; background: var(--grid); border: 1px solid var(--line); }
   .tag small { color: var(--muted); }
   .tablewrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -130,12 +131,84 @@
   .donut .legend > span { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; }
   .donut .legend b { color: var(--fg); white-space: nowrap; }
   .empty { color: var(--muted); font-size: 13px; }
+  /* ---- game look ---- */
+  h2, .name, .tro-num, .big, .wr-num, .rk-n, .award .n, .brand, .bc-t, .ev-m { font-family: "Lilita One", system-ui, sans-serif; font-weight: 400; letter-spacing: .01em; }
+  h2 { font-size: 21px; }
+  .name, .tro-num { text-shadow: 0 3px 0 rgba(0,0,0,.35); }
+  .tro-num { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .brand { font-size: 20px; color: var(--fg); margin-right: 6px; }
+  .brand b { color: var(--y); }
+  .ico { width: 22px; height: 22px; object-fit: contain; flex: none; vertical-align: middle; }
+  .ico.s { width: 18px; height: 18px; } .ico.l { width: 30px; height: 30px; }
+  .hero-id { display: flex; gap: 14px; align-items: center; }
+  .avatar { width: 76px; height: 76px; border-radius: 16px; border: 3px solid rgba(255,255,255,.85); background: rgba(0,0,0,.25); flex: none; box-shadow: 0 4px 0 rgba(0,0,0,.3); }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.18); border-radius: 99px; padding: 3px 10px 3px 4px; font-size: 12.5px; color: #fff; }
+  .pill img { width: 24px; height: 24px; object-fit: contain; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; padding: 4px 13px 4px 4px; }
+  .chip img { width: 26px; height: 26px; border-radius: 7px; }
+  .card:has(.kimg:not([hidden])) { padding-right: 76px; }
+  .kimg { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 58px; height: 58px; border-radius: 12px; object-fit: contain; opacity: .95; }
+  .rk img { width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+  .row-l img { width: 20px; height: 20px; object-fit: contain; flex: none; }
+  /* battles */
+  .flt { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+  .flt button { font: inherit; font-size: 12px; padding: 5px 11px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+  .flt button[aria-pressed="true"] { background: var(--purple); color: #fff; }
+  .bl { display: flex; flex-direction: column; gap: 6px; }
+  .bt { display: grid; grid-template-columns: 28px 38px minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 7px 10px; border-radius: 12px; background: color-mix(in srgb, var(--grid) 60%, transparent); border-left: 4px solid var(--muted); font-size: 13px; }
+  .bt.bw { border-left-color: var(--ok); } .bt.bl2 { border-left-color: var(--bad); }
+  .bt .bimg { width: 38px; height: 38px; border-radius: 9px; object-fit: cover; background: var(--grid); }
+  .bt .m { min-width: 0; } .bt .m b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bt .m small { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .bt .r { text-align: right; font-weight: 700; white-space: nowrap; } .bt .r small { display: block; font-weight: 400; color: var(--muted); }
+  .tg { font-size: 10.5px; padding: 1px 6px; border-radius: 99px; margin-left: 0; vertical-align: 1px; background: var(--grid); color: var(--muted); font-weight: 600; }
+  .tg.rk2 { background: color-mix(in srgb, var(--pink) 25%, transparent); color: var(--pink); }
+  .more { margin-top: 8px; }
+  /* events */
+  .evs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .ev { border-radius: 14px; overflow: hidden; background: var(--grid); border: 1px solid var(--line); display: flex; flex-direction: column; }
+  .ev-top { display: flex; align-items: center; gap: 6px; padding: 7px 8px; color: #fff; }
+  .ev-top img { width: 26px; height: 26px; object-fit: contain; }
+  .ev-m { font-size: 14px; line-height: 1.05; text-shadow: 0 1px 0 rgba(0,0,0,.4); }
+  .ev-map { aspect-ratio: 4 / 3; width: 100%; object-fit: cover; object-position: center 40%; display: block; background: #2b5b2b; }
+  .ev-b { padding: 6px 8px 8px; font-size: 12.5px; } .ev-b b { display: block; } .ev-b small { color: var(--muted); }
+  /* brawler grid */
+  .bgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+  @media (max-width: 600px) { .bgrid { grid-template-columns: repeat(3, 1fr); } }
+  .bc { position: relative; border-radius: 12px; padding: 6px 6px 7px; text-align: center; background: linear-gradient(180deg, color-mix(in srgb, var(--purple) 22%, var(--panel)), var(--panel)); border: 1px solid var(--line); }
+  .bc img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 9px; display: block; background: var(--grid); }
+  .bc-t { font-size: 12.5px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bc-s { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bc-p { position: absolute; top: 3px; left: 3px; min-width: 22px; height: 22px; padding: 0 4px; border-radius: 7px; background: #6C3BFF; color: #fff; font: 13px/22px "Lilita One", sans-serif; border: 2px solid #fff; }
+  .bc-p.max { background: #FFB800; color: #2A1600; }
+  .bc-x { position: absolute; top: 3px; right: 4px; font-size: 11px; color: #FFD34D; text-shadow: 0 1px 1px #000; }
+  .bc.lock img { filter: grayscale(1) brightness(.45); } .bc.lock .bc-t { color: var(--muted); }
+  /* club & ranks */
+  .club-h { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+  .club-h img { width: 54px; height: 60px; object-fit: contain; }
+  .cl { max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+  .cm { display: grid; grid-template-columns: 26px 28px 1fr auto; gap: 8px; align-items: center; padding: 5px 8px; border-radius: 10px; font-size: 13px; }
+  .cm img { width: 28px; height: 28px; border-radius: 7px; }
+  .cm .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .cm .n small { color: var(--muted); margin-left: 4px; }
+  .cm.me { background: color-mix(in srgb, var(--y) 16%, transparent); outline: 1px solid color-mix(in srgb, var(--y) 45%, transparent); }
+  .pos { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+  .chr { display: flex; flex-direction: column; gap: 12px; }
+  .chr-p { display: flex; flex-direction: column; gap: 6px; }
+  .chr-h { display: flex; align-items: center; gap: 8px; font-size: 14px; } .chr-h img { width: 30px; height: 30px; border-radius: 8px; }
+  .chr-h small { color: var(--muted); }
+  .bdg { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 3px; border-radius: 99px; background: color-mix(in srgb, #E5484D 20%, var(--grid)); font-size: 12.5px; }
+  .bdg img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+  .bdg b { color: var(--y); }
+  body.light .bdg b { color: #9A5B00; }
+  .legal { font-size: 11.5px; }
+  @media (max-width: 600px) { .tro { text-align: left; } .tro-num { justify-content: flex-start; } .name { font-size: 34px; } .avatar { width: 64px; height: 64px; } }
 </style>
 </head>
 <body class="loading">
 <div class="wrap">
   <div class="bar">
-    <span class="left"><span class="live"></span>Caleb's Friends · mis à jour <span id="ago">…</span></span>
+    <span class="left"><span class="brand"><b>ZTH</b> Stats</span><span class="live"></span>mis à jour <span id="ago">…</span></span>
     <button class="btn" id="reload">⟳ Actualiser</button>
     <button class="btn" id="theme">☀️ Clair</button>
   </div>
@@ -143,10 +216,14 @@
 
   <section class="hero">
     <div class="hero-top">
-      <div>
-        <p class="kicker">★ Joueur Brawl Stars</p>
-        <h1 class="name" id="hName">Chargement…</h1>
-        <p class="meta" id="hMeta">Récupération des stats de l'équipe</p>
+      <div class="hero-id">
+        <img class="avatar" id="hAva" alt="" hidden>
+        <div>
+          <p class="kicker">★ Joueur Brawl Stars</p>
+          <h1 class="name" id="hName">Chargement…</h1>
+          <p class="meta" id="hMeta">Récupération des stats de l'équipe</p>
+          <div class="pills" id="hPills"></div>
+        </div>
       </div>
       <div class="tro"><div class="tro-num" id="hTro">—</div><p class="tro-lbl">trophées</p></div>
     </div>
@@ -160,7 +237,8 @@
   <section class="grid">
     <div class="card acc" style="--c: var(--purple)"><p class="lbl">Victoires récentes</p><div class="wr" id="kWr">—</div></div>
     <div class="card acc" style="--c: #2BB673"><p class="lbl">Victoires 3c3</p><div class="big" id="k3">—</div><p class="note" id="kSd">—</p></div>
-    <div class="card acc" style="--c: var(--pink)"><p class="lbl">Meilleur brawler</p><div class="big" id="kTop">—</div><p class="note" id="kTopT">—</p></div>
+    <div class="card acc" style="--c: var(--pink)"><p class="lbl">Meilleur brawler</p><div class="big" id="kTop">—</div><p class="note" id="kTopT">—</p><img class="kimg" id="kTopI" alt="" hidden></div>
+    <div class="card acc" style="--c: #FF8A2B"><p class="lbl">Meilleure série</p><div class="big" id="kStr">—</div><p class="note" id="kStrT">—</p><img class="kimg" id="kStrI" alt="" hidden></div>
     <div class="card acc" style="--c: var(--y)"><p class="lbl">Collection</p><div class="big" id="kOwn">—</div><p class="note" id="kMax">—</p></div>
   </section>
 
@@ -173,6 +251,24 @@
     <h2>Classé : qui est devant ?</h2>
     <div class="bars" id="race"></div>
     <p class="note">Points de classé actuels. Le trait jaune montre le record absolu de chaque joueur.</p>
+  </section>
+
+  <section class="card">
+    <div class="ghead"><h2 id="batT">🕹️ Derniers combats</h2><div class="flt" id="batF"></div></div>
+    <div class="bl" id="batL"></div>
+    <button class="btn more" id="batMore" hidden>Afficher plus</button>
+  </section>
+
+  <section class="card" id="evCard" hidden>
+    <h2>🗺️ Événements en cours</h2>
+    <div class="evs" id="evs"></div>
+    <p class="note">Rotation officielle des cartes en ce moment.</p>
+  </section>
+
+  <section class="two">
+    <div class="card" id="chCard"><h2>🇨🇭 Classements suisses</h2><div class="chr" id="chr"></div>
+      <p class="note">Top 200 de Suisse, par joueur et par brawler.</p></div>
+    <div class="card" id="clubCard" hidden><h2 id="clubT">🛡️ Club</h2><div class="club-h" id="clubH"></div><div class="cl" id="clubL"></div></div>
   </section>
 
   <section class="gsec" id="graphs">
@@ -195,6 +291,13 @@
       <div class="card"><h2 id="gDistT">Répartition des trophées des brawlers</h2><div class="chart" id="gDist"></div><p class="note">Nombre de brawlers par tranche de trophées.</p></div>
       <div class="card"><h2 id="gPowT">Niveaux de puissance</h2><div class="chart" id="gPow"></div><p class="note">Nombre de brawlers à chaque niveau. Le niveau 11 est en jaune.</p></div>
     </div>
+  </section>
+
+  <section class="card">
+    <div class="ghead"><h2 id="bgT">🧱 Brawlers</h2>
+      <label class="ctl" style="margin:0">Trier : <select id="bgS"><option value="tr">Trophées</option><option value="pw">Niveau</option><option value="st">Meilleure série</option><option value="nm">Nom</option></select></label></div>
+    <div class="bgrid" id="bg"></div>
+    <button class="btn more" id="bgMore" hidden>Afficher tous les brawlers</button>
   </section>
 
   <section class="card">
@@ -242,7 +345,8 @@
     <p class="note">Touche une ligne pour voir ce joueur. « Victoires récentes » : les 25 derniers combats ; au Survivant, finir dans le top 4 (solo) ou top 2 (duo/trio) compte comme victoire.</p>
   </section>
 
-  <p class="foot">Page de fan non officielle, ni créée, ni approuvée, ni sponsorisée par Supercell. Brawl Stars est une marque de Supercell.<br>Données de l'API officielle Brawl Stars, actualisées toutes les 5 minutes environ.</p>
+  <p class="foot">Données de l'API officielle Brawl Stars, actualisées toutes les 5 minutes environ. Images : <a href="https://brawlify.com" style="color:inherit">Brawlify</a>.<br>
+    <span class="legal">Ce contenu n'est pas affilié à Supercell, ni approuvé, sponsorisé ou spécifiquement validé par Supercell, et Supercell n'en est pas responsable. Pour plus d'informations, voir la <a href="https://supercell.com/fan-content-policy" style="color:inherit">Politique de contenu des fans de Supercell</a>.</span></p>
 </div>
 
 <script>
@@ -293,6 +397,27 @@
       ${sparkles}${t.div ? `<text x="24" y="30" text-anchor="middle" font-size="17" font-weight="900" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" paint-order="stroke" font-family="system-ui,sans-serif">${t.div}</text>` : ''}</svg>`;
   };
   const elo = (x) => x.ranked && x.ranked.rankedElo != null ? x.ranked.rankedElo : null;
+
+  // ---------- game images (Brawlify CDN, official Supercell art under the Fan Content Policy) ----------
+  const CDN = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? '/cdn' : 'https://cdn.brawlify.com';
+  const IMG = {
+    brawler: (id) => `${CDN}/brawlers/borderless/${id}.png`,
+    icon: (id) => `${CDN}/profile-icons/regular/${id}.png`,
+    rank: (n) => `${CDN}/ranked/tiered/${58000000 + Math.min(22, Math.max(1, n)) - 1}.png`,
+    mode: (mid) => `${CDN}/game-modes/regular/${48000000 + mid}.png`,
+    map: (id) => `${CDN}/maps/regular/${id}.png`,
+    badge: (id) => `${CDN}/club-badges/regular/${id}.png`,
+    sp: (id) => `${CDN}/star-powers/regular/${id}.png`,
+    gadget: (id) => `${CDN}/gadgets/regular/${id}.png`,
+  };
+  const img = (src, cls, alt) => { const i = el('img', cls); i.src = src; i.alt = alt || ''; i.loading = 'lazy'; i.decoding = 'async'; i.onerror = () => { i.style.visibility = 'hidden'; }; return i; };
+  const MODE_ID = { gemGrab: 0, heist: 2, bounty: 3, brawlBall: 5, soloShowdown: 6, bigGame: 7, roboRumble: 8, duoShowdown: 9, bossFight: 10, siege: 11, hotZone: 17, knockout: 20, duels: 24, wipeout: 25, payload: 26, hunters: 35, trioShowdown: 38 };
+  const modeId = (m) => MODE_ID[m];
+  const ROLES = { president: 'Président', vicePresident: 'Vice-président', senior: 'Senior', member: 'Membre' };
+  const until = (s) => { const ms = battleDate(s) - Date.now(); if (ms <= 0) return 'terminé'; const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `encore ${h} h ${String(m).padStart(2, '0')}` : `encore ${m} min`; };
+  const ago = (s) => { const m = Math.round((Date.now() - battleDate(s)) / 6e4); return m < 60 ? `il y a ${Math.max(1, m)} min` : m < 1440 ? `il y a ${Math.round(m / 60)} h` : `il y a ${Math.round(m / 1440)} j`; };
+  const TYPES = { soloRanked: ['Classé', 'rk2'], teamRanked: ['Classé', 'rk2'], ranked: ['Trophées', ''], friendly: ['Amical', ''], challenge: ['Défi', ''], tournament: ['Tournoi', ''], championshipChallenge: ['Championnat', 'rk2'] };
+  let batFilter = 'all', batAll = false, bgSort = 'tr', bgAll = false;
 
   let data = null;
   let hist = null;      // history.json ({points:[{t, p:{tag:{tr, elo}}}]}), may stay null
@@ -407,6 +532,93 @@
     svg.append(t1, t2); box.append(svg);
   }
 
+  // ---------- battles, events, club, Swiss ranks, brawler grid ----------
+  function renderExtras(p, ps) {
+    // recent battles
+    $('batT').textContent = '🕹️ Derniers combats · ' + p.name;
+    const list = [...((p.recent && p.recent.list) || [])].reverse(); // newest first
+    const counts = { all: list.length, rk: list.filter((b) => (TYPES[b.type] || [])[1] === 'rk2').length, tr: list.filter((b) => b.type === 'ranked').length };
+    const fl = $('batF'); fl.replaceChildren(...[['all', 'Tout'], ['rk', 'Classé'], ['tr', 'Trophées']].map(([k, lab]) => { const b = el('button', null, `${lab} (${counts[k]})`); b.type = 'button'; b.setAttribute('aria-pressed', batFilter === k); b.onclick = () => { batFilter = k; batAll = false; renderExtras(p, ps); }; return b; }));
+    const shown = list.filter((b) => batFilter === 'all' || (batFilter === 'rk' ? (TYPES[b.type] || [])[1] === 'rk2' : b.type === 'ranked'));
+    const bl = $('batL'); bl.replaceChildren();
+    if (!shown.length) bl.append(el('div', 'empty', 'Aucun combat de ce type récemment.'));
+    shown.slice(0, batAll ? 25 : 8).forEach((b) => {
+      const sd = /Showdown/i.test(b.mode || '');
+      const res = b.result === 'win' ? 'win' : b.result === 'loss' ? 'loss' : '';
+      const row = el('div', 'bt ' + (res === 'win' ? 'bw' : res === 'loss' ? 'bl2' : ''));
+      const mi = b.modeId != null ? b.modeId : modeId(b.mode); row.append(mi != null ? img(IMG.mode(mi), 'ico l', mode(b.mode)) : el('span'));
+      row.append(b.brawlerId ? img(IMG.brawler(b.brawlerId), 'bimg', b.brawler || '') : el('span'));
+      const m = el('div', 'm'); const t = el('b', null, mode(b.mode || 'unknown')); const ty = TYPES[b.type];
+      const sm = el('small'); if (ty) sm.append(el('span', 'tg ' + ty[1], ty[0]), ' '); sm.append((b.brawler || '') + (b.map ? ' · ' + b.map : '')); m.append(t, sm); row.append(m);
+      const r = el('div', 'r', sd && b.rank ? 'Top ' + b.rank : res === 'win' ? 'Victoire' : res === 'loss' ? 'Défaite' : 'Égalité');
+      r.style.color = res === 'win' ? 'var(--ok)' : res === 'loss' ? 'var(--bad)' : 'var(--muted)';
+      r.append(el('small', null, (b.trophyChange != null ? (b.trophyChange >= 0 ? '+' : '') + b.trophyChange + ' 🏆 · ' : '') + ago(b.time))); row.append(r);
+      bl.append(row);
+    });
+    const mo = $('batMore'); mo.hidden = batAll || shown.length <= 8; mo.textContent = `Afficher les ${shown.length} combats`; mo.onclick = () => { batAll = true; renderExtras(p, ps); };
+
+    // events
+    const evs = (data.rotation || []).filter((e) => battleDate(e.end) > Date.now()).sort((a, b) => (a.slot || 0) - (b.slot || 0));
+    $('evCard').hidden = !evs.length; const ev = $('evs'); ev.replaceChildren();
+    evs.forEach((e) => {
+      const c = el('div', 'ev'); const top = el('div', 'ev-top'); top.style.background = MCOL[e.mode] || '#4A4F6A';
+      if (e.modeId != null) top.append(img(IMG.mode(e.modeId), null, ''));
+      top.append(el('span', 'ev-m', mode(e.mode || 'unknown'))); c.append(top);
+      if (e.mapId) c.append(img(IMG.map(e.mapId), 'ev-map', 'Carte ' + (e.map || '')));
+      const bt = el('div', 'ev-b'); bt.append(el('b', null, e.map || '—'), el('small', null, until(e.end))); c.append(bt); ev.append(c);
+    });
+
+    // Swiss rankings (whole team)
+    const chr = $('chr'); chr.replaceChildren(); const CH = data.boards && data.boards.CH;
+    ps.forEach((x) => {
+      const box = el('div', 'chr-p'); const h = el('div', 'chr-h'); if (x.icon) h.append(img(IMG.icon(x.icon), null, ''));
+      const nm = el('b', null, x.name); h.append(nm);
+      const myRank = CH && CH.mine && CH.mine[x.tag];
+      h.append(el('small', null, myRank ? `· #${myRank} en Suisse 🇨🇭` : CH && CH.min ? `· top 200 suisse : encore ${F(CH.min - x.trophies)} 🏆` : ''));
+      box.append(h);
+      const tags = el('div', 'tags');
+      (x.chBrawlers || []).forEach((b) => { const d = el('span', 'bdg'); d.append(img(IMG.brawler(b.id), null, ''), Object.assign(el('b'), { textContent: '#' + b.rank }), ' ' + b.name); tags.append(d); });
+      if (!(x.chBrawlers || []).length && data.brawlerBoards) {
+        const near = (x.brawlers || []).slice(0, 8).map((b) => ({ b, bb: data.brawlerBoards[b.id] })).filter((z) => z.bb && z.bb.min && z.bb.n >= 200).map((z) => ({ ...z, gap: z.bb.min - z.b.trophies + 1 })).sort((a, c) => a.gap - c.gap)[0];
+        tags.append(el('span', 'note', near ? `Aucun brawler dans le top 200 suisse. Le plus proche : ${near.b.name}, encore ${F(near.gap)} 🏆.` : 'Aucun brawler dans le top 200 suisse.'));
+      }
+      box.append(tags); chr.append(box);
+    });
+
+    // club of the selected player
+    const club = p.clubTag && data.clubs && data.clubs[p.clubTag];
+    $('clubCard').hidden = !club;
+    if (club) {
+      $('clubT').textContent = '🛡️ Club · ' + club.name;
+      const ch = $('clubH'); ch.replaceChildren(); if (club.badgeId) ch.append(img(IMG.badge(club.badgeId), null, 'Badge du club'));
+      const info = el('div'); info.append(el('div', 'big', F(club.trophies) + ' 🏆'), el('p', 'note', `${club.count} membres · dès ${F(club.requiredTrophies)} 🏆 · ${club.type === 'open' ? 'ouvert' : club.type === 'closed' ? 'fermé' : 'sur invitation'}`)); ch.append(info);
+      const cl = $('clubL'); cl.replaceChildren();
+      const ours = new Set(ps.map((z) => z.tag));
+      club.members.forEach((m) => {
+        const r = el('div', 'cm' + (ours.has(m.tag) ? ' me' : '')); r.append(el('span', 'pos', '#' + m.pos), m.icon ? img(IMG.icon(m.icon), null, '') : el('span'));
+        const n = el('div', 'n'); const nb = el('span', null, m.name); if (m.nameColor && !document.body.classList.contains('light') && m.nameColor !== '#ffffff') nb.style.color = m.nameColor; n.append(nb, el('small', null, ROLES[m.role] || m.role)); r.append(n, el('span', 'val', F(m.trophies)));
+        cl.append(r);
+      });
+    }
+
+    // brawler grid
+    const own = [...(p.brawlers || [])]; const ownIds = new Set(own.map((b) => b.id));
+    const sorters = { tr: (a, b) => b.trophies - a.trophies, pw: (a, b) => b.power - a.power || b.trophies - a.trophies, st: (a, b) => b.maxStreak - a.maxStreak || b.trophies - a.trophies, nm: (a, b) => a.name.localeCompare(b.name) };
+    own.sort(sorters[bgSort]); $('bgS').value = bgSort; $('bgS').onchange = (e) => { bgSort = e.target.value; renderExtras(p, ps); };
+    $('bgT').textContent = `🧱 Brawlers · ${own.length} / ${(data.allBrawlers || []).length || p.brawlersTotal}`;
+    const g = $('bg'); g.replaceChildren(); const LIM = innerWidth < 700 ? 18 : 40;
+    own.forEach((b) => {
+      const c = el('div', 'bc'); c.title = `${b.name} · niveau ${b.power} · ${F(b.trophies)} 🏆 (record ${F(b.highestTrophies)})${b.maxStreak ? ' · meilleure série ' + b.maxStreak : ''}${b.prestige ? ' · prestige ' + b.prestige : ''}`;
+      c.append(img(IMG.brawler(b.id), null, b.name), el('span', 'bc-p' + (b.power === 11 ? ' max' : ''), String(b.power)));
+      if (b.prestige) c.append(el('span', 'bc-x', '★'.repeat(Math.min(3, b.prestige))));
+      c.append(el('div', 'bc-t', b.name), el('div', 'bc-s', '🏆 ' + F(b.trophies) + (b.maxStreak >= 5 ? ' · 🔥' + b.maxStreak : '')));
+      g.append(c);
+    });
+    (data.allBrawlers || []).filter((b) => !ownIds.has(b.id)).forEach((b) => { const c = el('div', 'bc lock'); c.append(img(IMG.brawler(b.id), null, b.name), el('div', 'bc-t', b.name), el('div', 'bc-s', '🔒 Pas débloqué')); g.append(c); });
+    const cards = [...g.children]; if (!bgAll) cards.slice(LIM).forEach((c) => c.remove());
+    const bm = $('bgMore'); bm.hidden = bgAll || cards.length <= LIM; bm.textContent = `Afficher les ${cards.length} brawlers`; bm.onclick = () => { bgAll = true; renderExtras(p, ps); };
+  }
+
   // ---------- graphs ----------
   const RANGES = [['24h', '24 h', 864e5], ['7j', '7 j', 6048e5], ['30j', '30 j', 2592e6], ['all', 'Tout', Infinity]];
   function drawGraphs() {
@@ -491,9 +703,9 @@
   $('theme').onclick = () => { light = !light; setTheme(light); if (data) drawGraphs(); try { localStorage.setItem('cf-theme', light ? 'light' : 'dark'); } catch (_) {} };
 
   // ---------- helpers ----------
-  const barRow = (label, value, max, color, valText) => {
+  const barRow = (label, value, max, color, valText, icon) => {
     const r = el('div', 'row');
-    const l = el('span', 'row-l'); const d = el('span', 'dot'); d.style.background = color; l.append(d, el('span', null, label));
+    const l = el('span', 'row-l'); const d = icon ? img(icon, null, '') : el('span', 'dot'); if (!icon) d.style.background = color; l.append(d, el('span', null, label));
     const t = el('div', 'track'); const f = el('div', 'fill'); f.style.width = (max ? value / max * 100 : 0) + '%'; f.style.background = color; t.append(f);
     r.append(l, t, el('span', 'val', valText ?? F(value))); return r;
   };
@@ -507,9 +719,16 @@
     const ps = data.players; const p = player(); sel = p.tag;
 
     // hero
-    $('hName').textContent = p.name;
-    $('hMeta').textContent = '#' + p.tag + (p.club ? ' · Club ' + p.club : ' · Sans club') + ' · Niveau ' + F(p.expLevel);
-    $('hTro').textContent = F(p.trophies);
+    $('hName').textContent = p.name; $('hName').style.color = p.nameColor || '';
+    $('hMeta').textContent = '#' + p.tag + ' · Niveau ' + F(p.expLevel) + (p.prestige ? ' · Prestige total ' + F(p.prestige) : '');
+    const av = $('hAva'); if (p.icon) { av.src = IMG.icon(p.icon); av.alt = 'Icône de ' + p.name; av.hidden = false; } else av.hidden = true;
+    const pills = $('hPills'); pills.replaceChildren();
+    const pill = (src, txt) => { const d = el('span', 'pill'); if (src) d.append(img(src, null, '')); d.append(txt); pills.append(d); };
+    if (p.ranked && p.ranked.rankedRank) pill(IMG.rank(p.ranked.rankedRank), rankTier(p.ranked.rankedRank).name + ' · ' + F(p.ranked.rankedElo) + ' pts');
+    const club = p.clubTag && data.clubs && data.clubs[p.clubTag];
+    if (p.club) pill(club && club.badgeId ? IMG.badge(club.badgeId) : null, (club ? '' : 'Club ') + p.club);
+    if (p.fameTier) pill(null, '⭐ ' + p.fameTier.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()));
+    $('hTro').replaceChildren('🏆', F(p.trophies));
     const nearRec = !p.highestTrophies || p.trophies / p.highestTrophies >= 0.99;
     if (nearRec) {
       const step = p.trophies >= 100000 ? 10000 : 5000, nx = Math.floor(p.trophies / step) * step + step;
@@ -530,7 +749,7 @@
 
     // chips
     const ch = $('chips'); ch.replaceChildren();
-    ps.forEach((x) => { const b = el('button', 'chip', x.name + ' · ' + F(x.trophies) + ' 🏆'); b.setAttribute('aria-pressed', x.tag === p.tag); b.onclick = () => { sel = x.tag; try { localStorage.setItem('cf-player', sel); } catch (_) {} render(); }; ch.append(b); });
+    ps.forEach((x) => { const b = el('button', 'chip'); if (x.icon) b.append(img(IMG.icon(x.icon), null, '')); b.append(x.name + ' · ' + F(x.trophies) + ' 🏆'); b.setAttribute('aria-pressed', x.tag === p.tag); b.onclick = () => { sel = x.tag; try { localStorage.setItem('cf-player', sel); } catch (_) {} render(); }; ch.append(b); });
 
     // KPIs
     const w = $('kWr'); w.replaceChildren();
@@ -547,6 +766,9 @@
     $('kSd').textContent = 'Solo ' + F(p.soloWins) + ' · Duo ' + F(p.duoWins);
     $('kTop').textContent = p.topBrawler ? p.topBrawler.name : '—';
     $('kTopT').textContent = p.topBrawler ? F(p.topBrawler.trophies) + ' trophées' : '';
+    const kti = $('kTopI'); if (p.topBrawler && p.topBrawler.id) { kti.src = IMG.brawler(p.topBrawler.id); kti.hidden = false; } else kti.hidden = true;
+    const bs = p.bestStreak; $('kStr').textContent = bs ? bs.n + ' victoires' : '—'; $('kStrT').textContent = bs ? 'avec ' + bs.brawler : '';
+    const ksi = $('kStrI'); if (bs && bs.id) { ksi.src = IMG.brawler(bs.id); ksi.hidden = false; } else ksi.hidden = true;
     $('kOwn').textContent = p.brawlersOwned + ' / ' + p.brawlersTotal;
     $('kMax').textContent = p.maxPower + ' au niveau 11';
 
@@ -566,9 +788,9 @@
       const d = el('details'); d.append(el('summary', null, title + ' (' + items.length + ')'));
       const tg = el('div', 'tags'); items.forEach((x) => { const s = el('span', 'tag'); fmt(s, x); tg.append(s); }); d.append(tg); ml.append(d);
     };
-    listBlock('Voir les pouvoirs stellaires manquants (brawlers débloqués)', p.missing.starPowers, (s, x) => { s.append(x.name + ' '); s.append(el('small', null, '· ' + x.brawler + (x.power < 9 ? ' (niv. ' + x.power + ')' : ''))); });
-    listBlock('Voir les gadgets manquants (brawlers débloqués)', p.missing.gadgets, (s, x) => { s.append(x.name + ' '); s.append(el('small', null, '· ' + x.brawler + (x.power < 7 ? ' (niv. ' + x.power + ')' : ''))); });
-    listBlock('Voir les brawlers manquants', p.missing.brawlers.map((n) => ({ n })), (s, x) => { s.textContent = x.n; });
+    listBlock('Voir les pouvoirs stellaires manquants (brawlers débloqués)', p.missing.starPowers, (s, x) => { if (x.id) s.append(img(IMG.sp(x.id), 'ico s', '')); s.append(' ' + x.name + ' '); s.append(el('small', null, '· ' + x.brawler + (x.power < 9 ? ' (niv. ' + x.power + ')' : ''))); });
+    listBlock('Voir les gadgets manquants (brawlers débloqués)', p.missing.gadgets, (s, x) => { if (x.id) s.append(img(IMG.gadget(x.id), 'ico s', '')); s.append(' ' + x.name + ' '); s.append(el('small', null, '· ' + x.brawler + (x.power < 7 ? ' (niv. ' + x.power + ')' : ''))); });
+    listBlock('Voir les brawlers manquants', p.missing.brawlers.map((n, i) => ({ n, id: (p.missing.brawlerIds || [])[i] })), (s, x) => { if (x.id) s.append(img(IMG.brawler(x.id), 'ico s', '')); s.append(' ' + x.n); });
     const cp = $('completion'); cp.replaceChildren();
     ps.map((x) => ({ x, c: completion(x) })).sort((a, b) => b.c - a.c).forEach(({ x, c }, i) => cp.append(barRow((['🥇 ', '🥈 ', '🥉 '][i] || '') + x.name, c, 100, 'linear-gradient(90deg,#FFC93C,#FF9F1C)', c + ' %')));
 
@@ -581,7 +803,7 @@
       [['Actuel', R.rankedRank, R.rankedElo], ['Record de la saison', R.highestSeasonRankedRank, R.highestSeasonRankedElo], ['Record absolu', R.highestAllTimeRankedRank, R.highestAllTimeRankedElo]]
         .filter(([, n, e]) => n != null && e != null).forEach(([lab, n, elo]) => {
           const t = rankTier(n); const c = el('div', 'rk'); c.style.background = t.bg;
-          const em = el('div'); em.innerHTML = emblemSvg(t); const info = el('div');
+          const em = img(IMG.rank(n), null, 'Rang ' + t.name); const info = el('div');
           info.append(el('p', 'rk-l', lab), el('div', 'rk-n', t.name), el('div', 'rk-p', F(elo) + ' pts'));
           c.append(em, info); r.append(c);
         });
@@ -594,7 +816,7 @@
     const rmax = Math.max(1, ...rr.map((x) => Math.max(elo(x), x.ranked.highestAllTimeRankedElo || 0)));
     rr.forEach((x, i) => {
       const t = rankTier(x.ranked.rankedRank);
-      const row = barRow((i === 0 ? '👑 ' : '') + x.name, elo(x), rmax, t.bg, t.name + ' · ' + F(elo(x)));
+      const row = barRow((i === 0 ? '👑 ' : '') + x.name, elo(x), rmax, t.bg, t.name + ' · ' + F(elo(x)), IMG.rank(x.ranked.rankedRank)); row.querySelector('.fill').style.background = t.bg;
       const tr = row.querySelector('.track'); tr.style.overflow = 'visible';
       if (x.ranked.highestAllTimeRankedElo) { const mk = el('div', 'race-mk'); mk.style.left = `calc(${x.ranked.highestAllTimeRankedElo / rmax * 100}% - 1px)`; tr.append(mk); }
       race.append(row);
@@ -602,11 +824,14 @@
 
     // modes / brawlers
     const md = $('modes'); md.replaceChildren(); const mMax = Math.max(1, ...rc.modes.map((m) => m.battles));
-    rc.modes.forEach((m) => md.append(barRow(mode(m.name), m.battles, mMax, MCOL[m.name] || '#8A8FA8')));
+    rc.modes.forEach((m) => md.append(barRow(mode(m.name), m.battles, mMax, MCOL[m.name] || '#8A8FA8', null, modeId(m.name) != null ? IMG.mode(modeId(m.name)) : null)));
     if (!rc.modes.length) md.append(el('p', 'empty', 'Aucun combat récent.'));
     const bd = $('brawlers'); bd.replaceChildren(); const bMax = Math.max(1, ...rc.brawlers.map((m) => m.battles));
-    rc.brawlers.forEach((m, i) => bd.append(barRow(m.name, m.battles, bMax, PAL[i % PAL.length])));
+    const bid = (n) => { const b = (p.brawlers || []).find((z) => z.name === n) || (data.allBrawlers || []).find((z) => z.name === n); return b ? b.id : null; };
+    rc.brawlers.forEach((m, i) => { const id = bid(m.name); bd.append(barRow(m.name, m.battles, bMax, PAL[i % PAL.length], null, id ? IMG.brawler(id) : null)); });
     if (!rc.brawlers.length) bd.append(el('p', 'empty', 'Aucun combat récent.'));
+
+    renderExtras(p, ps);
 
     // awards
     const aw = $('awards'); aw.replaceChildren();
@@ -681,7 +906,7 @@
 
     // squad modes / brawlers
     const sm = $('sqModes'); sm.replaceChildren(); const smx = Math.max(1, ...sqM.map((m) => m.n));
-    sqM.forEach((m) => sm.append(barRow(mode(m.k), m.n, smx, MCOL[m.k] || '#8A8FA8')));
+    sqM.forEach((m) => sm.append(barRow(mode(m.k), m.n, smx, MCOL[m.k] || '#8A8FA8', null, modeId(m.k) != null ? IMG.mode(modeId(m.k)) : null)));
     const sb = $('sqBrawlers'); sb.replaceChildren(); const top8 = sqB.slice(0, 8); const sbx = Math.max(1, ...top8.map((m) => m.n));
     top8.forEach((m, i) => sb.append(barRow(m.k + (m.who > 1 ? ' 👥' : ''), m.n, sbx, PAL[i % PAL.length])));
 

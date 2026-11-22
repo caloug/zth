@@ -32,9 +32,7 @@ jobs:
       - name: Fetch stats from the Brawl Stars API
         env:
           BS_API_KEY: ${{ secrets.BS_API_KEY }}
-        run: |
-          BS_DUMP_DIR=/tmp/dump node scripts/update.mjs
-          echo "DUMP-BEGIN"; tar -C /tmp/dump -czf - . | base64 -w 120; echo "DUMP-END"
+        run: node scripts/update.mjs
 
       - uses: actions/configure-pages@v5
 
