@@ -26,7 +26,7 @@
   .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
   .bar .left { margin-right: auto; }
   .live.warn { background: #FF9F1C; box-shadow: 0 0 8px #FF9F1C; } .live.dead { background: var(--bad); box-shadow: 0 0 8px var(--bad); }
-  body.loading .wrap > section, body.loading .chips { opacity: .35; }
+  body.loading .pane, body.loading .hero, body.loading .chips { opacity: .35; }
   .live { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); margin-right: 6px; box-shadow: 0 0 8px var(--ok); }
   .btn { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
   .hero { position: relative; overflow: hidden; border-radius: 22px; padding: 24px 20px; color: #fff;
@@ -237,8 +237,8 @@
     /* bars animate only on intentional renders (first load / player switch), never the silent 5-min refresh */
     body.anim .fill, body.anim .prog-fill, body.anim .hb { transition: width .55s var(--ease-out); }
     /* one-time staggered section entrance on first load */
-    body.intro .wrap > :nth-child(n+2):nth-child(-n+9) { animation: fadeUp .45s var(--ease-out) backwards; }
-    body.intro .wrap > :nth-child(2){animation-delay:0ms} body.intro .wrap > :nth-child(3){animation-delay:45ms} body.intro .wrap > :nth-child(4){animation-delay:90ms} body.intro .wrap > :nth-child(5){animation-delay:135ms} body.intro .wrap > :nth-child(6){animation-delay:180ms} body.intro .wrap > :nth-child(7){animation-delay:225ms} body.intro .wrap > :nth-child(8){animation-delay:270ms} body.intro .wrap > :nth-child(9){animation-delay:315ms}
+    body.intro .pane.on > *:nth-child(-n+8) { animation: fadeUp .45s var(--ease-out) backwards; }
+    body.intro .pane.on > *:nth-child(1){animation-delay:0ms} body.intro .pane.on > *:nth-child(2){animation-delay:45ms} body.intro .pane.on > *:nth-child(3){animation-delay:90ms} body.intro .pane.on > *:nth-child(4){animation-delay:135ms} body.intro .pane.on > *:nth-child(5){animation-delay:180ms} body.intro .pane.on > *:nth-child(6){animation-delay:225ms} body.intro .pane.on > *:nth-child(7){animation-delay:270ms} body.intro .pane.on > *:nth-child(8){animation-delay:315ms}
     @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     /* gentle pulse only on healthy live dot + "online" status dots */
     .live:not(.warn):not(.dead), .sdot.on { animation: pulse 2.2s var(--ease-io) infinite; }
@@ -246,6 +246,14 @@
     .btn.spinning .ri { animation: spin .5s var(--ease-io); }
     @keyframes spin { to { transform: rotate(360deg); } }
   }
+  .tabs { position: sticky; top: 0; z-index: 20; display: flex; gap: 5px; overflow-x: auto; padding: 8px 2px; margin: 0 -2px; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(8px); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 0 0 auto; font: inherit; font-size: 14px; font-family: "Lilita One", system-ui, sans-serif; padding: 9px 16px; min-height: 42px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 99px; cursor: pointer; white-space: nowrap; transition: background var(--t) var(--ease-out), color var(--t) var(--ease-out), border-color var(--t) var(--ease-out); }
+  .tab.on { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .tab:active { transform: scale(.96); }
+  .pane { display: none; flex-direction: column; gap: 18px; }
+  .pane.on { display: flex; animation: fadeIn .28s var(--ease-out); }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
@@ -280,7 +288,20 @@
 
   <div class="chips" id="chips"></div>
 
-  <section class="grid">
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
+    <button class="tab on" type="button" role="tab" data-tab="overview">Vue d'ensemble</button>
+    <button class="tab" type="button" role="tab" data-tab="classe">Classé</button>
+    <button class="tab" type="button" role="tab" data-tab="combats">Combats</button>
+    <button class="tab" type="button" role="tab" data-tab="brawlers">Brawlers</button>
+    <button class="tab" type="button" role="tab" data-tab="equipe">Équipe</button>
+  </nav>
+  <div class="pane on" data-pane="overview"></div>
+  <div class="pane" data-pane="classe"></div>
+  <div class="pane" data-pane="combats"></div>
+  <div class="pane" data-pane="brawlers"></div>
+  <div class="pane" data-pane="equipe"></div>
+
+  <section class="grid" data-tab="overview" data-o="1">
     <div class="card acc" style="--c: var(--purple)"><p class="lbl">Victoires récentes</p><div class="wr" id="kWr">—</div></div>
     <div class="card acc" style="--c: #2BB673"><p class="lbl">Victoires 3c3</p><div class="big" id="k3">—</div><p class="note" id="kSd">—</p></div>
     <div class="card acc" style="--c: var(--pink)"><p class="lbl">Meilleur brawler</p><div class="big" id="kTop">—</div><p class="note" id="kTopT">—</p><img class="kimg" id="kTopI" alt="" hidden></div>
@@ -288,31 +309,31 @@
     <div class="card acc" style="--c: var(--y)"><p class="lbl">Collection</p><div class="big" id="kOwn">—</div><p class="note" id="kMax">—</p></div>
   </section>
 
-  <section class="card" id="rankedCard" hidden>
+  <section class="card" id="rankedCard" data-tab="classe" data-o="1" hidden>
     <h2>Classé</h2>
     <div id="ranked"></div>
   </section>
 
-  <section class="card" id="raceCard" hidden>
+  <section class="card" id="raceCard" data-tab="classe" data-o="2" hidden>
     <h2>Classé : qui est devant ?</h2>
     <div class="bars" id="race"></div>
     <p class="note">Points de classé actuels. Le trait jaune montre le record absolu de chaque joueur.</p>
   </section>
 
-  <section class="card" id="wkCard">
+  <section class="card" id="wkCard" data-tab="overview" data-o="2">
     <h2>📅 Résumé de la semaine</h2>
     <div class="awards" id="wkHi"></div>
     <div class="wk-cards" id="wkC"></div>
     <p class="note" id="wkN"></p>
   </section>
 
-  <section class="card">
+  <section class="card" data-tab="combats" data-o="1">
     <div class="ghead"><h2 id="batT">🕹️ Derniers combats</h2><div class="flt" id="batF"></div></div>
     <div class="bl" id="batL"></div>
     <button class="btn more" id="batMore" hidden>Afficher plus</button>
   </section>
 
-  <section class="card">
+  <section class="card" data-tab="combats" data-o="2">
     <div class="ghead"><h2 id="mpT">🗺️ Taux de victoire par map</h2>
       <div class="ctl" style="margin:0"><div class="flt" id="mpScope"></div><select id="mpS" aria-label="Trier les maps"><option value="n">Plus jouées</option><option value="best">Meilleur %</option><option value="worst">Pire %</option></select></div></div>
     <div id="mpL"></div>
@@ -320,13 +341,13 @@
     <p class="note" id="mpN"></p>
   </section>
 
-  <section class="card" id="evCard" hidden>
+  <section class="card" id="evCard" data-tab="combats" data-o="3" hidden>
     <h2>🗺️ Événements en cours</h2>
     <div class="evs" id="evs"></div>
     <p class="note">Rotation officielle des cartes en ce moment.</p>
   </section>
 
-  <section class="two">
+  <section class="two" data-tab="equipe" data-o="1">
     <div class="card" id="chCard"><h2>🇨🇭 Classements suisses</h2><div class="chr" id="chr"></div>
       <p class="note">Top 200 de Suisse, par joueur et par brawler.</p></div>
     <div class="card" id="clubCard" hidden><h2 id="clubT">🛡️ Club</h2><div class="club-h" id="clubH"></div><div class="cl" id="clubL"></div></div>
@@ -334,34 +355,34 @@
 
   <section class="gsec" id="graphs">
     <h2>📈 Graphiques</h2>
-    <div class="card">
+    <div class="card" data-tab="overview" data-o="3">
       <div class="ghead"><h2>Trophées dans le temps</h2><div class="rng" data-rng></div></div>
       <div class="chart" id="gTro"></div><div class="legend" id="gTroL"></div>
     </div>
-    <div class="card" id="gEloCard">
+    <div class="card" id="gEloCard" data-tab="classe" data-o="3">
       <div class="ghead"><h2>Points de classé dans le temps</h2><div class="rng" data-rng></div></div>
       <div class="chart" id="gElo"></div><div class="legend" id="gEloL"></div>
     </div>
-    <div class="two">
+    <div class="two" data-tab="combats" data-o="4">
       <div class="card"><h2 id="gBatT">Les 25 derniers combats</h2><div class="chart" id="gBat"></div><div class="sq" id="gBatSq"></div>
         <p class="note">Trophées gagnés ou perdus, cumulés du plus ancien au plus récent. Carrés : <span style="color:var(--ok)">■</span> victoire · <span style="color:var(--bad)">■</span> défaite · <span style="color:var(--muted)">■</span> autre.</p></div>
       <div class="card"><h2>Modes joués par l'équipe</h2><div class="donut"><div class="chart" id="gMod"></div><div class="legend" id="gModL"></div></div>
         <p class="note">Sur les derniers combats des trois joueurs.</p></div>
     </div>
-    <div class="two">
+    <div class="two" data-tab="brawlers" data-o="3">
       <div class="card"><h2 id="gDistT">Répartition des trophées des brawlers</h2><div class="chart" id="gDist"></div><p class="note">Nombre de brawlers par tranche de trophées.</p></div>
       <div class="card"><h2 id="gPowT">Niveaux de puissance</h2><div class="chart" id="gPow"></div><p class="note">Nombre de brawlers à chaque niveau. Le niveau 11 est en jaune.</p></div>
     </div>
   </section>
 
-  <section class="card">
+  <section class="card" data-tab="brawlers" data-o="1">
     <div class="ghead"><h2 id="bgT">🧱 Brawlers</h2>
       <label class="ctl" style="margin:0">Trier : <select id="bgS"><option value="tr">Trophées</option><option value="pw">Niveau</option><option value="st">Meilleure série</option><option value="nm">Nom</option></select></label></div>
     <div class="bgrid" id="bg"></div>
     <button class="btn more" id="bgMore" hidden>Afficher tous les brawlers</button>
   </section>
 
-  <section class="card">
+  <section class="card" data-tab="brawlers" data-o="2">
     <h2>🧩 Ce qui manque</h2>
     <div class="miss-grid" id="missBars"></div>
     <div id="missLists"></div>
@@ -370,34 +391,34 @@
     <p class="note">Moyenne des pourcentages : pouvoirs stellaires, gadgets, brawlers et brawlers niveau 11.</p>
   </section>
 
-  <section class="two">
+  <section class="two" data-tab="combats" data-o="5">
     <div class="card"><h2>Modes des derniers combats</h2><div class="bars" id="modes"></div></div>
     <div class="card"><h2>Brawlers des derniers combats</h2><div class="bars" id="brawlers"></div></div>
   </section>
 
-  <section class="card"><h2>🏅 Trophées de l'équipe</h2><div class="awards" id="awards"></div></section>
-  <section class="card"><h2>L'équipe au complet</h2><div class="grid" id="totals"></div></section>
-  <section class="card"><h2>💡 Le savais-tu ?</h2><ul class="facts" id="facts"></ul></section>
+  <section class="card" data-tab="equipe" data-o="2"><h2>🏅 Trophées de l'équipe</h2><div class="awards" id="awards"></div></section>
+  <section class="card" data-tab="equipe" data-o="3"><h2>L'équipe au complet</h2><div class="grid" id="totals"></div></section>
+  <section class="card" data-tab="overview" data-o="4"><h2>💡 Le savais-tu ?</h2><ul class="facts" id="facts"></ul></section>
 
-  <section class="card">
+  <section class="card" data-tab="overview" data-o="5">
     <h2>🎯 Prochain palier de trophées</h2>
     <div class="bars" id="milestones" style="gap:14px"></div>
     <p class="note">Un palier tous les 10 000 trophées au-dessus de 100 000, tous les 5 000 en dessous.</p>
   </section>
 
-  <section class="card">
+  <section class="card" data-tab="equipe" data-o="4">
     <h2>⚔️ Face-à-face</h2>
     <div class="ctl"><select id="hA" aria-label="Premier joueur"></select><span>contre</span><select id="hB" aria-label="Deuxième joueur"></select></div>
     <div class="h2h" id="h2h"></div>
     <p class="note">Le chiffre en gras gagne la ligne.</p>
   </section>
 
-  <section class="card"><h2>Modes préférés de l'équipe</h2><div class="bars" id="sqModes"></div>
+  <section class="card" data-tab="equipe" data-o="5"><h2>Modes préférés de l'équipe</h2><div class="bars" id="sqModes"></div>
     <p class="note">Tous les derniers combats de chaque joueur, additionnés par mode.</p></section>
-  <section class="card"><h2>Brawlers préférés de l'équipe</h2><div class="bars" id="sqBrawlers"></div>
+  <section class="card" data-tab="equipe" data-o="6"><h2>Brawlers préférés de l'équipe</h2><div class="bars" id="sqBrawlers"></div>
     <p class="note">👥 = joué par plusieurs d'entre vous.</p></section>
 
-  <section class="card">
+  <section class="card" data-tab="equipe" data-o="7">
     <h2>Comparer les joueurs</h2>
     <div class="tablewrap"><table>
       <thead><tr><th>Joueur</th><th>Tag</th><th class="num">Trophées</th><th class="num">Record</th><th class="num">Victoires 3c3</th><th class="num">% victoires récentes</th><th>Meilleur brawler</th><th>Dernière partie</th></tr></thead>
@@ -1084,6 +1105,30 @@
     try { await navigator.clipboard.writeText(url); done(true); } catch (_) { done(false); }
   };
   $('reload').onclick = async () => { const r = $('reload'); r.classList.add('spinning'); try { await load(); } finally { setTimeout(() => r.classList.remove('spinning'), 520); } };
+
+  // ---------- tabs: move each tagged section into its pane, then switch panes ----------
+  const TAB_LIST = ['overview', 'classe', 'combats', 'brawlers', 'equipe'];
+  (function layoutTabs() {
+    TAB_LIST.forEach((t) => {
+      const pane = document.querySelector(`.pane[data-pane="${t}"]`); if (!pane) return;
+      [...document.querySelectorAll(`[data-tab="${t}"][data-o]`)].sort((a, b) => (+a.dataset.o) - (+b.dataset.o)).forEach((el) => pane.appendChild(el));
+    });
+    const g = $('graphs'); if (g) g.remove(); // its charts have been moved out
+  })();
+  let curTab = 'overview';
+  function setTab(t, fromUser) {
+    if (!TAB_LIST.includes(t)) t = 'overview';
+    curTab = t;
+    document.querySelectorAll('.tab').forEach((b) => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+    document.querySelectorAll('.pane').forEach((pn) => pn.classList.toggle('on', pn.dataset.pane === t));
+    try { localStorage.setItem('cf-tab', t); } catch (_) {}
+    try { history.replaceState(null, '', '#' + t); } catch (_) {}
+    if (data) { try { drawGraphs(); } catch (_) {} }        // size charts now that their pane is visible
+    if (fromUser) { const y = $('tabs').getBoundingClientRect().top + scrollY - 4; if (scrollY > y) scrollTo({ top: y, behavior: 'smooth' }); }
+  }
+  document.querySelectorAll('.tab').forEach((b) => { b.onclick = () => setTab(b.dataset.tab, true); });
+  (function initTab() { let t; try { t = location.hash.replace('#', '') || localStorage.getItem('cf-tab'); } catch (_) {} setTab(TAB_LIST.includes(t) ? t : 'overview'); })();
+
   load();
   setInterval(load, 60 * 1000);
   setInterval(tick, 20 * 1000);
