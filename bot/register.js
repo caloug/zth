@@ -16,6 +16,15 @@ const commands = [
   { name: 'maj', description: 'Forcer une mise à jour des stats maintenant' },
   { name: 'notifs', description: 'Activer ou couper les notifications', options: [
     { name: 'etat', description: 'on ou off', type: 3, required: true, choices: [ { name: 'on', value: 'on' }, { name: 'off', value: 'off' } ] } ] },
+  { name: 'semaine', description: 'Résumé de la semaine de l\'équipe' },
+  { name: 'compare', description: 'Comparer deux joueurs', options: [
+    { name: 'joueur1', description: 'Premier joueur', type: 3, required: true, choices: players },
+    { name: 'joueur2', description: 'Deuxième joueur', type: 3, required: true, choices: players } ] },
+  { name: 'map', description: 'Meilleures et pires maps d\'un joueur', options: [
+    { name: 'joueur', description: 'Quel joueur', type: 3, required: false, choices: players } ] },
+  { name: 'brawler', description: 'Brawlers d\'un joueur', options: [
+    { name: 'joueur', description: 'Quel joueur', type: 3, required: false, choices: players } ] },
+  { name: 'records', description: "Records de l'équipe" },
   { name: 'panneau', description: 'Afficher le panneau de contrôle avec les boutons' },
 ];
 

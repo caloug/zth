@@ -59,11 +59,58 @@ function classeEmbed(d) {
   return { title: '⚔️ Classé — qui est devant ?', color: GOLD, description: lines.join('\n') || 'Pas de données classé.', footer: { text: 'ZTH' } };
 }
 
+async function getHistory() { try { const r = await fetch('https://caloug.github.io/zth/history.json?t=' + Date.now(), { cf: { cacheTtl: 0 } }); return r.ok ? (await r.json()).points : null; } catch { return null; } }
+function weekEmbed(d) {
+  const sg = (v, s = '') => v == null ? '—' : (v > 0 ? '+' : '') + F(v) + s;
+  const lines = d.players.filter((p) => p.week).map((p) => { const w = p.week; return `**${p.name}** — 🏆 ${sg(w.trophies)}${w.elo != null ? ` · ⚔️ ${sg(w.elo, ' pts')}` : ''} · 🎮 ${F(w.battles)}${w.winRate != null ? ` · ${w.winRate}% V` : ''}` + (w.brawler ? `\n   Brawler : ${w.brawler.name}` : '') + (w.bestMap ? ` · Top map : ${w.bestMap.map} (${w.bestMap.wr}%)` : ''); });
+  return { title: '📅 Résumé de la semaine', color: PURPLE, description: lines.join('\n\n') || 'Pas de données.' };
+}
+function compareEmbed(d, aTag, bTag) {
+  const A = d.players.find((p) => p.tag === aTag), B = d.players.find((p) => p.tag === bTag);
+  if (!A || !B || A === B) return { title: 'Comparer', description: 'Choisis deux joueurs différents.', color: RED };
+  const rk = (p) => p.ranked?.rankedRank ? `${tierName(p.ranked.rankedRank)} (${F(p.ranked.rankedElo)})` : '—';
+  const row = (lab, av, bv) => `${lab} — **${av}** vs **${bv}**`;
+  return { title: `⚔️ ${A.name} vs ${B.name}`, color: PURPLE, description: [
+    row('🏆 Trophées', F(A.trophies), F(B.trophies)), row('⚔️ Classé', rk(A), rk(B)),
+    row('🎯 Victoires récentes', (A.recent?.winRate ?? '—') + '%', (B.recent?.winRate ?? '—') + '%'),
+    row('💥 3c3', F(A.wins3v3), F(B.wins3v3)), row('🧱 Brawlers', A.brawlersOwned + '/' + A.brawlersTotal, B.brawlersOwned + '/' + B.brawlersTotal),
+  ].join('\n') };
+}
+function mapEmbed(d, tag) {
+  const p = d.players.find((x) => x.tag === tag) || d.players[0];
+  const maps = (p.maps || []).filter((m) => m.wr != null && m.w + m.l >= 3);
+  const fmt = (m) => `${m.map} — ${m.wr}% (${m.w}V/${m.l}D)`;
+  return { title: `🗺️ Maps de ${p.name}`, color: PURPLE, fields: [
+    { name: '✅ Meilleures', value: [...maps].sort((a, b) => b.wr - a.wr).slice(0, 5).map(fmt).join('\n') || '—' },
+    { name: '😤 Pires', value: [...maps].sort((a, b) => a.wr - b.wr).slice(0, 3).map(fmt).join('\n') || '—' },
+  ], footer: { text: 'Min. 3 combats enregistrés par map' } };
+}
+function recordsEmbed(d, hist) {
+  const ps = d.players, nameOf = (t) => (ps.find((x) => x.tag === t) || {}).name || t, lines = [];
+  let best = null; if (hist) for (const x of ps) { const m = new Map(); for (const q of hist) { const v = q.p[x.tag]; if (!v || v.tr == null) continue; m.set(q.t.slice(0, 10), v.tr); } const arr = [...m.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1); for (let i = 1; i < arr.length; i++) { const dd = arr[i][1] - arr[i - 1][1]; if (!best || dd > best.d) best = { d: dd, tag: x.tag }; } }
+  if (best && best.d > 0) lines.push(`📈 Plus gros gain/jour : **${nameOf(best.tag)}** +${F(best.d)} 🏆`);
+  const bs = ps.filter((x) => x.bestStreak).sort((a, b) => b.bestStreak.n - a.bestStreak.n)[0]; if (bs) lines.push(`🔥 Plus longue série : **${bs.name}** ${bs.bestStreak.n} victoires`);
+  const ws = ps.filter((x) => (x.worstStreak || 0) >= 2).sort((a, b) => b.worstStreak - a.worstStreak)[0]; if (ws) lines.push(`🧊 Plus longue série de défaites : **${ws.name}** ${ws.worstStreak}`);
+  const hr = ps.filter((x) => x.ranked?.highestAllTimeRankedRank).sort((a, b) => b.ranked.highestAllTimeRankedRank - a.ranked.highestAllTimeRankedRank)[0]; if (hr) lines.push(`⚔️ Plus haut rang : **${hr.name}** ${tierName(hr.ranked.highestAllTimeRankedRank)}`);
+  return { title: "🏆 Records de l'équipe", color: GOLD, description: lines.join('\n') || '—' };
+}
+function brawlerEmbed(d, tag) {
+  const p = d.players.find((x) => x.tag === tag) || d.players[0];
+  const mb = (p.mapBrawler || []).slice(0, 6).map((m) => `${m.map} : **${m.brawler}** (${m.wr}%)`);
+  return { title: `🧱 Brawlers de ${p.name}`, color: PURPLE, description: [
+    `⭐ Meilleur brawler : **${p.topBrawler?.name || '—'}**${p.topBrawler ? ` (${F(p.topBrawler.trophies)} 🏆)` : ''}`,
+    p.bestStreak ? `🔥 Meilleure série : **${p.bestStreak.brawler}** ${p.bestStreak.n} victoires` : null,
+    `🧱 Collection : **${p.brawlersOwned}/${p.brawlersTotal}**`,
+    mb.length ? `\n**Meilleur brawler par map :**\n` + mb.join('\n') : null,
+  ].filter(Boolean).join('\n') };
+}
 const panelComponents = () => [{
   type: 1, components: [
     { type: 2, style: 1, custom_id: 'maj', label: 'Mettre à jour', emoji: { name: '🔄' } },
     { type: 2, style: 2, custom_id: 'stats', label: 'Stats équipe', emoji: { name: '📊' } },
     { type: 2, style: 2, custom_id: 'classe', label: 'Classé', emoji: { name: '⚔️' } },
+    { type: 2, style: 2, custom_id: 'semaine', label: 'Semaine', emoji: { name: '📅' } },
+    { type: 2, style: 2, custom_id: 'records', label: 'Records', emoji: { name: '🏆' } },
     { type: 2, style: 2, custom_id: 'notifs', label: 'Notifs', emoji: { name: '🔔' } },
     { type: 2, style: 5, label: 'Ouvrir le site', url: SITE },
   ],
@@ -100,6 +147,11 @@ async function handle(interaction, env) {
     if (name === 'classe') { const d = await getData(); return msg({ embeds: [classeEmbed(d)] }); }
     if (name === 'maj') { const r = await triggerWithCooldown(env); return ephemeral({ content: r.wait ? `⏳ Une mise à jour vient d'être lancée. Réessaie dans ${r.wait} s.` : r.ok ? '🔄 Mise à jour lancée ! Les nouvelles stats arrivent dans ~1 min.' : '❌ Échec (token GitHub ?).' }); }
     if (name === 'notifs') { const c = await getConfig(env); const v = opt('etat'); c.notifs = v === 'on'; await setConfig(env, c); return ephemeral({ content: c.notifs ? '🔔 Notifications **activées**.' : '🔕 Notifications **coupées**.' }); }
+    if (name === 'semaine') { const d = await getData(); return msg({ embeds: [weekEmbed(d)] }); }
+    if (name === 'compare') { const d = await getData(); return msg({ embeds: [compareEmbed(d, opt('joueur1'), opt('joueur2'))] }); }
+    if (name === 'map') { const d = await getData(); return msg({ embeds: [mapEmbed(d, opt('joueur'))] }); }
+    if (name === 'records') { const d = await getData(); const h = await getHistory(); return msg({ embeds: [recordsEmbed(d, h)] }); }
+    if (name === 'brawler') { const d = await getData(); return msg({ embeds: [brawlerEmbed(d, opt('joueur'))] }); }
     if (name === 'panneau') return msg({ embeds: [{ title: '🎮 Panneau ZTH', description: 'Contrôle le bot avec les boutons ci-dessous.', color: PURPLE }], components: panelComponents() });
     return ephemeral({ content: 'Commande inconnue.' });
   }
@@ -109,6 +161,8 @@ async function handle(interaction, env) {
     if (cid === 'maj') { const r = await triggerWithCooldown(env); return ephemeral({ content: r.wait ? `⏳ Déjà lancée, réessaie dans ${r.wait} s.` : r.ok ? '🔄 Mise à jour lancée !' : '❌ Échec (token GitHub ?).' }); }
     if (cid === 'stats') { const d = await getData(); return ephemeral({ embeds: [teamStatsEmbed(d)] }); }
     if (cid === 'classe') { const d = await getData(); return ephemeral({ embeds: [classeEmbed(d)] }); }
+    if (cid === 'semaine') { const d = await getData(); return ephemeral({ embeds: [weekEmbed(d)] }); }
+    if (cid === 'records') { const d = await getData(); const h = await getHistory(); return ephemeral({ embeds: [recordsEmbed(d, h)] }); }
     if (cid === 'notifs') { const c = await getConfig(env); c.notifs = !c.notifs; await setConfig(env, c); return ephemeral({ content: c.notifs ? '🔔 Notifications **activées**.' : '🔕 Notifications **coupées**.' }); }
     return ephemeral({ content: 'Bouton inconnu.' });
   }

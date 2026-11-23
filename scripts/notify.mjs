@@ -47,11 +47,23 @@ function weeklyMsg(out) {
   return { embeds: [{ title: '📅 Résumé de la semaine', description: lines.join('\n\n') || 'Pas de combats cette semaine.', color: 0x6C3BFF }] };
 }
 
+const bParse = (t) => new Date(/^\d{8}T/.test(t) ? t.replace(/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)/, '$1-$2-$3T$4:$5:$6') : t);
+function dailyMsg(out, history, now) {
+  const dayFr = new Intl.DateTimeFormat('fr-CH', { timeZone: 'Europe/Zurich', weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(now));
+  const cutoff = now - 24 * 3600e3;
+  const gain = (tag) => { if (!history) return null; const pp = history.filter((q) => q.p[tag] && q.p[tag].tr != null); if (pp.length < 2) return null; const nowTr = pp[pp.length - 1].p[tag].tr; const base = (pp.find((q) => new Date(q.t).getTime() >= cutoff) || pp[0]).p[tag].tr; return nowTr - base; };
+  const todayBattles = (p) => (p.recent?.list || []).filter((b) => bParse(b.time).getTime() >= cutoff).length;
+  const lines = out.players.map((p) => { const g = gain(p.tag), nb = todayBattles(p), r = p.ranked || {};
+    return `**${p.name}** — 🏆 ${g == null ? '—' : (g >= 0 ? '+' : '') + F(g)}${nb ? ` · 🎮 ${nb} combats` : ''}${r.rankedRank ? ` · ⚔️ ${tier(r.rankedRank).name}` : ''}`; });
+  const tot = out.players.reduce((s, p) => { const g = gain(p.tag); return s + (g || 0); }, 0);
+  return { embeds: [{ title: '📊 Récap du jour — ' + dayFr, description: lines.join('\n') + (tot ? `\n\n*Ensemble aujourd'hui : ${tot >= 0 ? '+' : ''}${F(tot)} 🏆*` : ''), color: 0x3DDC84 }] };
+}
+
 // Pure core: given the previous state and the current data, decide what to announce.
-export function computeMessages(prev, out, now = Date.now()) {
+export function computeMessages(prev, out, now = Date.now(), history = null) {
   const msgs = [];
   const fresh = !prev || !prev.players || !Object.keys(prev.players).length;
-  const state = { updatedAt: out.updatedAt, players: {}, weeklyDay: prev?.weeklyDay };
+  const state = { updatedAt: out.updatedAt, players: {}, weeklyDay: prev?.weeklyDay, dailyDay: prev?.dailyDay };
   for (const p of out.players) {
     const was = (prev?.players && prev.players[p.tag]) || {};
     const rank = p.ranked?.rankedRank ?? null, elo = p.ranked?.rankedElo ?? null, mile = milestone(p.trophies);
@@ -62,8 +74,11 @@ export function computeMessages(prev, out, now = Date.now()) {
     state.players[p.tag] = { rank, elo, mile };
   }
   const z = zurich(now);
-  if (fresh) state.weeklyDay = z.day;
-  else if (z.weekday === 'Mon' && z.hour >= 8 && prev.weeklyDay !== z.day) { msgs.push(weeklyMsg(out)); state.weeklyDay = z.day; }
+  if (fresh) { state.weeklyDay = z.day; state.dailyDay = z.day; }
+  else {
+    if (z.weekday === 'Mon' && z.hour >= 8 && prev.weeklyDay !== z.day) { msgs.push(weeklyMsg(out)); state.weeklyDay = z.day; }
+    if (z.hour >= 20 && prev.dailyDay !== z.day) { msgs.push(dailyMsg(out, history, now)); state.dailyDay = z.day; }
+  }
   if (fresh) msgs.unshift(startupMsg());
   return { msgs, state, fresh };
 }
@@ -87,7 +102,7 @@ async function send(msg) {
 
 // Called from update.mjs after data.json is built. Never throws: a notification problem
 // must not break the stats update or the deploy.
-export async function notify(out) {
+export async function notify(out, history = null) {
   if (!WEBHOOK && !DRY && !STATE_FILE) { console.log('notify: no DISCORD_WEBHOOK, skipping'); return; }
   try {
     // The Discord panel can switch notifications off (bot /config.json). When off, we still
@@ -95,7 +110,7 @@ export async function notify(out) {
     let on = true;
     if (process.env.BOT_CONFIG_URL) { try { const r = await fetch(process.env.BOT_CONFIG_URL + '?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const c = await r.json(); on = c.notifs !== false; } } catch (e) { console.warn('notify: config fetch failed (' + e.message + '), assuming on'); } }
     const prev = await loadState();
-    const { msgs, state, fresh } = computeMessages(prev, out);
+    const { msgs, state, fresh } = computeMessages(prev, out, Date.now(), history);
     if (on) { for (const m of msgs) { try { await send(m); await new Promise((r) => setTimeout(r, 600)); } catch (e) { console.warn('notify send failed: ' + e.message); } } }
     else if (msgs.length) console.log('notify: ' + msgs.length + ' message(s) suppressed (notifications off via panel)');
     const outFile = process.env.NOTIFY_STATE_OUT || STATE_OUT;
