@@ -143,6 +143,12 @@
   .hero-id { display: flex; gap: 14px; align-items: center; }
   .avatar { width: 76px; height: 76px; border-radius: 16px; border: 3px solid rgba(255,255,255,.85); background: rgba(0,0,0,.25); flex: none; box-shadow: 0 4px 0 rgba(0,0,0,.3); }
   .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .seen { display: inline-flex; align-items: center; gap: 7px; margin-top: 9px; font-size: 13px; color: var(--muted); }
+  .sdot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+  .sdot.on { background: var(--ok); box-shadow: 0 0 7px var(--ok); }
+  .sdot.idle { background: #FF9F1C; }
+  .sdot.off { background: var(--muted); opacity: .7; }
+  .chip .sdot { width: 8px; height: 8px; }
   .pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.18); border-radius: 99px; padding: 3px 10px 3px 4px; font-size: 12.5px; color: #fff; }
   .pill img { width: 24px; height: 24px; object-fit: contain; }
   .chip { display: inline-flex; align-items: center; gap: 7px; padding: 4px 13px 4px 4px; }
@@ -238,6 +244,7 @@
           <h1 class="name" id="hName">Chargement…</h1>
           <p class="meta" id="hMeta">Récupération des stats de l'équipe</p>
           <div class="pills" id="hPills"></div>
+          <p class="seen" id="hSeen" hidden></p>
         </div>
       </div>
       <div class="tro"><div class="tro-num" id="hTro">—</div><p class="tro-lbl">trophées</p></div>
@@ -369,7 +376,7 @@
   <section class="card">
     <h2>Comparer les joueurs</h2>
     <div class="tablewrap"><table>
-      <thead><tr><th>Joueur</th><th>Tag</th><th class="num">Trophées</th><th class="num">Record</th><th class="num">Victoires 3c3</th><th class="num">% victoires récentes</th><th>Meilleur brawler</th></tr></thead>
+      <thead><tr><th>Joueur</th><th>Tag</th><th class="num">Trophées</th><th class="num">Record</th><th class="num">Victoires 3c3</th><th class="num">% victoires récentes</th><th>Meilleur brawler</th><th>Dernière partie</th></tr></thead>
       <tbody id="cmp"></tbody>
     </table></div>
     <p class="note">Touche une ligne pour voir ce joueur. « Victoires récentes » : les 25 derniers combats ; au Survivant, finir dans le top 4 (solo) ou top 2 (duo/trio) compte comme victoire.</p>
@@ -446,6 +453,8 @@
   const ROLES = { president: 'Président', vicePresident: 'Vice-président', senior: 'Senior', member: 'Membre' };
   const until = (s) => { const ms = battleDate(s) - Date.now(); if (ms <= 0) return 'terminé'; const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `encore ${h} h ${String(m).padStart(2, '0')}` : `encore ${m} min`; };
   const ago = (s) => { const m = Math.round((Date.now() - battleDate(s)) / 6e4); return m < 60 ? `il y a ${Math.max(1, m)} min` : m < 1440 ? `il y a ${Math.round(m / 60)} h` : `il y a ${Math.round(m / 1440)} j`; };
+  // Brawl Stars' API has no real "online" flag, so the most recent battle is used as "last seen".
+  const seen = (s) => { if (!s) return { cls: 'off', label: 'Pas de partie récente' }; const m = Math.floor((Date.now() - battleDate(s)) / 6e4); const cls = m < 30 ? 'on' : m < 1440 ? 'idle' : 'off'; return { cls, label: 'Vu ' + (m < 3 ? 'à l\'instant' : ago(s)) }; };
   const TYPES = { soloRanked: ['Classé', 'rk2'], teamRanked: ['Classé', 'rk2'], ranked: ['Trophées', ''], friendly: ['Amical', ''], challenge: ['Défi', ''], tournament: ['Tournoi', ''], championshipChallenge: ['Championnat', 'rk2'] };
   let batFilter = 'all', batAll = false, bgSort = 'tr', bgAll = false, mpSort = 'n', mpScope = 'me', mpAll = false;
   const DDay = new Intl.DateTimeFormat('fr-CH', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -812,6 +821,7 @@
     const club = p.clubTag && data.clubs && data.clubs[p.clubTag];
     if (p.club) pill(club && club.badgeId ? IMG.badge(club.badgeId) : null, (club ? '' : 'Club ') + p.club);
     if (p.fameTier) pill(null, '⭐ ' + p.fameTier.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()));
+    const hs = $('hSeen'), sv = seen(p.lastBattle); hs.replaceChildren(el('span', 'sdot ' + sv.cls), el('span', null, sv.label)); hs.title = "D'apres la derniere partie - l'API Brawl Stars ne donne pas le statut en ligne"; hs.hidden = false;
     $('hTro').replaceChildren('🏆', F(p.trophies));
     const nearRec = !p.highestTrophies || p.trophies / p.highestTrophies >= 0.99;
     if (nearRec) {
@@ -833,7 +843,7 @@
 
     // chips
     const ch = $('chips'); ch.replaceChildren();
-    ps.forEach((x) => { const b = el('button', 'chip'); if (x.icon) b.append(img(IMG.icon(x.icon), null, '')); b.append(x.name + ' · ' + F(x.trophies) + ' 🏆'); b.setAttribute('aria-pressed', x.tag === p.tag); b.onclick = () => setSel(x.tag); ch.append(b); });
+    ps.forEach((x) => { const b = el('button', 'chip'); const sv = seen(x.lastBattle); b.append(el('span', 'sdot ' + sv.cls)); if (x.icon) b.append(img(IMG.icon(x.icon), null, '')); b.append(x.name + ' · ' + F(x.trophies) + ' 🏆'); b.title = sv.label; b.setAttribute('aria-pressed', x.tag === p.tag); b.onclick = () => setSel(x.tag); ch.append(b); });
 
     // KPIs
     const w = $('kWr'); w.replaceChildren();
@@ -1000,6 +1010,7 @@
       const tr = el('tr', x.tag === p.tag ? 'sel' : '');
       [x.name, '#' + x.tag, F(x.trophies), F(x.highestTrophies), F(x.wins3v3), x.recent.winRate == null ? '—' : x.recent.winRate + ' %', x.topBrawler ? x.topBrawler.name : '—']
         .forEach((v, i) => tr.append(el('td', i >= 2 && i <= 5 ? 'num' : '', v)));
+      const sv = seen(x.lastBattle), sc = el('td'); sc.append(el('span', 'sdot ' + sv.cls), ' ' + sv.label.replace('Vu ', '')); tr.append(sc);
       tr.tabIndex = 0; tr.setAttribute('aria-label', 'Voir ' + x.name);
       tr.onclick = () => { setSel(x.tag); window.scrollTo({ top: 0, behavior: 'smooth' }); };
       tr.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tr.onclick(); } };

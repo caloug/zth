@@ -225,6 +225,7 @@ async function main() {
         brawlersTotal: all.length,
         maxPower: myBrawlers.filter((b) => b.power === 11).length,
         topBrawler: top ? { name: top.name, trophies: top.trophies, id: top.id } : null,
+        lastBattle: battles[0]?.time || null,
         recent: {
           battles: battles.length,
           decided: decided.length,
