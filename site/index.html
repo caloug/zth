@@ -285,6 +285,7 @@
   <div class="bar">
     <span class="left"><span class="brand"><b>ZTH</b> Stats</span><span class="live"></span>mis à jour <span id="ago">…</span></span>
     <button class="btn" id="share">🔗 Partager ce joueur</button>
+    <button class="btn" id="card">📸 Ma carte</button>
     <button class="btn" id="reload"><span class="ri">⟳</span> Actualiser</button>
     <button class="btn" id="theme">☀️ Clair</button>
   </div>
@@ -1177,6 +1178,55 @@
     try { if (navigator.share) { await navigator.share({ title: 'Stats de ' + txt, url }); return; } } catch (_) { return; }
     try { await navigator.clipboard.writeText(url); done(true); } catch (_) { done(false); }
   };
+  // ---------- shareable stat card (canvas → image) ----------
+  function drawStar(x, cx, cy, R, r, fill, stroke, w) {
+    x.beginPath(); for (let i = 0; i < 10; i++) { const rad = i % 2 === 0 ? R : r, a = i * Math.PI / 5; const px = cx + rad * Math.sin(a), py = cy - rad * Math.cos(a); i ? x.lineTo(px, py) : x.moveTo(px, py); } x.closePath();
+    x.fillStyle = fill; x.fill(); if (stroke) { x.lineWidth = w; x.strokeStyle = stroke; x.stroke(); }
+  }
+  function rr(x, a, b, w, h, r) { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath(); }
+  function fitText(x, txt, fx, fy, maxW, size, font) { let sz = size; do { x.font = '800 ' + sz + 'px ' + font; if (x.measureText(txt).width <= maxW) break; sz -= 2; } while (sz > 20); x.fillText(txt, fx, fy); }
+  async function buildCard(p) {
+    try { await document.fonts.ready; } catch (_) {}
+    const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+    const DISP = '"Lilita One", system-ui, sans-serif', SANS = 'system-ui, -apple-system, sans-serif';
+    const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1B0B40'); g.addColorStop(.55, '#4A1FB8'); g.addColorStop(1, '#C2187A'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const blob = (cx, cy, rad, col) => { const rg = x.createRadialGradient(cx, cy, 0, cx, cy, rad); rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = rg; x.fillRect(0, 0, W, H); };
+    blob(250, 260, 440, 'rgba(255,61,127,.45)'); blob(860, 520, 480, 'rgba(108,59,255,.5)');
+    x.textBaseline = 'middle'; x.textAlign = 'left';
+    drawStar(x, 95, 112, 44, 19, '#FFC93C', '#2A1600', 6);
+    x.fillStyle = '#fff'; x.font = '400 54px ' + DISP; x.fillText('ZTH STATS', 150, 116);
+    x.textAlign = 'right'; x.fillStyle = 'rgba(255,255,255,.7)'; x.font = '500 30px ' + SANS; x.fillText(new Date().toLocaleDateString('fr-CH'), W - 70, 116); x.textAlign = 'left';
+    x.fillStyle = '#FFC93C'; fitText(x, p.name, 70, 290, W - 140, 120, DISP);
+    x.fillStyle = 'rgba(255,255,255,.8)'; x.font = '500 38px ' + SANS; x.fillText('#' + p.tag + '  ·  Niveau ' + F(p.expLevel), 72, 372);
+    x.font = '400 150px ' + DISP; x.fillStyle = '#fff'; x.fillText('🏆', 70, 540); const tw = x.measureText('🏆  ').width;
+    x.fillStyle = '#FFC93C'; x.fillText(F(p.trophies), 70 + tw, 540);
+    x.fillStyle = 'rgba(255,255,255,.7)'; x.font = '600 40px ' + SANS; x.fillText('trophées', 76, 648);
+    const r = p.ranked || {}, tiles = [];
+    if (r.rankedRank) tiles.push(['⚔️  Classé', rankTier(r.rankedRank).name + ' · ' + F(r.rankedElo)]);
+    if (p.recent && p.recent.winRate != null) tiles.push(['🎯  Victoires récentes', p.recent.winRate + ' %']);
+    if (p.currentStreak >= 3) tiles.push(['🔥  Série', p.currentStreak + ' d\'affilée']);
+    if (p.topBrawler) tiles.push(['⭐  Meilleur brawler', p.topBrawler.name]);
+    tiles.push(['🧱  Collection', p.brawlersOwned + ' / ' + p.brawlersTotal]);
+    tiles.push(['💥  Victoires 3c3', F(p.wins3v3)]);
+    const tt = tiles.slice(0, 4), tileW = (W - 140 - 40) / 2, tileH = 175, ox = 70, oy = 740;
+    tt.forEach((t, i) => { const col = i % 2, row = (i / 2) | 0, tx = ox + col * (tileW + 40), ty = oy + row * (tileH + 30);
+      rr(x, tx, ty, tileW, tileH, 26); x.fillStyle = 'rgba(0,0,0,.3)'; x.fill();
+      x.fillStyle = 'rgba(255,255,255,.72)'; x.font = '600 30px ' + SANS; x.fillText(t[0], tx + 32, ty + 52);
+      x.fillStyle = '#fff'; fitText(x, String(t[1]), tx + 32, ty + 118, tileW - 64, 50, DISP); });
+    x.fillStyle = 'rgba(255,255,255,.9)'; x.font = '400 40px ' + DISP; x.fillText('caloug.github.io/zth', 70, H - 92);
+    x.fillStyle = 'rgba(255,255,255,.5)'; x.font = '400 25px ' + SANS; x.fillText('Fan non officiel · Brawl Stars est une marque de Supercell', 70, H - 46);
+    return await new Promise((res) => c.toBlob(res, 'image/png'));
+  }
+  async function shareCard() {
+    const p = data && player(); if (!p) return; const btn = $('card'), old = btn.textContent; btn.textContent = '⏳ …';
+    try {
+      const b = await buildCard(p); const file = new File([b], 'zth-' + p.name.replace(/[^a-z0-9]/gi, '_') + '.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Stats de ' + p.name, text: p.name + ' · ' + F(p.trophies) + ' 🏆 · caloug.github.io/zth' }); }
+      else { const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(u), 1000); btn.textContent = '✓ Image enregistrée'; setTimeout(() => btn.textContent = old, 2200); return; }
+    } catch (e) { console.warn('card', e); }
+    btn.textContent = old;
+  }
+  $('card').onclick = shareCard;
   $('reload').onclick = async () => { const r = $('reload'); r.classList.add('spinning'); try { await load(); } finally { setTimeout(() => r.classList.remove('spinning'), 520); } };
 
   // ---------- tabs: move each tagged section into its pane, then switch panes ----------
