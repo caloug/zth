@@ -306,6 +306,9 @@ async function main() {
     pl.mapBattles = mine.length;
     pl.playHours = Array(24).fill(0);
     for (const b of mine) { const h = zurHour(b.t); if (h >= 0) pl.playHours[h]++; }
+    let curL = 0, maxL = 0;
+    for (const b of mine) { if (b.r === 'loss') { curL++; if (curL > maxL) maxL = curL; } else curL = 0; }
+    pl.worstStreak = maxL;
   }
 
   const out = { updatedAt: new Date().toISOString(), players, failed, clubs, rotation, boards, brawlerBoards, allBrawlers, team, tracked };

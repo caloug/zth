@@ -705,6 +705,8 @@
     if (best && best.d > 0) recAward('📈', 'Plus gros gain en un jour', nameOf(best.tag), '+' + F(best.d) + ' 🏆');
     const bs = ps.filter((x) => x.bestStreak).sort((a, b) => b.bestStreak.n - a.bestStreak.n)[0];
     if (bs) recAward('🔥', 'Plus longue série', bs.name, bs.bestStreak.n + ' victoires');
+    const ws = ps.filter((x) => (x.worstStreak || 0) >= 2).sort((a, b) => b.worstStreak - a.worstStreak)[0];
+    if (ws) recAward('🧊', 'Plus longue série de défaites', ws.name, ws.worstStreak + ' défaites');
     const hr = ps.filter((x) => x.ranked && x.ranked.highestAllTimeRankedRank).sort((a, b) => b.ranked.highestAllTimeRankedRank - a.ranked.highestAllTimeRankedRank)[0];
     if (hr) recAward('⚔️', 'Plus haut rang atteint', hr.name, rankTier(hr.ranked.highestAllTimeRankedRank).name);
     const hotS = ps.filter((x) => x.currentStreak >= 2).sort((a, b) => b.currentStreak - a.currentStreak)[0];
