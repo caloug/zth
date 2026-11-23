@@ -42,7 +42,7 @@
   .tro-lbl { font-size: 13px; color: rgba(255,255,255,.8); margin: 4px 0 0; }
   .prog { position: relative; z-index: 1; margin-top: 16px; }
   .prog-bar { height: 10px; border-radius: 99px; background: rgba(255,255,255,.18); overflow: hidden; }
-  .prog-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--y), #FF9F1C); transition: width .6s; }
+  .prog-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--y), #FF9F1C); }
   .prog-txt { display: flex; justify-content: space-between; font-size: 13px; color: rgba(255,255,255,.85); margin-top: 6px; }
   .take { position: relative; z-index: 1; margin: 12px 0 0; line-height: 1.5; }
   .take b { color: var(--y); }
@@ -63,7 +63,7 @@
   .row-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
   .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
   .track { background: var(--grid); border-radius: 99px; height: 12px; overflow: hidden; position: relative; }
-  .fill { height: 100%; border-radius: 99px; transition: width .6s; }
+  .fill { height: 100%; border-radius: 99px; }
   .val { font-variant-numeric: tabular-nums; text-align: right; min-width: 2.4em; }
   .wr { display: flex; align-items: center; gap: 12px; }
   .wr-num { font-size: 30px; font-weight: 800; }
@@ -223,6 +223,30 @@
   .mp-n { min-width: 0; } .mp-n b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .mp-n small { color: var(--muted); }
   .mp-v { text-align: right; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; } .mp-v small { display: block; font-weight: 400; color: var(--muted); }
   @media (max-width: 600px) { .tro { text-align: left; } .tro-num { justify-content: flex-start; } .name { font-size: 34px; } .avatar { width: 64px; height: 64px; } }
+  /* ---- motion: sober, purposeful (applied per the UX-motion guide) ---- */
+  :root { --ease-out: cubic-bezier(.16,1,.3,1); --ease-in: cubic-bezier(.7,0,.84,0); --ease-io: cubic-bezier(.65,0,.35,1); --t-fast: .13s; --t: .2s; }
+  .ri { display: inline-block; }
+  @media (prefers-reduced-motion: no-preference) {
+    .card, .bc, .award, .ev, .rk, .chip, .btn, select, tbody tr { transition: transform var(--t) var(--ease-out), box-shadow var(--t) var(--ease-out), border-color var(--t) var(--ease-out); }
+    @media (hover: hover) {
+      .bc:hover, .award:hover, .ev:hover, .chip:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.22); }
+      .btn:hover { border-color: var(--purple); }
+      tbody tr:hover { box-shadow: inset 0 0 0 99px color-mix(in srgb, var(--purple) 7%, transparent); }
+    }
+    .btn:active, .chip:active, .flt button:active, .rng button:active, tbody tr:active { transform: scale(.96); }
+    /* bars animate only on intentional renders (first load / player switch), never the silent 5-min refresh */
+    body.anim .fill, body.anim .prog-fill, body.anim .hb { transition: width .55s var(--ease-out); }
+    /* one-time staggered section entrance on first load */
+    body.intro .wrap > :nth-child(n+2):nth-child(-n+9) { animation: fadeUp .45s var(--ease-out) backwards; }
+    body.intro .wrap > :nth-child(2){animation-delay:0ms} body.intro .wrap > :nth-child(3){animation-delay:45ms} body.intro .wrap > :nth-child(4){animation-delay:90ms} body.intro .wrap > :nth-child(5){animation-delay:135ms} body.intro .wrap > :nth-child(6){animation-delay:180ms} body.intro .wrap > :nth-child(7){animation-delay:225ms} body.intro .wrap > :nth-child(8){animation-delay:270ms} body.intro .wrap > :nth-child(9){animation-delay:315ms}
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    /* gentle pulse only on healthy live dot + "online" status dots */
+    .live:not(.warn):not(.dead), .sdot.on { animation: pulse 2.2s var(--ease-io) infinite; }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 6px var(--ok); } 50% { box-shadow: 0 0 12px var(--ok); transform: scale(1.1); } }
+    .btn.spinning .ri { animation: spin .5s var(--ease-io); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body class="loading">
@@ -230,7 +254,7 @@
   <div class="bar">
     <span class="left"><span class="brand"><b>ZTH</b> Stats</span><span class="live"></span>mis à jour <span id="ago">…</span></span>
     <button class="btn" id="share">🔗 Partager ce joueur</button>
-    <button class="btn" id="reload">⟳ Actualiser</button>
+    <button class="btn" id="reload"><span class="ri">⟳</span> Actualiser</button>
     <button class="btn" id="theme">☀️ Clair</button>
   </div>
   <p class="err" id="loadErr" hidden>Impossible de charger les stats pour l'instant. Nouvel essai dans 1 minute.</p>
@@ -786,8 +810,9 @@
   if (!sel) { try { sel = localStorage.getItem('cf-player'); } catch (_) {} }
   // Change the selected player everywhere: state, saved choice, and the address bar (so the link is shareable).
   const setSel = (tag) => { sel = tag; try { localStorage.setItem('cf-player', tag); } catch (_) {}
-    try { const u = new URL(location.href); u.searchParams.set('p', tag); history.replaceState(null, '', u); } catch (_) {} render(); };
-  let A = null, B = null;
+    try { const u = new URL(location.href); u.searchParams.set('p', tag); history.replaceState(null, '', u); } catch (_) {}
+    document.body.classList.add('anim'); clearTimeout(animT); animT = setTimeout(() => document.body.classList.remove('anim'), 800); render(); };
+  let A = null, B = null, animT;
 
   // ---------- theme ----------
   const setTheme = (light) => { document.body.classList.toggle('light', light); $('theme').textContent = light ? '🌙 Sombre' : '☀️ Clair'; };
@@ -1044,7 +1069,10 @@
       const r = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) throw new Error(r.status);
       const d = await r.json();
-      if (!data || d.updatedAt !== data.updatedAt) { data = d; render(); document.body.classList.remove('loading'); }
+      if (!data || d.updatedAt !== data.updatedAt) {
+        const first = !data; if (first) document.body.classList.add('anim'); data = d; render(); document.body.classList.remove('loading');
+        if (first) { document.body.classList.add('intro'); setTimeout(() => document.body.classList.remove('intro'), 1200); clearTimeout(animT); animT = setTimeout(() => document.body.classList.remove('anim'), 900); }
+      }
       $('loadErr').hidden = true;
     } catch (e) { $('loadErr').hidden = false; }
   }
@@ -1055,7 +1083,7 @@
     try { if (navigator.share) { await navigator.share({ title: 'Stats de ' + txt, url }); return; } } catch (_) { return; }
     try { await navigator.clipboard.writeText(url); done(true); } catch (_) { done(false); }
   };
-  $('reload').onclick = load;
+  $('reload').onclick = async () => { const r = $('reload'); r.classList.add('spinning'); try { await load(); } finally { setTimeout(() => r.classList.remove('spinning'), 520); } };
   load();
   setInterval(load, 60 * 1000);
   setInterval(tick, 20 * 1000);
