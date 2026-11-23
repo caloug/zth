@@ -215,6 +215,10 @@
   .bdg b { color: var(--y); }
   body.light .bdg b { color: #9A5B00; }
   .legal { font-size: 11.5px; }
+  .wr-now { display: flex; gap: 12px; margin-bottom: 12px; }
+  .wrb { flex: 1; background: color-mix(in srgb, var(--grid) 60%, transparent); border: 1px solid var(--line); border-radius: 14px; padding: 11px 14px; }
+  .wrb .lbl { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .wrb .big { font-family: "Lilita One", system-ui, sans-serif; font-size: 32px; line-height: 1.1; margin-top: 2px; }
   .mb-row { display: grid; grid-template-columns: 46px minmax(0,1fr) minmax(0,1.1fr) auto; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
   .mb-row:last-child { border-bottom: 0; }
   .mb-br { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -458,12 +462,18 @@
   <div class="card" data-tab="overview" data-o="3.5"><h2 id="gDayT">Trophées par jour</h2><div class="chart" id="gDay"></div><p class="note">Variation de trophées jour par jour (vert = gain, rouge = perte).</p></div>
   <div class="card" data-tab="combats" data-o="6"><h2 id="gHoursT">Quand vous jouez</h2><div class="chart" id="gHours"></div><p class="note">Nombre de combats par heure (heure suisse).</p></div>
   <section class="card" data-tab="equipe" data-o="0"><h2>🏆 Records de l'équipe</h2><div class="awards" id="records"></div></section>
+  <section class="card" data-tab="combats" data-o="2.5">
+    <div class="ghead"><h2 id="wrT">🎯 Taux de victoire</h2><div class="flt" id="wrView"></div></div>
+    <div class="wr-now" id="wrNow"></div>
+    <div class="chart" id="gWR"></div><div class="legend" id="gWRL"></div>
+    <p class="note">⚔️ Classé = parties Classé (pick & ban). 🏆 Trophées = parties normales (ladder). Enregistré depuis le début du suivi.</p>
+  </section>
   <section class="card" data-tab="combats" data-o="7"><h2 id="mbT">🎯 Meilleur brawler par map</h2><div id="mapBr"></div><p class="note">Le brawler avec lequel ce joueur gagne le plus sur chaque map (min. 3 combats enregistrés).</p></section>
   <section class="card" data-tab="equipe" data-o="0.5"><h2>🏆 Podium de la semaine</h2><div class="podium" id="podium"></div><p class="note">Qui a gagné le plus de trophées ces 7 derniers jours.</p></section>
   <section class="card" data-tab="equipe" data-o="7">
     <h2>Comparer les joueurs</h2>
     <div class="tablewrap"><table>
-      <thead><tr><th>Joueur</th><th>Tag</th><th class="num">Trophées</th><th class="num">Record</th><th class="num">Victoires 3c3</th><th class="num">% victoires récentes</th><th>Meilleur brawler</th><th>Dernière partie</th></tr></thead>
+      <thead><tr><th>Joueur</th><th>Tag</th><th class="num">Trophées</th><th class="num">Record</th><th class="num">Victoires 3c3</th><th class="num">% Classé</th><th class="num">% Troph.</th><th>Meilleur brawler</th><th>Dernière partie</th></tr></thead>
       <tbody id="cmp"></tbody>
     </table></div>
     <p class="note">Touche une ligne pour voir ce joueur. « Victoires récentes » : les 25 derniers combats ; au Survivant, finir dans le top 4 (solo) ou top 2 (duo/trio) compte comme victoire.</p>
@@ -544,7 +554,7 @@
   // Brawl Stars' API has no real "online" flag, so the most recent battle is used as "last seen".
   const seen = (s) => { if (!s) return { cls: 'off', label: 'Pas de partie récente' }; const m = Math.floor((Date.now() - battleDate(s)) / 6e4); const cls = m < 30 ? 'on' : m < 1440 ? 'idle' : 'off'; return { cls, label: 'Vu ' + (m < 3 ? 'à l\'instant' : ago(s)) }; };
   const TYPES = { soloRanked: ['Classé', 'rk2'], teamRanked: ['Classé', 'rk2'], ranked: ['Trophées', ''], friendly: ['Amical', ''], challenge: ['Défi', ''], tournament: ['Tournoi', ''], championshipChallenge: ['Championnat', 'rk2'] };
-  let batFilter = 'all', batAll = false, bgSort = 'tr', bgAll = false, mpSort = 'n', mpScope = 'me', mpAll = false;
+  let batFilter = 'all', batAll = false, bgSort = 'tr', bgAll = false, mpSort = 'n', mpScope = 'me', mpAll = false, wrView = 'week';
   const DDay = new Intl.DateTimeFormat('fr-CH', { weekday: 'long', day: 'numeric', month: 'long' });
 
   let data = null;
@@ -926,6 +936,19 @@
     const ph = p.playHours || [];
     if (!ph.some((v) => v)) empty($('gHours'), 'Pas encore assez de combats enregistrés.');
     else { const peak = ph.indexOf(Math.max(...ph)); barChart($('gHours'), ph.map((v, h) => ({ label: h + 'h', value: v, color: h === peak ? 'var(--y)' : 'var(--purple)', tip: h + 'h-' + ((h + 1) % 24) + 'h' })), { unit: 'combat', label: 'Combats par heure' }); }
+    // win rate over time (Classé vs Trophées), selected player
+    $('wrT').textContent = '🎯 Taux de victoire · ' + p.name;
+    const WRV = [['day', 'Jour'], ['week', 'Semaine'], ['month', 'Mois']];
+    $('wrView').replaceChildren(...WRV.map(([k, lab]) => { const b = el('button', null, lab); b.type = 'button'; b.setAttribute('aria-pressed', wrView === k); b.onclick = () => { wrView = k; drawGraphs(); }; return b; }));
+    const wrTile = (lbl, o, col) => { const d = el('div', 'wrb'); d.append(el('div', 'lbl', lbl)); const big = el('div', 'big', o.rate == null ? '—' : o.rate + ' %'); big.style.color = o.rate == null ? 'var(--muted)' : col; d.append(big, el('div', 'note', o.w + ' V · ' + o.l + ' D')); return d; };
+    $('wrNow').replaceChildren(wrTile('⚔️ Classé', (p.wr && p.wr.ranked) || { rate: null, w: 0, l: 0 }, 'var(--pink)'), wrTile('🏆 Trophées', (p.wr && p.wr.ladder) || { rate: null, w: 0, l: 0 }, 'var(--y)'));
+    const wlog = (p.wrLog && p.wrLog[wrView]) || [];
+    const toPts = (wk, lk) => wlog.map((b) => { const w = b[wk], l = b[lk]; return [new Date(b.k).getTime(), w + l ? Math.round(w / (w + l) * 100) : null]; });
+    const wser = [{ name: 'Classé', color: 'var(--pink)', pts: toPts('rw', 'rl') }, { name: 'Trophées', color: 'var(--y)', pts: toPts('lw', 'll') }].filter((se) => se.pts.some((q) => q[1] != null));
+    if (!wser.length) { empty($('gWR'), 'Pas encore assez de combats enregistrés.'); $('gWRL').replaceChildren(); }
+    else { const fx = wrView === 'month' ? (xx) => new Intl.DateTimeFormat('fr-CH', { month: 'short' }).format(new Date(xx)) : (xx) => new Intl.DateTimeFormat('fr-CH', { day: 'numeric', month: 'short' }).format(new Date(xx));
+      const tt = wrView === 'month' ? (xx) => new Intl.DateTimeFormat('fr-CH', { month: 'long', year: 'numeric' }).format(new Date(xx)) : (xx) => new Intl.DateTimeFormat('fr-CH', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(xx));
+      lineChart($('gWR'), wser, { label: 'Taux de victoire', fmtX: fx, tipTitle: tt, tipVal: (v) => v + ' %' }); legend('gWRL', wser); }
   }
   const normTag = (t) => (t || '').replace(/^#/, '').toUpperCase();
   let sel = null;
@@ -1005,6 +1028,7 @@
       const c2 = document.createElementNS(ns, 'circle'); Object.entries({ cx: 42, cy: 42, r: R, fill: 'none', 'stroke-width': 10, 'stroke-linecap': 'round', 'stroke-dasharray': `${C * rc.winRate / 100} ${C}`, transform: 'rotate(-90 42 42)' }).forEach(([k, v]) => c2.setAttribute(k, v));
       c2.style.stroke = rc.winRate >= 50 ? 'var(--ok)' : 'var(--bad)'; s.append(c1, c2);
       const box = el('div'); box.append(el('div', 'wr-num', rc.winRate + ' %'), el('p', 'note', rc.wins + ' victoires sur ' + rc.decided + ' combats'));
+      if (p.wr) box.append(el('p', 'note', '⚔️ Classé ' + (p.wr.ranked.rate == null ? '—' : p.wr.ranked.rate + '%') + ' · 🏆 Troph. ' + (p.wr.ladder.rate == null ? '—' : p.wr.ladder.rate + '%')));
       w.append(s, box);
     } else w.textContent = '—';
     $('k3').textContent = F(p.wins3v3);
@@ -1164,8 +1188,8 @@
     const cb = $('cmp'); cb.replaceChildren();
     [...ps].sort((x, y) => y.trophies - x.trophies).forEach((x) => {
       const tr = el('tr', x.tag === p.tag ? 'sel' : '');
-      [x.name, '#' + x.tag, F(x.trophies), F(x.highestTrophies), F(x.wins3v3), x.recent.winRate == null ? '—' : x.recent.winRate + ' %', x.topBrawler ? x.topBrawler.name : '—']
-        .forEach((v, i) => tr.append(el('td', i >= 2 && i <= 5 ? 'num' : '', v)));
+      [x.name, '#' + x.tag, F(x.trophies), F(x.highestTrophies), F(x.wins3v3), x.wr && x.wr.ranked.rate != null ? x.wr.ranked.rate + ' %' : '—', x.wr && x.wr.ladder.rate != null ? x.wr.ladder.rate + ' %' : '—', x.topBrawler ? x.topBrawler.name : '—']
+        .forEach((v, i) => tr.append(el('td', i >= 2 && i <= 6 ? 'num' : '', v)));
       const sv = seen(x.lastBattle), sc = el('td'); sc.append(el('span', 'sdot ' + sv.cls), ' ' + sv.label.replace('Vu ', '')); tr.append(sc);
       tr.tabIndex = 0; tr.setAttribute('aria-label', 'Voir ' + x.name);
       tr.onclick = () => { setSel(x.tag); window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -1240,7 +1264,8 @@
     x.fillStyle = 'rgba(255,255,255,.7)'; x.font = '600 40px ' + SANS; x.fillText('trophées', 76, 648);
     const r = p.ranked || {}, tiles = [];
     if (r.rankedRank) tiles.push(['⚔️  Classé', rankTier(r.rankedRank).name + ' · ' + F(r.rankedElo)]);
-    if (p.recent && p.recent.winRate != null) tiles.push(['🎯  Victoires récentes', p.recent.winRate + ' %']);
+    if (p.wr && p.wr.ranked.rate != null) tiles.push(['🎯  WR Classé', p.wr.ranked.rate + ' %']);
+    if (p.wr && p.wr.ladder.rate != null) tiles.push(['🏆  WR Trophées', p.wr.ladder.rate + ' %']);
     if (p.currentStreak >= 3) tiles.push(['🔥  Série', p.currentStreak + ' d\'affilée']);
     if (p.topBrawler) tiles.push(['⭐  Meilleur brawler', p.topBrawler.name]);
     tiles.push(['🧱  Collection', p.brawlersOwned + ' / ' + p.brawlersTotal]);

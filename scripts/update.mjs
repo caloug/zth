@@ -17,6 +17,8 @@ const HIST_OUT = process.env.HISTORY_OUT || OUT.replace(/[^/]+$/, 'history.json'
 const HIST_URL = process.env.HISTORY_URL || 'https://caloug.github.io/zth/history.json';
 const BAT_OUT = OUT.replace(/[^/]+$/, 'battles.json');
 const BAT_URL = process.env.BATTLES_URL || 'https://caloug.github.io/zth/battles.json';
+const WR_OUT = OUT.replace(/[^/]+$/, 'winrate.json');
+const WR_URL = process.env.WINRATE_URL || 'https://caloug.github.io/zth/winrate.json';
 const BAT_DAYS = 60;
 
 if (!KEY && !process.env.BS_MOCK_DIR) {
@@ -99,6 +101,19 @@ const loadHistory = () => loadStore(HIST_URL, 'points', 'HISTORY_FILE');
 // ---- battle store → per-map win rates and the weekly summary ----
 const zurHourFmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Zurich', hour: '2-digit', hour12: false });
 const zurHour = (s) => { const h = parseInt(zurHourFmt.format(bDateRaw(s)), 10); return Number.isFinite(h) ? h % 24 : -1; };
+const zurPartsFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zurich', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' });
+const zurYMD = (s) => { const pp = zurPartsFmt.formatToParts(bDateRaw(s)); const g = (t) => pp.find((x) => x.type === t).value; return { y: g('year'), m: g('month'), d: g('day'), wd: g('weekday') }; };
+const dayKey = (s) => { const z = zurYMD(s); return `${z.y}-${z.m}-${z.d}`; };
+const monthKey = (s) => { const z = zurYMD(s); return `${z.y}-${z.m}-01`; };
+const WD = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+const weekKey = (s) => { const z = zurYMD(s); const dt = new Date(Date.UTC(+z.y, +z.m - 1, +z.d)); dt.setUTCDate(dt.getUTCDate() - (WD[z.wd] || 0)); return dt.toISOString().slice(0, 10); };
+const isRanked = (t) => t === 'soloRanked' || t === 'teamRanked';
+const isLadder = (t) => t === 'ranked';
+function wrBuckets(mine, keyFn) {
+  const m = new Map();
+  for (const b of mine) { if (b.r !== 'win' && b.r !== 'loss') continue; const R = isRanked(b.ty), L = isLadder(b.ty); if (!R && !L) continue; const k = keyFn(b.t); const o = m.get(k) || { k, rw: 0, rl: 0, lw: 0, ll: 0 }; if (R) b.r === 'win' ? o.rw++ : o.rl++; else b.r === 'win' ? o.lw++ : o.ll++; m.set(k, o); }
+  return [...m.values()].sort((a, z) => a.k < z.k ? -1 : 1);
+}
 const bDateRaw = (s) => new Date(/^\d{8}T/.test(s) ? s.replace(/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)/, '$1-$2-$3T$4:$5:$6') : s);
 const bDate = (s) => new Date(/^\d{8}T/.test(s) ? s.replace(/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)/, '$1-$2-$3T$4:$5:$6') : s);
 function mapStats(bs) {
@@ -316,7 +331,19 @@ async function main() {
       mm.n++; const br = mm.br.get(b.b) || { name: b.b, id: b.bi, w: 0, l: 0 }; if (b.r === 'win') br.w++; else if (b.r === 'loss') br.l++; mm.br.set(b.b, br); byMap.set(key, mm); }
     pl.mapBrawler = [...byMap.values()].map((mm) => { const best = [...mm.br.values()].filter((v) => v.w + v.l >= 3).map((v) => ({ ...v, wr: Math.round(v.w / (v.w + v.l) * 100), g: v.w + v.l })).sort((a, b) => b.wr - a.wr || b.g - a.g)[0];
       return best ? { map: mm.map, mapId: mm.mapId, mode: mm.mode, modeId: mm.modeId, n: mm.n, brawler: best.name, brawlerId: best.id, wr: best.wr, games: best.g } : null; }).filter(Boolean).sort((a, b) => b.n - a.n).slice(0, 12);
+    // win rate split: ranked (classé) vs ladder (trophées)
+    const rate = (arr) => { const w = arr.filter((b) => b.r === 'win').length, l = arr.filter((b) => b.r === 'loss').length; return { w, l, rate: w + l ? Math.round(w / (w + l) * 100) : null }; };
+    pl.wr = { ranked: rate(mine.filter((b) => isRanked(b.ty))), ladder: rate(mine.filter((b) => isLadder(b.ty))) };
+    pl.wrLog = { day: wrBuckets(mine, dayKey).slice(-30), week: wrBuckets(mine, weekKey).slice(-12), month: wrBuckets(mine, monthKey) };
   }
+  // persist monthly win rate so it survives beyond the 60-day battle window
+  const wrOld = await loadStore(WR_URL, 'points', 'WINRATE_FILE');
+  const wrMap = new Map(wrOld.map((x) => [x.k, x.p]));
+  const monthsNow = {};
+  for (const pl of players) for (const mb of pl.wrLog.month) { (monthsNow[mb.k] ||= {})[pl.tag] = { rw: mb.rw, rl: mb.rl, lw: mb.lw, ll: mb.ll }; }
+  for (const k in monthsNow) wrMap.set(k, monthsNow[k]);
+  const wrPoints = [...wrMap.entries()].map(([k, pp]) => ({ k, p: pp })).sort((a, z) => a.k < z.k ? -1 : 1).slice(-24);
+  for (const pl of players) pl.wrLog.month = wrPoints.map((x) => ({ k: x.k, ...(x.p[pl.tag] || { rw: 0, rl: 0, lw: 0, ll: 0 }) })).filter((mb) => mb.rw + mb.rl + mb.lw + mb.ll > 0);
 
   const out = { updatedAt: new Date().toISOString(), players, failed, clubs, rotation, boards, brawlerBoards, allBrawlers, team, tracked };
   await mkdir(OUT.replace(/\/[^/]+$/, ''), { recursive: true });
@@ -330,6 +357,7 @@ async function main() {
   console.log(`Battles: ${store.length} saved (${newBattles.length} in this run's logs)`);
   await notify(out, points);
   await writeFile(HIST_OUT, JSON.stringify({ updatedAt: out.updatedAt, points }));
+  await writeFile(WR_OUT, JSON.stringify({ updatedAt: out.updatedAt, points: wrPoints }));
   console.log(`History: ${points.length} points`);
   console.log(`Wrote ${OUT} with ${players.length} players${failed.length ? `, failed: ${failed.join(', ')}` : ''}`);
 }

@@ -39,7 +39,8 @@ function statsEmbed(d, p) {
   const fields = [
     { name: '🏆 Trophées', value: `${F(p.trophies)} (record ${F(p.highestTrophies)})`, inline: true },
     { name: '⚔️ Classé', value: r.rankedRank ? `${tierName(r.rankedRank)} · ${F(r.rankedElo)} pts` : '—', inline: true },
-    { name: '🎯 Victoires récentes', value: p.recent && p.recent.winRate != null ? `${p.recent.winRate} %` : '—', inline: true },
+    { name: '🎯 WR Classé', value: p.wr?.ranked?.rate != null ? `${p.wr.ranked.rate} %` : '—', inline: true },
+    { name: '🏆 WR Trophées', value: p.wr?.ladder?.rate != null ? `${p.wr.ladder.rate} %` : '—', inline: true },
     { name: '🧱 Brawlers', value: `${p.brawlersOwned} / ${p.brawlersTotal}`, inline: true },
     { name: '🥊 Victoires 3c3', value: F(p.wins3v3), inline: true },
   ];
@@ -72,7 +73,8 @@ function compareEmbed(d, aTag, bTag) {
   const row = (lab, av, bv) => `${lab} — **${av}** vs **${bv}**`;
   return { title: `⚔️ ${A.name} vs ${B.name}`, color: PURPLE, description: [
     row('🏆 Trophées', F(A.trophies), F(B.trophies)), row('⚔️ Classé', rk(A), rk(B)),
-    row('🎯 Victoires récentes', (A.recent?.winRate ?? '—') + '%', (B.recent?.winRate ?? '—') + '%'),
+    row('🎯 WR Classé', (A.wr?.ranked?.rate ?? '—') + '%', (B.wr?.ranked?.rate ?? '—') + '%'),
+    row('🏆 WR Trophées', (A.wr?.ladder?.rate ?? '—') + '%', (B.wr?.ladder?.rate ?? '—') + '%'),
     row('💥 3c3', F(A.wins3v3), F(B.wins3v3)), row('🧱 Brawlers', A.brawlersOwned + '/' + A.brawlersTotal, B.brawlersOwned + '/' + B.brawlersTotal),
   ].join('\n') };
 }
