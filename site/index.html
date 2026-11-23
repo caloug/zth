@@ -219,6 +219,16 @@
   .wrb { flex: 1; background: color-mix(in srgb, var(--grid) 60%, transparent); border: 1px solid var(--line); border-radius: 14px; padding: 11px 14px; }
   .wrb .lbl { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
   .wrb .big { font-family: "Lilita One", system-ui, sans-serif; font-size: 32px; line-height: 1.1; margin-top: 2px; }
+  .cal-title { font-family: "Lilita One", system-ui, sans-serif; font-size: 18px; text-transform: capitalize; margin-bottom: 8px; }
+  .cal-head, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .cal-head { margin-bottom: 5px; } .cal-head span { text-align: center; font-size: 11px; color: var(--muted); }
+  .cal-cell { aspect-ratio: 1; border-radius: 9px; background: var(--grid); display: flex; align-items: center; justify-content: center; position: relative; }
+  .cal-cell.empty { background: transparent; }
+  .cal-cell .cal-d { position: absolute; top: 3px; left: 5px; font-size: 10px; color: var(--muted); }
+  .cal-cell .cal-wr { font-family: "Lilita One", system-ui, sans-serif; font-size: 13px; }
+  .cal-cell.g { background: color-mix(in srgb, var(--ok) 32%, var(--grid)); } .cal-cell.g .cal-wr { color: var(--ok); }
+  .cal-cell.b { background: color-mix(in srgb, var(--bad) 32%, var(--grid)); } .cal-cell.b .cal-wr { color: var(--bad); }
+  .cal-cell.g .cal-d, .cal-cell.b .cal-d { color: var(--fg); opacity: .6; }
   .mb-row { display: grid; grid-template-columns: 46px minmax(0,1fr) minmax(0,1.1fr) auto; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
   .mb-row:last-child { border-bottom: 0; }
   .mb-br { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -332,12 +342,16 @@
     <button class="tab on" type="button" role="tab" data-tab="overview">Vue d'ensemble</button>
     <button class="tab" type="button" role="tab" data-tab="classe">Classé</button>
     <button class="tab" type="button" role="tab" data-tab="combats">Combats</button>
+    <button class="tab" type="button" role="tab" data-tab="trophy">🏆 Troph.</button>
+    <button class="tab" type="button" role="tab" data-tab="ranked">⚔️ Ranked</button>
     <button class="tab" type="button" role="tab" data-tab="brawlers">Brawlers</button>
     <button class="tab" type="button" role="tab" data-tab="equipe">Équipe</button>
   </nav>
   <div class="pane on" data-pane="overview"></div>
   <div class="pane" data-pane="classe"></div>
   <div class="pane" data-pane="combats"></div>
+  <div class="pane" data-pane="trophy"></div>
+  <div class="pane" data-pane="ranked"></div>
   <div class="pane" data-pane="brawlers"></div>
   <div class="pane" data-pane="equipe"></div>
 
@@ -469,6 +483,14 @@
     <p class="note">⚔️ Classé = parties Classé (pick & ban). 🏆 Trophées = parties normales (ladder). Enregistré depuis le début du suivi.</p>
   </section>
   <section class="card" data-tab="combats" data-o="7"><h2 id="mbT">🎯 Meilleur brawler par map</h2><div id="mapBr"></div><p class="note">Le brawler avec lequel ce joueur gagne le plus sur chaque map (min. 3 combats enregistrés).</p></section>
+  <section class="card" data-tab="trophy" data-o="1"><h2>📅 Calendrier — Trophées</h2><div id="calLad"></div><p class="note">Chaque jour coloré selon ton taux de victoire en parties normales (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
+  <section class="card" data-tab="trophy" data-o="2"><div class="ghead"><h2>Taux de victoire — Trophées</h2><div class="flt" id="wrViewLad"></div></div><div class="chart" id="gWRlad"></div></section>
+  <section class="card" data-tab="trophy" data-o="3"><h2>🏆 Derniers combats Trophées</h2><div class="bl" id="batLad"></div></section>
+  <section class="card" data-tab="trophy" data-o="4"><h2>🗺️ Maps — Trophées</h2><div id="mpLad"></div></section>
+  <section class="card" data-tab="ranked" data-o="1"><h2>📅 Calendrier — Ranked</h2><div id="calRk"></div><p class="note">Chaque jour coloré selon ton taux de victoire en Classé (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
+  <section class="card" data-tab="ranked" data-o="2"><div class="ghead"><h2>Taux de victoire — Classé</h2><div class="flt" id="wrViewRk"></div></div><div class="chart" id="gWRrk"></div></section>
+  <section class="card" data-tab="ranked" data-o="3"><h2>⚔️ Derniers combats Classé</h2><div class="bl" id="batRk"></div></section>
+  <section class="card" data-tab="ranked" data-o="4"><h2>🗺️ Maps — Classé</h2><div id="mpRk"></div></section>
   <section class="card" data-tab="equipe" data-o="0.5"><h2>🏆 Podium de la semaine</h2><div class="podium" id="podium"></div><p class="note">Qui a gagné le plus de trophées ces 7 derniers jours.</p></section>
   <section class="card" data-tab="equipe" data-o="7">
     <h2>Comparer les joueurs</h2>
@@ -671,6 +693,54 @@
   }
 
   // ---------- battles, events, club, Swiss ranks, brawler grid ----------
+  function battleRowEl(b) {
+    const sd = /Showdown/i.test(b.mode || '');
+    const res = b.result === 'win' ? 'win' : b.result === 'loss' ? 'loss' : '';
+    const row = el('div', 'bt ' + (res === 'win' ? 'bw' : res === 'loss' ? 'bl2' : ''));
+    const mi = b.modeId != null ? b.modeId : modeId(b.mode); row.append(mi != null ? img(IMG.mode(mi), 'ico l', mode(b.mode)) : el('span'));
+    row.append(b.brawlerId ? img(IMG.brawler(b.brawlerId), 'bimg', b.brawler || '') : el('span'));
+    const m = el('div', 'm'); const t = el('b', null, mode(b.mode || 'unknown')); const ty = TYPES[b.type];
+    const sm = el('small'); if (ty) sm.append(el('span', 'tg ' + ty[1], ty[0]), ' '); sm.append((b.brawler || '') + (b.map ? ' · ' + b.map : '')); m.append(t, sm); row.append(m);
+    const r = el('div', 'r', sd && b.rank ? 'Top ' + b.rank : res === 'win' ? 'Victoire' : res === 'loss' ? 'Défaite' : 'Égalité');
+    r.style.color = res === 'win' ? 'var(--ok)' : res === 'loss' ? 'var(--bad)' : 'var(--muted)';
+    r.append(el('small', null, (b.trophyChange != null ? (b.trophyChange >= 0 ? '+' : '') + b.trophyChange + ' 🏆 · ' : '') + ago(b.time))); row.append(r);
+    return row;
+  }
+  function mapRowEl(m) {
+    const r = el('div', 'mp'); const ic = el('div', 'mp-i'); if (m.mapId) ic.append(img(IMG.map(m.mapId), 'mm', m.map)); if (m.modeId != null) ic.append(img(IMG.mode(m.modeId), 'mo', ''));
+    const n = el('div', 'mp-n'); n.append(el('b', null, m.map || '—'), el('small', null, mode(m.mode || 'unknown') + ' · ' + m.n + ' combat' + (m.n > 1 ? 's' : '')));
+    const col = m.wr == null ? 'var(--muted)' : m.wr >= 55 ? 'var(--ok)' : m.wr < 45 ? 'var(--bad)' : 'var(--y)';
+    const t = el('div', 'track'); const f = el('div', 'fill'); f.style.width = (m.wr || 0) + '%'; f.style.background = col; t.append(f);
+    const v = el('div', 'mp-v', m.wr == null ? '—' : m.wr + ' %'); v.style.color = col; v.append(el('small', null, `${m.w} V · ${m.l} D`));
+    r.append(ic, n, t, v); return r;
+  }
+  const MONTHS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  function renderCal(boxId, p, type) {
+    const box = $(boxId); if (!box) return; box.replaceChildren();
+    const map = new Map((p.wrLog && p.wrLog.day || []).map((d) => [d.k, d]));
+    const now = new Date(), year = now.getFullYear(), month = now.getMonth();
+    box.append(el('div', 'cal-title', MONTHS_FR[month] + ' ' + year));
+    const head = el('div', 'cal-head'); ['L', 'M', 'M', 'J', 'V', 'S', 'D'].forEach((d) => head.append(el('span', null, d))); box.append(head);
+    const grid = el('div', 'cal-grid');
+    const startWd = (new Date(year, month, 1).getDay() + 6) % 7, daysIn = new Date(year, month + 1, 0).getDate();
+    for (let i = 0; i < startWd; i++) grid.append(el('div', 'cal-cell empty'));
+    for (let d = 1; d <= daysIn; d++) {
+      const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`, rec = map.get(key);
+      const w = type === 'ranked' ? (rec ? rec.rw : 0) : (rec ? rec.lw : 0), l = type === 'ranked' ? (rec ? rec.rl : 0) : (rec ? rec.ll : 0);
+      const cell = el('div', 'cal-cell'); cell.append(el('span', 'cal-d', String(d)));
+      if (w + l > 0) { const wr = Math.round(w / (w + l) * 100); cell.classList.add(wr >= 50 ? 'g' : 'b'); cell.append(el('span', 'cal-wr', wr + '%')); cell.title = `${d} ${MONTHS_FR[month]} · ${wr}% (${w}V/${l}D)`; }
+      grid.append(cell);
+    }
+    box.append(grid);
+  }
+  function renderTypeTabs(p) {
+    renderCal('calLad', p, 'ladder'); renderCal('calRk', p, 'ranked');
+    const listFor = (type) => [...((p.recent && p.recent.list) || [])].reverse().filter((b) => type === 'ranked' ? (b.type === 'soloRanked' || b.type === 'teamRanked') : b.type === 'ranked');
+    const fillBat = (boxId, type) => { const bl = $(boxId); if (!bl) return; bl.replaceChildren(); const l = listFor(type); if (!l.length) bl.append(el('div', 'empty', 'Aucun combat ' + (type === 'ranked' ? 'classé' : 'trophées') + ' récent enregistré.')); l.slice(0, 25).forEach((b) => bl.append(battleRowEl(b))); };
+    fillBat('batLad', 'ladder'); fillBat('batRk', 'ranked');
+    const fillMaps = (boxId, arr) => { const ml = $(boxId); if (!ml) return; ml.replaceChildren(); const maps = (arr || []).filter((m) => m.wr != null).slice(0, 15); if (!maps.length) ml.append(el('div', 'empty', 'Pas encore assez de combats enregistrés par map.')); maps.forEach((m) => ml.append(mapRowEl(m))); };
+    fillMaps('mpLad', p.mapsLadder); fillMaps('mpRk', p.mapsRanked);
+  }
   function renderExtras(p, ps) {
     // ---- weekly summary (whole team, last 7 days) ----
     const wks = ps.filter((x) => x.week);
@@ -708,14 +778,7 @@
     if (mpSort !== 'n') maps = maps.filter((m) => m.w + m.l >= 3).sort((a, b) => mpSort === 'best' ? b.wr - a.wr || b.n - a.n : a.wr - b.wr || b.n - a.n);
     const ml = $('mpL'); ml.replaceChildren();
     if (!maps.length) ml.append(el('div', 'empty', mpSort === 'n' ? 'Pas encore de combats enregistrés.' : 'Il faut au moins 3 combats sur une map pour la classer. Revenez plus tard !'));
-    maps.slice(0, mpAll ? 40 : 10).forEach((m) => {
-      const r = el('div', 'mp'); const ic = el('div', 'mp-i'); if (m.mapId) ic.append(img(IMG.map(m.mapId), 'mm', m.map)); if (m.modeId != null) ic.append(img(IMG.mode(m.modeId), 'mo', ''));
-      const n = el('div', 'mp-n'); n.append(el('b', null, m.map || '—'), el('small', null, mode(m.mode || 'unknown') + ' · ' + m.n + ' combat' + (m.n > 1 ? 's' : '')));
-      const col = m.wr == null ? 'var(--muted)' : m.wr >= 55 ? 'var(--ok)' : m.wr < 45 ? 'var(--bad)' : 'var(--y)';
-      const t = el('div', 'track'); const f = el('div', 'fill'); f.style.width = (m.wr || 0) + '%'; f.style.background = col; t.append(f);
-      const v = el('div', 'mp-v', m.wr == null ? '—' : m.wr + ' %'); v.style.color = col; v.append(el('small', null, `${m.w} V · ${m.l} D`));
-      r.append(ic, n, t, v); ml.append(r);
-    });
+    maps.slice(0, mpAll ? 40 : 10).forEach((m) => ml.append(mapRowEl(m)));
     const mm = $('mpMore'); mm.hidden = mpAll || maps.length <= 10; mm.textContent = `Afficher les ${Math.min(40, maps.length)} maps`; mm.onclick = () => { mpAll = true; renderExtras(p, ps); };
     $('mpN').textContent = (mpScope === 'team' ? 'Toute l’équipe' : p.name) + (data.tracked ? ` · combats enregistrés depuis ${DDay.format(battleDate(data.tracked))}` : '') + '. Au Survivant, une victoire = finir dans la première moitié.';
     const worst = (p.maps || []).filter((m) => m.wr != null && m.w + m.l >= 3).sort((a, b) => a.wr - b.wr)[0];
@@ -751,6 +814,7 @@
     const medal = ['🥇', '🥈', '🥉'];
     if (!wk.length) pod.append(el('div', 'empty', 'Pas encore de données cette semaine.'));
     wk.slice(0, 3).forEach((e, i) => { const r = el('div', 'pod-row'); r.append(el('span', 'pod-m', medal[i] || '•')); if (e.x.icon) r.append(img(IMG.icon(e.x.icon), null, '')); else r.append(el('span')); r.append(el('b', null, e.x.name)); const v = el('span', 'pod-v', (e.t >= 0 ? '+' : '') + F(e.t) + ' 🏆'); v.style.color = e.t >= 0 ? 'var(--ok)' : 'var(--bad)'; r.append(v); pod.append(r); });
+    renderTypeTabs(p);
 
     // recent battles
     $('batT').textContent = '🕹️ Derniers combats · ' + p.name;
@@ -760,19 +824,7 @@
     const shown = list.filter((b) => batFilter === 'all' || (batFilter === 'rk' ? (TYPES[b.type] || [])[1] === 'rk2' : b.type === 'ranked'));
     const bl = $('batL'); bl.replaceChildren();
     if (!shown.length) bl.append(el('div', 'empty', 'Aucun combat de ce type récemment.'));
-    shown.slice(0, batAll ? 25 : 8).forEach((b) => {
-      const sd = /Showdown/i.test(b.mode || '');
-      const res = b.result === 'win' ? 'win' : b.result === 'loss' ? 'loss' : '';
-      const row = el('div', 'bt ' + (res === 'win' ? 'bw' : res === 'loss' ? 'bl2' : ''));
-      const mi = b.modeId != null ? b.modeId : modeId(b.mode); row.append(mi != null ? img(IMG.mode(mi), 'ico l', mode(b.mode)) : el('span'));
-      row.append(b.brawlerId ? img(IMG.brawler(b.brawlerId), 'bimg', b.brawler || '') : el('span'));
-      const m = el('div', 'm'); const t = el('b', null, mode(b.mode || 'unknown')); const ty = TYPES[b.type];
-      const sm = el('small'); if (ty) sm.append(el('span', 'tg ' + ty[1], ty[0]), ' '); sm.append((b.brawler || '') + (b.map ? ' · ' + b.map : '')); m.append(t, sm); row.append(m);
-      const r = el('div', 'r', sd && b.rank ? 'Top ' + b.rank : res === 'win' ? 'Victoire' : res === 'loss' ? 'Défaite' : 'Égalité');
-      r.style.color = res === 'win' ? 'var(--ok)' : res === 'loss' ? 'var(--bad)' : 'var(--muted)';
-      r.append(el('small', null, (b.trophyChange != null ? (b.trophyChange >= 0 ? '+' : '') + b.trophyChange + ' 🏆 · ' : '') + ago(b.time))); row.append(r);
-      bl.append(row);
-    });
+    shown.slice(0, batAll ? 25 : 8).forEach((b) => bl.append(battleRowEl(b)));
     const mo = $('batMore'); mo.hidden = batAll || shown.length <= 8; mo.textContent = `Afficher les ${shown.length} combats`; mo.onclick = () => { batAll = true; renderExtras(p, ps); };
 
     // events
@@ -949,6 +1001,10 @@
     else { const fx = wrView === 'month' ? (xx) => new Intl.DateTimeFormat('fr-CH', { month: 'short' }).format(new Date(xx)) : (xx) => new Intl.DateTimeFormat('fr-CH', { day: 'numeric', month: 'short' }).format(new Date(xx));
       const tt = wrView === 'month' ? (xx) => new Intl.DateTimeFormat('fr-CH', { month: 'long', year: 'numeric' }).format(new Date(xx)) : (xx) => new Intl.DateTimeFormat('fr-CH', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(xx));
       lineChart($('gWR'), wser, { label: 'Taux de victoire', fmtX: fx, tipTitle: tt, tipVal: (v) => v + ' %' }); legend('gWRL', wser); }
+    // per-type WR charts (Trophées tab + Ranked tab)
+    [['wrViewLad'], ['wrViewRk']].forEach(([id]) => { const g = $(id); if (g) g.replaceChildren(...WRV.map(([k, lab]) => { const b = el('button', null, lab); b.type = 'button'; b.setAttribute('aria-pressed', wrView === k); b.onclick = () => { wrView = k; drawGraphs(); }; return b; })); });
+    const wrTypeChart = (boxId, wk, lk, col, nm) => { const box = $(boxId); if (!box) return; const pts = ((p.wrLog && p.wrLog[wrView]) || []).map((b) => { const w = b[wk], l = b[lk]; return [new Date(b.k).getTime(), w + l ? Math.round(w / (w + l) * 100) : null]; }); if (!pts.some((q) => q[1] != null)) { empty(box, 'Pas encore assez de combats enregistrés.'); return; } const fxx = wrView === 'month' ? (xx) => new Intl.DateTimeFormat('fr-CH', { month: 'short' }).format(new Date(xx)) : (xx) => new Intl.DateTimeFormat('fr-CH', { day: 'numeric', month: 'short' }).format(new Date(xx)); lineChart(box, [{ name: nm, color: col, pts }], { label: nm, fmtX: fxx, tipTitle: (xx) => new Date(xx).toLocaleDateString('fr-CH'), tipVal: (v) => v + ' %' }); };
+    wrTypeChart('gWRlad', 'lw', 'll', 'var(--y)', 'Trophées'); wrTypeChart('gWRrk', 'rw', 'rl', 'var(--pink)', 'Classé');
   }
   const normTag = (t) => (t || '').replace(/^#/, '').toUpperCase();
   let sel = null;
@@ -1292,7 +1348,7 @@
   $('reload').onclick = async () => { const r = $('reload'); r.classList.add('spinning'); try { await load(); } finally { setTimeout(() => r.classList.remove('spinning'), 520); } };
 
   // ---------- tabs: move each tagged section into its pane, then switch panes ----------
-  const TAB_LIST = ['overview', 'classe', 'combats', 'brawlers', 'equipe'];
+  const TAB_LIST = ['overview', 'classe', 'combats', 'trophy', 'ranked', 'brawlers', 'equipe'];
   (function layoutTabs() {
     TAB_LIST.forEach((t) => {
       const pane = document.querySelector(`.pane[data-pane="${t}"]`); if (!pane) return;

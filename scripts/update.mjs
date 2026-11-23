@@ -334,7 +334,9 @@ async function main() {
     // win rate split: ranked (classé) vs ladder (trophées)
     const rate = (arr) => { const w = arr.filter((b) => b.r === 'win').length, l = arr.filter((b) => b.r === 'loss').length; return { w, l, rate: w + l ? Math.round(w / (w + l) * 100) : null }; };
     pl.wr = { ranked: rate(mine.filter((b) => isRanked(b.ty))), ladder: rate(mine.filter((b) => isLadder(b.ty))) };
-    pl.wrLog = { day: wrBuckets(mine, dayKey).slice(-30), week: wrBuckets(mine, weekKey).slice(-12), month: wrBuckets(mine, monthKey) };
+    pl.wrLog = { day: wrBuckets(mine, dayKey).slice(-62), week: wrBuckets(mine, weekKey).slice(-12), month: wrBuckets(mine, monthKey) };
+    pl.mapsRanked = mapStats(mine.filter((b) => isRanked(b.ty))).slice(0, 40);
+    pl.mapsLadder = mapStats(mine.filter((b) => isLadder(b.ty))).slice(0, 40);
   }
   // persist monthly win rate so it survives beyond the 60-day battle window
   const wrOld = await loadStore(WR_URL, 'points', 'WINRATE_FILE');
