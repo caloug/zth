@@ -97,6 +97,9 @@ async function loadStore(url, key, fileEnv) {
 const loadHistory = () => loadStore(HIST_URL, 'points', 'HISTORY_FILE');
 
 // ---- battle store → per-map win rates and the weekly summary ----
+const zurHourFmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Zurich', hour: '2-digit', hour12: false });
+const zurHour = (s) => { const h = parseInt(zurHourFmt.format(bDateRaw(s)), 10); return Number.isFinite(h) ? h % 24 : -1; };
+const bDateRaw = (s) => new Date(/^\d{8}T/.test(s) ? s.replace(/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)/, '$1-$2-$3T$4:$5:$6') : s);
 const bDate = (s) => new Date(/^\d{8}T/.test(s) ? s.replace(/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)/, '$1-$2-$3T$4:$5:$6') : s);
 function mapStats(bs) {
   const m = new Map();
@@ -178,6 +181,8 @@ async function main() {
       const count = (arr, key) => Object.entries(arr.reduce((m, x) => { if (x[key]) m[x[key]] = (m[x[key]] || 0) + 1; return m; }, {}))
         .map(([k, n]) => ({ name: k, battles: n })).sort((a, b) => b.battles - a.battles);
       const decided = battles.filter((b) => b.result === 'win' || b.result === 'loss');
+      let streak = 0; // signed: +N win streak, -N loss streak (from the most recent games)
+      for (const b of battles) { if (b.result !== 'win' && b.result !== 'loss') continue; const w = b.result === 'win'; if (streak === 0) streak = w ? 1 : -1; else if ((streak > 0) === w) streak += w ? 1 : -1; else break; }
       const wins = decided.filter((b) => b.result === 'win').length;
       const tc = battles.filter((b) => b.trophyChange != null);
 
@@ -226,6 +231,7 @@ async function main() {
         maxPower: myBrawlers.filter((b) => b.power === 11).length,
         topBrawler: top ? { name: top.name, trophies: top.trophies, id: top.id } : null,
         lastBattle: battles[0]?.time || null,
+        currentStreak: streak,
         recent: {
           battles: battles.length,
           decided: decided.length,
@@ -298,6 +304,8 @@ async function main() {
     const mine = store.filter((b) => b.g === pl.tag);
     pl.maps = mapStats(mine).slice(0, 40);
     pl.mapBattles = mine.length;
+    pl.playHours = Array(24).fill(0);
+    for (const b of mine) { const h = zurHour(b.t); if (h >= 0) pl.playHours[h]++; }
   }
 
   const out = { updatedAt: new Date().toISOString(), players, failed, clubs, rotation, boards, brawlerBoards, allBrawlers, team, tracked };
