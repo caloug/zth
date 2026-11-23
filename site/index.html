@@ -254,6 +254,22 @@
   .pane { display: none; flex-direction: column; gap: 18px; }
   .pane.on { display: flex; animation: fadeIn .28s var(--ease-out); }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  /* ---- special effects (sober, auto-off with reduce-motion) ---- */
+  .hero > * { position: relative; z-index: 1; }
+  .rk { position: relative; overflow: hidden; }
+  .chip.lead { border-color: var(--y); box-shadow: 0 0 0 1px var(--y), 0 0 10px rgba(255,201,60,.45); }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero::before { content: ""; position: absolute; inset: -30%; z-index: 0; pointer-events: none; filter: blur(12px);
+      background: radial-gradient(circle at 25% 30%, rgba(255,61,127,.55), transparent 42%), radial-gradient(circle at 75% 55%, rgba(108,59,255,.55), transparent 46%), radial-gradient(circle at 55% 85%, rgba(255,201,60,.4), transparent 42%);
+      animation: aurora 16s ease-in-out infinite; }
+    @keyframes aurora { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(5%,-4%) scale(1.12); } 66% { transform: translate(-4%,4%) scale(1.06); } }
+    .tro-num { background: linear-gradient(100deg, var(--y) 35%, #fff 50%, var(--y) 65%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 4.5s linear infinite; }
+    @keyframes shimmer { to { background-position: -220% 0; } }
+    .rk::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.28) 50%, transparent 58%); transform: translateX(-130%); animation: sweep 5.5s ease-in-out infinite; }
+    @keyframes sweep { 0% { transform: translateX(-130%); } 18% { transform: translateX(130%); } 100% { transform: translateX(130%); } }
+    .chip.lead { animation: leadpulse 2.4s ease-in-out infinite; }
+    @keyframes leadpulse { 0%,100% { box-shadow: 0 0 0 1px var(--y), 0 0 8px rgba(255,201,60,.35); } 50% { box-shadow: 0 0 0 1px var(--y), 0 0 15px rgba(255,201,60,.6); } }
+  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
@@ -889,7 +905,8 @@
 
     // chips
     const ch = $('chips'); ch.replaceChildren();
-    ps.forEach((x) => { const b = el('button', 'chip'); const sv = seen(x.lastBattle); b.append(el('span', 'sdot ' + sv.cls)); if (x.icon) b.append(img(IMG.icon(x.icon), null, '')); b.append(x.name + ' · ' + F(x.trophies) + ' 🏆'); b.title = sv.label; b.setAttribute('aria-pressed', x.tag === p.tag); b.onclick = () => setSel(x.tag); ch.append(b); });
+    const leadTag = ps.reduce((m, x) => x.trophies > m.trophies ? x : m, ps[0]).tag;
+    ps.forEach((x) => { const b = el('button', 'chip' + (x.tag === leadTag ? ' lead' : '')); const sv = seen(x.lastBattle); b.append(el('span', 'sdot ' + sv.cls)); if (x.icon) b.append(img(IMG.icon(x.icon), null, '')); b.append(x.name + ' · ' + F(x.trophies) + ' 🏆'); b.title = sv.label; b.setAttribute('aria-pressed', x.tag === p.tag); b.onclick = () => setSel(x.tag); ch.append(b); });
 
     // KPIs
     const w = $('kWr'); w.replaceChildren();
