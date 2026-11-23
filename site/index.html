@@ -215,6 +215,18 @@
   .bdg b { color: var(--y); }
   body.light .bdg b { color: #9A5B00; }
   .legal { font-size: 11.5px; }
+  .mb-row { display: grid; grid-template-columns: 46px minmax(0,1fr) minmax(0,1.1fr) auto; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .mb-row:last-child { border-bottom: 0; }
+  .mb-br { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .mb-br img { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; background: var(--grid); flex: none; }
+  .mb-br span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ms-eta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .podium { display: flex; flex-direction: column; gap: 8px; }
+  .pod-row { display: grid; grid-template-columns: 36px 30px 1fr auto; gap: 10px; align-items: center; font-size: 15px; }
+  .pod-row:first-child { font-size: 17px; }
+  .pod-row img { width: 30px; height: 30px; border-radius: 8px; }
+  .pod-m { font-size: 24px; text-align: center; }
+  .pod-v { font-weight: 700; font-variant-numeric: tabular-nums; }
   /* week + maps */
   #wkHi { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   @media (max-width: 600px) { #wkHi { grid-template-columns: 1fr 1fr; } #wkHi .award .e { font-size: 20px; } }
@@ -446,6 +458,8 @@
   <div class="card" data-tab="overview" data-o="3.5"><h2 id="gDayT">Trophées par jour</h2><div class="chart" id="gDay"></div><p class="note">Variation de trophées jour par jour (vert = gain, rouge = perte).</p></div>
   <div class="card" data-tab="combats" data-o="6"><h2 id="gHoursT">Quand vous jouez</h2><div class="chart" id="gHours"></div><p class="note">Nombre de combats par heure (heure suisse).</p></div>
   <section class="card" data-tab="equipe" data-o="0"><h2>🏆 Records de l'équipe</h2><div class="awards" id="records"></div></section>
+  <section class="card" data-tab="combats" data-o="7"><h2 id="mbT">🎯 Meilleur brawler par map</h2><div id="mapBr"></div><p class="note">Le brawler avec lequel ce joueur gagne le plus sur chaque map (min. 3 combats enregistrés).</p></section>
+  <section class="card" data-tab="equipe" data-o="0.5"><h2>🏆 Podium de la semaine</h2><div class="podium" id="podium"></div><p class="note">Qui a gagné le plus de trophées ces 7 derniers jours.</p></section>
   <section class="card" data-tab="equipe" data-o="7">
     <h2>Comparer les joueurs</h2>
     <div class="tablewrap"><table>
@@ -711,6 +725,22 @@
     if (hr) recAward('⚔️', 'Plus haut rang atteint', hr.name, rankTier(hr.ranked.highestAllTimeRankedRank).name);
     const hotS = ps.filter((x) => x.currentStreak >= 2).sort((a, b) => b.currentStreak - a.currentStreak)[0];
     if (hotS) recAward('⚡', 'En feu en ce moment', hotS.name, hotS.currentStreak + " victoires d'affilée");
+    // best brawler per map (selected player)
+    $('mbT').textContent = '🎯 Meilleur brawler par map · ' + p.name;
+    const mb = $('mapBr'); mb.replaceChildren(); const mbl = p.mapBrawler || [];
+    if (!mbl.length) mb.append(el('div', 'empty', 'Pas encore assez de combats enregistrés par map.'));
+    mbl.forEach((m) => { const r = el('div', 'mb-row');
+      const ic = el('div', 'mp-i'); if (m.mapId) ic.append(img(IMG.map(m.mapId), 'mm', '')); if (m.modeId != null) ic.append(img(IMG.mode(m.modeId), 'mo', ''));
+      const n = el('div', 'mp-n'); n.append(el('b', null, m.map || '—'), el('small', null, mode(m.mode || 'unknown')));
+      const br = el('div', 'mb-br'); if (m.brawlerId) br.append(img(IMG.brawler(m.brawlerId), null, m.brawler)); br.append(el('span', null, m.brawler));
+      const v = el('div', 'mp-v'); v.textContent = m.wr + ' %'; v.style.color = m.wr >= 55 ? 'var(--ok)' : m.wr < 45 ? 'var(--bad)' : 'var(--y)'; v.append(el('small', null, m.games + ' combats'));
+      r.append(ic, n, br, v); mb.append(r); });
+    // weekly podium
+    const pod = $('podium'); pod.replaceChildren();
+    const wk = ps.filter((x) => x.week).map((x) => ({ x, t: x.week.trophies })).sort((a, b) => b.t - a.t);
+    const medal = ['🥇', '🥈', '🥉'];
+    if (!wk.length) pod.append(el('div', 'empty', 'Pas encore de données cette semaine.'));
+    wk.slice(0, 3).forEach((e, i) => { const r = el('div', 'pod-row'); r.append(el('span', 'pod-m', medal[i] || '•')); if (e.x.icon) r.append(img(IMG.icon(e.x.icon), null, '')); else r.append(el('span')); r.append(el('b', null, e.x.name)); const v = el('span', 'pod-v', (e.t >= 0 ? '+' : '') + F(e.t) + ' 🏆'); v.style.color = e.t >= 0 ? 'var(--ok)' : 'var(--bad)'; r.append(v); pod.append(r); });
 
     // recent battles
     $('batT').textContent = '🕹️ Derniers combats · ' + p.name;
@@ -1091,12 +1121,17 @@
     const hot = [...ps].filter((x) => x.recent.trophyChange != null).sort((a, b) => b.recent.trophyChange - a.recent.trophyChange)[0];
     if (hot && hot.recent.trophyChange > 0) add('📈', `${hot.name} est en forme : +${F(hot.recent.trophyChange)} trophées sur ses derniers combats.`);
 
-    // milestones
+    // milestones + pace projection (from the last 7 days of history)
+    const paceOf = (tag) => { if (!hist || !hist.points) return null; const pp = hist.points.filter((q) => q.p[tag] && q.p[tag].tr != null); if (pp.length < 2) return null; const last = new Date(pp[pp.length - 1].t), from = last - 7 * 864e5; const rc = pp.filter((q) => new Date(q.t) >= from); if (rc.length < 2) return null; const d = rc[rc.length - 1].p[tag].tr - rc[0].p[tag].tr, days = (new Date(rc[rc.length - 1].t) - new Date(rc[0].t)) / 864e5; return days > 0 ? d / days : null; };
     const ms = $('milestones'); ms.replaceChildren();
     ps.map((x) => { const step = x.trophies >= 100000 ? 10000 : 5000; const next = Math.floor(x.trophies / step) * step + step; return { x, next, go: next - x.trophies, pc: (x.trophies - (next - step)) / step * 100 }; })
       .sort((a, b) => a.go - b.go).forEach(({ x, next, go, pc }) => {
         const box = el('div'); const top = el('div', 'ms-top'); top.append(el('b', null, x.name + ' → ' + F(next) + ' 🏆'), el('span', 'ms-go', 'encore ' + F(go)));
-        const t = el('div', 'track'); const f = el('div', 'fill'); f.style.width = pc + '%'; f.style.background = 'linear-gradient(90deg,#6C3BFF,#FFC93C)'; t.append(f); box.append(top, t); ms.append(box);
+        const t = el('div', 'track'); const f = el('div', 'fill'); f.style.width = pc + '%'; f.style.background = 'linear-gradient(90deg,#6C3BFF,#FFC93C)'; t.append(f); box.append(top, t);
+        const pace = paceOf(x.tag);
+        if (pace && pace > 0) { const days = Math.ceil(go / pace); const dt = new Date(Date.now() + days * 864e5); box.append(el('div', 'ms-eta', days <= 120 ? `à ce rythme : ~${DDay.format(dt)}` : 'à ce rythme : dans plusieurs mois')); }
+        else if (pace != null && pace <= 0) box.append(el('div', 'ms-eta', 'en baisse ces derniers jours'));
+        ms.append(box);
       });
 
     // head to head

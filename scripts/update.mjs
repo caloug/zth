@@ -309,6 +309,13 @@ async function main() {
     let curL = 0, maxL = 0;
     for (const b of mine) { if (b.r === 'loss') { curL++; if (curL > maxL) maxL = curL; } else curL = 0; }
     pl.worstStreak = maxL;
+    // best brawler per map (min 3 decided games on that map)
+    const byMap = new Map();
+    for (const b of mine) { if (!b.b) continue; const key = b.id || b.mp; if (!key) continue;
+      const mm = byMap.get(key) || { map: b.mp, mapId: b.id || null, mode: b.m, modeId: b.mi ?? null, n: 0, br: new Map() };
+      mm.n++; const br = mm.br.get(b.b) || { name: b.b, id: b.bi, w: 0, l: 0 }; if (b.r === 'win') br.w++; else if (b.r === 'loss') br.l++; mm.br.set(b.b, br); byMap.set(key, mm); }
+    pl.mapBrawler = [...byMap.values()].map((mm) => { const best = [...mm.br.values()].filter((v) => v.w + v.l >= 3).map((v) => ({ ...v, wr: Math.round(v.w / (v.w + v.l) * 100), g: v.w + v.l })).sort((a, b) => b.wr - a.wr || b.g - a.g)[0];
+      return best ? { map: mm.map, mapId: mm.mapId, mode: mm.mode, modeId: mm.modeId, n: mm.n, brawler: best.name, brawlerId: best.id, wr: best.wr, games: best.g } : null; }).filter(Boolean).sort((a, b) => b.n - a.n).slice(0, 12);
   }
 
   const out = { updatedAt: new Date().toISOString(), players, failed, clubs, rotation, boards, brawlerBoards, allBrawlers, team, tracked };
