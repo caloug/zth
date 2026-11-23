@@ -13,6 +13,13 @@
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17l-6 3.3 1.3-6.7-5-4.6 6.8-.8z' fill='%23FFC93C' stroke='%232A1600' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#6C3BFF">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ZTH Stats">
 <style>
   @font-face { font-family: "Lilita One"; src: url("fonts/LilitaOne.woff2") format("woff2"); font-display: swap; }
   :root { --y: #FFC93C; --pink: #FF3D7F; --purple: #6C3BFF; --ok: #3DDC84; --bad: #FF5C6C;
@@ -1198,6 +1205,7 @@
   load();
   setInterval(load, 60 * 1000);
   setInterval(tick, 20 * 1000);
+  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();
 </script>
 </body>
