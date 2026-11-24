@@ -63,6 +63,10 @@
   .lbl { color: var(--muted); font-size: 12px; margin: 0 0 6px; text-transform: uppercase; letter-spacing: .06em; }
   .big { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
   .tl-link { display: block; } .tl-img { width: 100%; height: auto; border-radius: 12px; display: block; }
+  .gd-in { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); font: inherit; margin-bottom: 10px; }
+  .gd-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .gd-grid a { padding: 6px 10px; border-radius: 999px; background: var(--grid); border: 1px solid var(--line); color: var(--fg); text-decoration: none; font-size: 13px; }
+  .gd-grid a:hover, .gd-grid a:focus-visible { border-color: var(--y); color: var(--y); }
   .note { color: var(--muted); font-size: 12.5px; margin: 6px 0 0; }
   h2 { font-size: 18px; margin: 0 0 12px; }
   h3 { font-size: 15px; margin: 16px 0 8px; }
@@ -347,7 +351,7 @@
     <button class="tab" type="button" role="tab" data-tab="ranked">⚔️ Ranked</button>
     <button class="tab" type="button" role="tab" data-tab="brawlers">Brawlers</button>
     <button class="tab" type="button" role="tab" data-tab="equipe">Équipe</button>
-    <button class="tab" type="button" role="tab" data-tab="tierlist">📊 Tier List</button>
+    <button class="tab" type="button" role="tab" data-tab="tierlist">📊 Tier List &amp; Guides</button>
   </nav>
   <div class="pane on" data-pane="overview"></div>
   <div class="pane" data-pane="classe"></div>
@@ -457,6 +461,10 @@
   <section class="card" data-tab="tierlist" data-o="1"><h2>📊 Tier List des Brawlers</h2>
     <a class="tl-link" href="tierlist.webp" target="_blank" rel="noopener"><img class="tl-img" src="tierlist.webp" alt="Tier list des Brawlers (Compétitif), mise à jour le 24 novembre 2026" width="2247" height="2576" loading="lazy"></a>
     <p class="note">Tier list compétitive du 24 nov. 2026 · source : Prodigy (code créateur « Prodigy »). Touche l'image pour l'ouvrir en grand et zoomer.</p></section>
+  <section class="card" data-tab="tierlist" data-o="2"><h2>📖 Guides des Brawlers</h2>
+    <input id="gdFilter" class="gd-in" type="search" placeholder="Chercher un brawler…" aria-label="Chercher un guide de brawler" autocomplete="off">
+    <div class="gd-grid" id="gdGrid"></div>
+    <p class="note">Les guides sont hébergés sur powerleagueprodigy.com (Prodigy) et s'ouvrent sur leur site ; certains peuvent demander un compte ou un abonnement.</p></section>
   <section class="card" data-tab="equipe" data-o="2"><h2>🏅 Trophées de l'équipe</h2><div class="awards" id="awards"></div></section>
   <section class="card" data-tab="equipe" data-o="3"><h2>L'équipe au complet</h2><div class="grid" id="totals"></div></section>
   <section class="card" data-tab="overview" data-o="4"><h2>💡 Le savais-tu ?</h2><ul class="facts" id="facts"></ul></section>
@@ -1354,6 +1362,12 @@
   $('reload').onclick = async () => { const r = $('reload'); r.classList.add('spinning'); try { await load(); } finally { setTimeout(() => r.classList.remove('spinning'), 520); } };
 
   // ---------- tabs: move each tagged section into its pane, then switch panes ----------
+  (function guides() {
+    const G = [["8-Bit","8bit"],["Alli","alli"],["Amber","amber"],["Angelo","angelo"],["Ash","ash"],["Barley","barley"],["Bea","bea"],["Belle","belle"],["Berry","berry"],["Bibi","bibi"],["Bo","bo"],["Bolt","bolt"],["Bonnie","bonnie"],["Brock","brock"],["Bull","bull"],["Buster","buster"],["Buzz","buzz"],["Byron","byron"],["Carl","carl"],["Charlie","charlie"],["Chester","chester"],["Chuck","chuck"],["Clancy","clancy"],["Colette","colette"],["Colt","colt"],["Cordelius","cordelius"],["Cosmo","cosmo"],["Crow","crow"],["Damian","damian"],["Darryl","darryl"],["Doug","doug"],["Draco","draco"],["Dynamike","dynamike"],["Edgar","edgar"],["El Primo","elprimo"],["Emz","emz"],["Eve","eve"],["Fang","fang"],["Finx","finx"],["Frank","frank"],["Gale","gale"],["Gene","gene"],["Gigi","gigi"],["Glowy","glowy"],["Gray","gray"],["Griff","griff"],["Grom","grom"],["Gus","gus"],["Hank","hank"],["Jacky","jacky"],["Jae-Yong","jaeyong"],["Janet","janet"],["Jessie","jessie"],["Juju","juju"],["Kaze","kaze"],["Kenji","kenji"],["Kit","kit"],["Larry & Lawrie","larrylawrie"],["Leon","leon"],["Lily","lily"],["Lola","lola"],["Lou","lou"],["Lumi","lumi"],["Maisie","maisie"],["Mandy","mandy"],["Max","max"],["Meeple","meeple"],["Meg","meg"],["Melodie","melodie"],["Mico","mico"],["Mina","mina"],["Moe","moe"],["Mortis","mortis"],["Mr. P","mrp"],["Najia","najia"],["Nani","nani"],["Nita","nita"],["Nori","nori"],["Ollie","ollie"],["Otis","otis"],["Pam","pam"],["Pearl","pearl"],["Penny","penny"],["Pierce","pierce"],["Piper","piper"],["Poco","poco"],["R-T","rt"],["Rico","rico"],["Rosa","rosa"],["Ruffs","ruffs"],["Sam","sam"],["Sandy","sandy"],["Shade","shade"],["Shelly","shelly"],["Sirius","sirius"],["Spike","spike"],["Sprout","sprout"],["Squeak","squeak"],["Starr Nova","starrnova"],["Stu","stu"],["Surge","surge"],["Tara","tara"],["Tick","tick"],["Trunk","trunk"],["Vince","vince"],["Wendy","wendy"],["Willow","willow"],["Ziggy","ziggy"]], grid = document.getElementById('gdGrid'), inp = document.getElementById('gdFilter');
+    if (!grid) return;
+    G.forEach(([n, slug]) => { const a = document.createElement('a'); a.href = 'https://powerleagueprodigy.com/' + slug; a.target = '_blank'; a.rel = 'noopener'; a.textContent = n; a.dataset.n = n.toLowerCase(); grid.appendChild(a); });
+    inp.addEventListener('input', () => { const q = inp.value.trim().toLowerCase(); grid.querySelectorAll('a').forEach((a) => { a.style.display = !q || a.dataset.n.includes(q) ? '' : 'none'; }); });
+  })();
   const TAB_LIST = ['overview', 'classe', 'combats', 'trophy', 'ranked', 'brawlers', 'equipe', 'tierlist'];
   (function layoutTabs() {
     TAB_LIST.forEach((t) => {
