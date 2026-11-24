@@ -62,6 +62,7 @@
   .acc::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--c, var(--purple)); }
   .lbl { color: var(--muted); font-size: 12px; margin: 0 0 6px; text-transform: uppercase; letter-spacing: .06em; }
   .big { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .tl-link { display: block; } .tl-img { width: 100%; height: auto; border-radius: 12px; display: block; }
   .note { color: var(--muted); font-size: 12.5px; margin: 6px 0 0; }
   h2 { font-size: 18px; margin: 0 0 12px; }
   h3 { font-size: 15px; margin: 16px 0 8px; }
@@ -346,6 +347,7 @@
     <button class="tab" type="button" role="tab" data-tab="ranked">⚔️ Ranked</button>
     <button class="tab" type="button" role="tab" data-tab="brawlers">Brawlers</button>
     <button class="tab" type="button" role="tab" data-tab="equipe">Équipe</button>
+    <button class="tab" type="button" role="tab" data-tab="tierlist">📊 Tier List</button>
   </nav>
   <div class="pane on" data-pane="overview"></div>
   <div class="pane" data-pane="classe"></div>
@@ -354,6 +356,7 @@
   <div class="pane" data-pane="ranked"></div>
   <div class="pane" data-pane="brawlers"></div>
   <div class="pane" data-pane="equipe"></div>
+  <div class="pane" data-pane="tierlist"></div>
 
   <section class="grid" data-tab="overview" data-o="1">
     <div class="card acc" style="--c: var(--purple)"><p class="lbl">Victoires récentes</p><div class="wr" id="kWr">—</div></div>
@@ -451,6 +454,9 @@
     <div class="card"><h2>Brawlers des derniers combats</h2><div class="bars" id="brawlers"></div></div>
   </section>
 
+  <section class="card" data-tab="tierlist" data-o="1"><h2>📊 Tier List des Brawlers</h2>
+    <a class="tl-link" href="tierlist.webp" target="_blank" rel="noopener"><img class="tl-img" src="tierlist.webp" alt="Tier list des Brawlers (Compétitif), mise à jour le 24 novembre 2026" width="2247" height="2576" loading="lazy"></a>
+    <p class="note">Tier list compétitive du 24 nov. 2026 · source : Prodigy (code créateur « Prodigy »). Touche l'image pour l'ouvrir en grand et zoomer.</p></section>
   <section class="card" data-tab="equipe" data-o="2"><h2>🏅 Trophées de l'équipe</h2><div class="awards" id="awards"></div></section>
   <section class="card" data-tab="equipe" data-o="3"><h2>L'équipe au complet</h2><div class="grid" id="totals"></div></section>
   <section class="card" data-tab="overview" data-o="4"><h2>💡 Le savais-tu ?</h2><ul class="facts" id="facts"></ul></section>
@@ -1348,7 +1354,7 @@
   $('reload').onclick = async () => { const r = $('reload'); r.classList.add('spinning'); try { await load(); } finally { setTimeout(() => r.classList.remove('spinning'), 520); } };
 
   // ---------- tabs: move each tagged section into its pane, then switch panes ----------
-  const TAB_LIST = ['overview', 'classe', 'combats', 'trophy', 'ranked', 'brawlers', 'equipe'];
+  const TAB_LIST = ['overview', 'classe', 'combats', 'trophy', 'ranked', 'brawlers', 'equipe', 'tierlist'];
   (function layoutTabs() {
     TAB_LIST.forEach((t) => {
       const pane = document.querySelector(`.pane[data-pane="${t}"]`); if (!pane) return;
