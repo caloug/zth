@@ -1071,6 +1071,7 @@
     const av = $('hAva'); if (p.icon) { av.src = IMG.icon(p.icon); av.alt = 'Icône de ' + p.name; av.hidden = false; } else av.hidden = true;
     const pills = $('hPills'); pills.replaceChildren();
     const pill = (src, txt) => { const d = el('span', 'pill'); if (src) d.append(img(src, null, '')); d.append(txt); pills.append(d); };
+    (p.alts || []).forEach((a) => pill(null, '🔗 Stats fusionnées avec ' + a.name + ' (' + F(a.trophies) + ' 🏆)'));
     if (p.ranked && p.ranked.rankedRank) pill(IMG.rank(p.ranked.rankedRank), rankTier(p.ranked.rankedRank).name + ' · ' + F(p.ranked.rankedElo) + ' pts');
     const club = p.clubTag && data.clubs && data.clubs[p.clubTag];
     if (p.club) pill(club && club.badgeId ? IMG.badge(club.badgeId) : null, (club ? '' : 'Club ') + p.club);

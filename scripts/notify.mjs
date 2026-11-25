@@ -69,9 +69,9 @@ export function computeMessages(prev, out, now = Date.now(), history = null) {
     const rank = p.ranked?.rankedRank ?? null, elo = p.ranked?.rankedElo ?? null, mile = milestone(p.trophies);
     if (!fresh) {
       if (rank != null && was.rank != null && rank > was.rank) msgs.push(rankMsg(p, rank, elo));
-      if (was.mile != null && mile > was.mile) msgs.push(troMsg(p, mile, p.trophies));
+      if (was.mile != null && mile > was.mile && !(p.alts && !was.merged)) msgs.push(troMsg(p, mile, p.trophies));
     }
-    state.players[p.tag] = { rank, elo, mile };
+    state.players[p.tag] = { rank, elo, mile, merged: !!p.alts };
   }
   const z = zurich(now);
   if (fresh) { state.weeklyDay = z.day; state.dailyDay = z.day; }

@@ -156,11 +156,36 @@ function thin(points, now = Date.now()) {
   return [...keep.values()].sort((a, b) => new Date(a.t) - new Date(b.t));
 }
 
+
+// ---- merge a player's secondary account(s) into the main one ----
+const uniqById = (a, b) => { const m = new Map(); for (const x of [...(a || []), ...(b || [])]) if (x && !m.has(x.id)) m.set(x.id, x); return [...m.values()]; };
+function mergeBrawlers(a, b) {
+  const m = new Map((a || []).map((x) => [x.id, { ...x }]));
+  for (const y of b || []) {
+    const x = m.get(y.id);
+    if (!x) { m.set(y.id, { ...y }); continue; }
+    m.set(y.id, { ...x, power: Math.max(x.power || 0, y.power || 0), rank: Math.max(x.rank || 0, y.rank || 0), trophies: (x.trophies || 0) + (y.trophies || 0),
+      highestTrophies: (x.highestTrophies || 0) + (y.highestTrophies || 0), prestigeLevel: (x.prestigeLevel || 0) + (y.prestigeLevel || 0),
+      currentWinStreak: Math.max(x.currentWinStreak || 0, y.currentWinStreak || 0), maxWinStreak: Math.max(x.maxWinStreak || 0, y.maxWinStreak || 0),
+      starPowers: uniqById(x.starPowers, y.starPowers), gadgets: uniqById(x.gadgets, y.gadgets), gears: uniqById(x.gears, y.gears), hyperCharges: uniqById(x.hyperCharges, y.hyperCharges) });
+  }
+  return [...m.values()];
+}
+function mergeProfiles(main, alts) {
+  const sum = (k) => [main, ...alts].reduce((t, q) => t + (typeof q[k] === 'number' ? q[k] : 0), 0);
+  const has = (k) => [main, ...alts].some((q) => typeof q[k] === 'number');
+  const out = { ...main, brawlers: alts.reduce((acc, q) => mergeBrawlers(acc, q.brawlers), main.brawlers || []) };
+  for (const k of ['trophies', 'highestTrophies', '3vs3Victories', 'soloVictories', 'duoVictories', 'expPoints', 'totalPrestigeLevel']) if (has(k)) out[k] = sum(k);
+  out.expLevel = Math.max(main.expLevel || 0, ...alts.map((q) => q.expLevel || 0));
+  return out; // ranked fields (ELO is per account and not additive) and identity stay those of the main account
+}
+
 async function main() {
   const history = await loadHistory();
   const oldBattles = await loadStore(BAT_URL, 'battles', 'BATTLES_FILE');
   const newBattles = [];
-  const { players: tags } = JSON.parse(await readFile('players.json', 'utf8'));
+  const { players: tags, alts: altCfg = {} } = JSON.parse(await readFile('players.json', 'utf8'));
+  const normTag = (t) => t.replace(/^#/, '').toUpperCase();
   const catalog = await api('/brawlers?limit=200');
   const all = catalog.items || [];
   const totalSP = all.reduce((s, b) => s + (b.starPowers || []).length, 0);
@@ -171,13 +196,26 @@ async function main() {
   for (const raw of tags) {
     const tag = raw.replace(/^#/, '').toUpperCase();
     try {
-      const p = await api(`/players/${enc(tag)}`);
+      const p0 = await api(`/players/${enc(tag)}`);
       let log = { items: [] };
       try { log = await api(`/players/${enc(tag)}/battlelog`); } catch (e) { console.warn(`battlelog ${tag}: ${e.message}`); }
+      log = { ...log, items: (log.items || []).map((it) => ({ ...it, _tag: tag })) };
+      // secondary accounts: fetched strictly (a failure fails this player, so merged totals never silently drop)
+      const altProfiles = [];
+      for (const rawAlt of altCfg[tag] || altCfg['#' + tag] || []) {
+        const at = normTag(rawAlt);
+        const ap = await api(`/players/${enc(at)}`);
+        let al = { items: [] };
+        try { al = await api(`/players/${enc(at)}/battlelog`); } catch (e) { console.warn(`battlelog ${at}: ${e.message}`); }
+        altProfiles.push({ tag: at, name: ap.name, trophies: ap.trophies ?? 0, highestTrophies: ap.highestTrophies ?? 0, p: ap });
+        log.items.push(...(al.items || []).map((it) => ({ ...it, _tag: tag, _alt: at })));
+      }
+      log.items.sort((a, z) => (bDate(z.battleTime) - bDate(a.battleTime)) || 0);
+      const p = altProfiles.length ? mergeProfiles(p0, altProfiles.map((x) => x.p)) : p0;
 
       // ---- recent battles ----
       const battles = (log.items || []).map((it) => {
-        const me = findMe(it, tag);
+        const me = findMe(it, it._alt || tag);
         return {
           time: it.battleTime,
           mode: it.event?.mode || it.battle?.mode || 'unknown',
@@ -187,7 +225,7 @@ async function main() {
           modeId: typeof it.event?.modeId === 'number' ? it.event.modeId : null,
           rank: typeof it.battle?.rank === 'number' ? it.battle.rank : null,
           brawlerId: me?.brawler?.id || me?.brawlers?.[0]?.id || null,
-          result: battleResult(it, tag),
+          result: battleResult(it, it._alt || tag),
           trophyChange: typeof it.battle?.trophyChange === 'number' ? it.battle.trophyChange : null,
           brawler: me?.brawler?.name || (me?.brawlers?.[0]?.name) || null,
         };
@@ -267,6 +305,7 @@ async function main() {
         },
         missing: { starPowers: missingSP, gadgets: missingGadgets, brawlers: missingBrawlers, brawlerIds: missingIds },
         ranked,
+        alts: altProfiles.length ? altProfiles.map((x) => ({ tag: x.tag, name: x.name, trophies: x.trophies, highestTrophies: x.highestTrophies })) : undefined,
       });
       console.log(`OK ${tag} ${p.name}: ${p.trophies} trophies`);
     } catch (e) {
@@ -351,7 +390,10 @@ async function main() {
   await mkdir(OUT.replace(/\/[^/]+$/, ''), { recursive: true });
   await writeFile(OUT, JSON.stringify(out, null, 1));
   const pt = { t: out.updatedAt, p: {} };
-  for (const pl of players) pt.p[pl.tag] = { tr: pl.trophies, elo: typeof pl.ranked?.rankedElo === 'number' ? pl.ranked.rankedElo : null };
+  for (const pl of players) pt.p[pl.tag] = { tr: pl.trophies, elo: typeof pl.ranked?.rankedElo === 'number' ? pl.ranked.rankedElo : null, ...(pl.alts ? { m: 1 } : {}) };
+  // one-off: older points of a freshly merged player only hold the main account, so add the secondary
+  // account's current trophies to them (once, flagged with m) to avoid a fake jump in the curves
+  for (const pl of players) if (pl.alts) { const add = pl.alts.reduce((t, x) => t + (x.trophies || 0), 0); for (const q of history) { const e = q.p && q.p[pl.tag]; if (e && !e.m && typeof e.tr === 'number') { e.tr += add; e.m = 1; } } }
   const points = thin([...history, pt]);
   for (const pl of players) pl.week = weekSummary(pl.tag, store.filter((b) => b.g === pl.tag), points, nowMs);
   await writeFile(OUT, JSON.stringify(out, null, 1));

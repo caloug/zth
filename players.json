@@ -1,3 +1,12 @@
 {
-  "players": ["8JL8YC98", "GR0RVJ0CG", "RRLRRLYG9"]
+  "players": [
+    "8JL8YC98",
+    "GR0RVJ0CG",
+    "RRLRRLYG9"
+  ],
+  "alts": {
+    "RRLRRLYG9": [
+      "2QJ8R8Y298"
+    ]
+  }
 }
