@@ -65,6 +65,8 @@
   .tl-link { display: block; } .tl-img { width: 100%; height: auto; border-radius: 12px; display: block; }
   .gd-in { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); font: inherit; margin-bottom: 10px; }
   .gd-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pk { margin-top: 12px; } .pk h3 { margin: 0 0 2px; font-size: 15px; } .pk p { margin: 0 0 6px; color: var(--muted); font-size: 12.5px; }
+  .gd-grid span { padding: 6px 10px; border-radius: 999px; background: var(--grid); border: 1px solid var(--line); font-size: 13px; }
   .gd-grid a { padding: 6px 10px; border-radius: 999px; background: var(--grid); border: 1px solid var(--line); color: var(--fg); text-decoration: none; font-size: 13px; }
   .gd-grid a:hover, .gd-grid a:focus-visible { border-color: var(--y); color: var(--y); }
   .note { color: var(--muted); font-size: 12.5px; margin: 6px 0 0; }
@@ -461,6 +463,12 @@
   <section class="card" data-tab="tierlist" data-o="1"><h2>📊 Tier List des Brawlers</h2>
     <a class="tl-link" href="tierlist.webp" target="_blank" rel="noopener"><img class="tl-img" src="tierlist.webp" alt="Tier list des Brawlers (Compétitif), mise à jour le 24 novembre 2026" width="2247" height="2576" loading="lazy"></a>
     <p class="note">Tier list compétitive du 24 nov. 2026 · source : Prodigy (code créateur « Prodigy »). Touche l'image pour l'ouvrir en grand et zoomer.</p></section>
+  <section class="card" data-tab="tierlist" data-o="1.5"><h2>🧠 Picks par mode</h2>
+    <p class="note" style="margin:0 0 10px">Idée : choisis un brawler qui répond directement à l'objectif du mode, quel que soit le draft. Avec des alliés aléatoires, on ne peut pas compter sur la synergie : mieux vaut avoir un impact personnel.</p>
+    <div class="pk"><h3>🔐 Braquage</h3><p>Objectif : faire un maximum de dégâts au coffre adverse (brawlers DPS).</p><div class="gd-grid"><span>Colt</span><span>Colette</span><span>Mélodie</span><span>Nori</span><span>Arkad</span><span>Polly</span><span>Kaze</span><span>Mico</span></div></div>
+    <div class="pk"><h3>🎯 Prime / Hors-jeu</h3><p>Objectif : prendre des éliminations et contrôler l'espace (snipers et assassins).</p><div class="gd-grid"><span>Mina</span><span>Polly</span><span>Belle</span><span>Angelo</span><span>Pierce</span><span>Pearl</span><span>Squeak</span><span>Mortis</span><span>Max</span><span>Vince</span><span>RT</span></div></div>
+    <div class="pk"><h3>💎 Zone réservée</h3><p>Objectif : contrôler la zone et accumuler les pourcentages (brawlers de contrôle).</p><div class="gd-grid"><span>Chester</span><span>Eliza</span><span>Kenji</span><span>Mina</span><span>Meg</span><span>Gaël</span><span>Lou</span><span>Max</span><span>Gus</span><span>Draco</span><span>Vince</span></div></div>
+    <p class="note">Conseils inspirés de Prodigy (powerleagueprodigy.com), reformulés. Modes d'après la liste de départ — d'autres modes pourront s'ajouter.</p></section>
   <section class="card" data-tab="tierlist" data-o="2"><h2>📖 Guides des Brawlers</h2>
     <input id="gdFilter" class="gd-in" type="search" placeholder="Chercher un brawler…" aria-label="Chercher un guide de brawler" autocomplete="off">
     <div class="gd-grid" id="gdGrid"></div>
