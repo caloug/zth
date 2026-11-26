@@ -448,6 +448,49 @@
   .info { margin-left: 6px; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--muted); background: transparent; color: var(--muted); font: 700 12px/1 var(--font-ui); cursor: pointer; vertical-align: 2px; padding: 0; }
   .tipbox { position: absolute; z-index: 70; width: 260px; padding: 10px 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-size: 12.5px; line-height: 1.45; box-shadow: 0 8px 24px rgba(0,0,0,.35); opacity: 0; pointer-events: none; }
   .tipbox.on { opacity: 1; }
+
+  /* ================= polish pass: richer, still short and purposeful ================= */
+  :root { --spring: cubic-bezier(.34, 1.56, .64, 1); }
+  @media (prefers-reduced-motion: no-preference) {
+    /* hero: a single light sheen sweeps across when a player opens; avatar ring pulses once */
+    .hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.16) 50%, transparent 65%); transform: translateX(-120%); }
+    body.swap .hero::after, html[data-brand="in"] .hero::after { animation: sheen 1.1s var(--motion-ease-out) .1s 1; }
+    @keyframes sheen { to { transform: translateX(120%); } }
+    body.swap .avatar { animation: avPop .55s var(--spring), ringPulse .9s ease-out .1s 1; }
+    @keyframes avPop { from { opacity: 0; transform: scale(.7) rotate(-6deg); } to { opacity: 1; transform: none; } }
+    @keyframes ringPulse { 0% { box-shadow: 0 0 0 0 rgba(255,201,60,.55); } 100% { box-shadow: 0 0 0 16px rgba(255,201,60,0); } }
+    .tro-n { background: linear-gradient(90deg, #fff 0%, #FFE9A8 50%, #fff 100%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    body.swap .tro-n, .tro-n.upd { animation: goldSlide 1.4s var(--motion-ease-out) 1; }
+    @keyframes goldSlide { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+    /* cards: spring entrance with a coloured accent that draws in; lift on hover */
+    body.swap .pane[data-pane="overview"] .grid > .card { animation: cardIn .5s var(--spring) backwards; }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: none; } }
+    .card.acc::before { transform-origin: top; }
+    body.swap .card.acc::before, body.mo-in .card.acc::before { animation: accDraw .6s var(--motion-ease-out) .15s backwards; }
+    @keyframes accDraw { from { transform: scaleY(0); } to { transform: none; } }
+    .card { transition: transform var(--motion-normal) var(--motion-ease-out), box-shadow var(--motion-normal) var(--motion-ease-out), border-color var(--motion-normal) var(--motion-ease); }
+    @media (hover: hover) { .card.acc:hover { transform: translateY(-3px); box-shadow: 0 10px 28px -10px color-mix(in srgb, var(--c, var(--purple)) 70%, transparent); border-color: color-mix(in srgb, var(--c, var(--purple)) 55%, var(--line)); } }
+    /* navigation: glowing pill, icon bounces when selected */
+    .tab-ind { height: 3px; box-shadow: 0 0 12px 1px color-mix(in srgb, var(--purple) 80%, transparent); background: linear-gradient(90deg, var(--purple), var(--pink)); transition: transform .38s var(--spring), width .3s var(--motion-ease-out); }
+    .tab.on .ti { animation: tabBounce .5s var(--spring); }
+    @keyframes tabBounce { 0% { transform: scale(.8) translateY(4px); } 60% { transform: scale(1.25) translateY(-3px); } 100% { transform: scale(1.12) translateY(-1px); } }
+    /* bars: fill with a soft light sweep */
+    .fill, .prog-fill { position: relative; overflow: hidden; }
+    body.anim .fill::after, body.anim .prog-fill::after, body.mo-in .fill::after, body.mo-in .prog-fill::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); transform: translateX(-100%); animation: barSheen .9s var(--motion-ease-out) .35s 1 forwards; }
+    @keyframes barSheen { to { transform: translateX(100%); } }
+    /* charts: area fades in under the line, end dot pulses */
+    .anim-chart:not(.in) path:not([fill="none"]) { opacity: 0; } .anim-chart.in path:not([fill="none"]) { opacity: 1; transition: opacity .8s ease .5s; }
+    .anim-chart.in circle:last-of-type { animation: dotPulse 1.6s ease-out .9s 2; transform-box: fill-box; transform-origin: center; }
+    @keyframes dotPulse { 0% { transform: scale(1); } 40% { transform: scale(1.9); opacity: .6; } 100% { transform: scale(1); opacity: 1; } }
+    /* list rows slide in from the left with a spring */
+    body.mo-in .bl > * { animation: rowIn .4s var(--spring) backwards; }
+    @keyframes rowIn { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+    /* podium first place gets a gold glow once revealed */
+    .pod-row.reveal { animation: champ .8s var(--spring), goldGlow 1.6s ease-out .3s 1; }
+    @keyframes goldGlow { 0% { box-shadow: 0 0 0 0 rgba(255,201,60,.6); } 100% { box-shadow: 0 0 0 22px rgba(255,201,60,0); } }
+    /* toast: slides up with a spring */
+    .toast, .ach { animation: toastIn .5s var(--spring); } @keyframes toastIn { from { opacity: 0; transform: translateY(24px) scale(.94); } to { opacity: 1; transform: none; } }
+  }
 </style>
 </head>
 <body class="loading">
@@ -1138,8 +1181,10 @@
       o.detect(d);
       o.afterRender(first);
     };
+    // ---- KPI numbers count up from 0 on open / player switch ----
+    o.kpis = () => { if (calm()) return; document.querySelectorAll('.pane[data-pane="overview"] .big').forEach((n) => { const t = n.textContent.trim(); if (!/^\d[\d\s\u00a0\u202f]*$/.test(t) || n.children.length) return; const v = parseInt(t.replace(/\D/g, ''), 10); if (v > 0) tween(n, 0, v, 700, F); }); };
     o.afterRender = (switching) => {
-      if (switching) { o.enter(); o.ring(); }
+      if (switching) { o.enter(); o.ring(); o.kpis(); }
       o.switching = false;
       requestAnimationFrame(ind);
     };
