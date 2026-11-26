@@ -1079,5 +1079,12 @@
   plainHeads(); setInterval(plainHeads, 1500);
   setInterval(load, 60 * 1000); setInterval(checkStale, 60 * 1000);
   setInterval(tick, 20 * 1000);
-  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  // Mise à jour automatique : dès qu'une nouvelle version de l'app prend le relais, la page se recharge une seule fois.
+  const BUILD = 'v26';
+  if ('serviceWorker' in navigator) {
+    const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadController || reloaded) return; reloaded = true; location.reload(); });
+    addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update().catch(() => {})).catch(() => {}));
+  }
+  (function stamp() { const f = document.querySelector('.foot'); if (f) f.append(document.createElement('br'), 'Version ' + BUILD); })();
 })();
