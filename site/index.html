@@ -22,6 +22,7 @@
 <meta name="apple-mobile-web-app-title" content="ZTH Stats">
 <link rel="stylesheet" href="assets/css/styles.css">
 <link rel="stylesheet" href="assets/css/chrome.css">
+<link rel="stylesheet" href="assets/css/bars.css">
 </head>
 <body class="loading">
 <div id="splash" class="splash" role="presentation" aria-hidden="true"><img src="icon-192.png" alt="" width="96" height="96"><b>ZTH <span>Stats</span></b><small>Ton escouade. Tes stats.</small></div>
@@ -107,7 +108,7 @@
     <p class="note" id="wkN"></p>
   </section>
 
-  <div class="seg" id="cSeg" data-tab="combats" data-o="0" role="group" aria-label="Type de combats"><button type="button" class="on" data-sub="all">Tout</button><button type="button" data-sub="trophy">Trophées</button><button type="button" data-sub="ranked">Ranked</button></div>
+  <div class="seg" id="cSeg" data-tab="combats" data-o="0" role="group" aria-label="Type de combats"><span class="seg-pill" aria-hidden="true"><i></i></span><button type="button" class="on" data-sub="all">Tout</button><button type="button" data-sub="trophy">Trophées</button><button type="button" data-sub="ranked">Ranked</button></div>
   <section class="card" data-tab="combats" data-o="1">
     <div class="ghead"><h2 id="batT">🕹️ Derniers combats</h2><div class="flt" id="batF"></div></div>
     <div class="bl" id="batL"></div>

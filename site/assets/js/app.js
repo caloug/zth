@@ -1064,6 +1064,7 @@
     if (!['all', 'trophy', 'ranked'].includes(sub)) sub = 'all';
     const pn = document.querySelector('.pane[data-pane="combats"]'); if (pn) pn.dataset.sub = sub;
     document.querySelectorAll('#cSeg button').forEach((b) => b.classList.toggle('on', b.dataset.sub === sub));
+    $('cSeg').style.setProperty('--i', ['all', 'trophy', 'ranked'].indexOf(sub));
     try { localStorage.setItem('cf-sub', sub); } catch (_) {}
     if (data) { try { drawGraphs(); } catch (_) {} }
   }
