@@ -444,10 +444,14 @@
     // ---- sliding nav pill + overflow menu ----
     const pill = () => { const a = document.querySelector('.tab.on'), i = document.getElementById('tabPill'); if (!a || !i) return; i.style.setProperty('--x', a.offsetLeft + 'px'); i.style.setProperty('--w', a.offsetWidth + 'px'); };
     o.pill = pill; window.addEventListener('resize', pill);
-    const mb = () => document.getElementById('moreBtn'), mm = () => document.getElementById('moreMenu');
-    const closeMenu = () => { if (mm() && !mm().hidden) { mm().hidden = true; mb().setAttribute('aria-expanded', 'false'); } };
-    document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#moreBtn')) { const open = mm().hidden; mm().hidden = !open; mb().setAttribute('aria-expanded', String(open)); } else if (!(e.target.closest && e.target.closest('#moreMenu')) || (e.target.closest('#moreMenu') && e.target.closest('button') && e.target.id !== 'reload')) closeMenu(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMenu(); } });
+    const mb = () => document.getElementById('moreBtn'), mm = () => document.getElementById('moreMenu'); let mt;
+    const isOpen = () => mm() && mm().classList.contains('open');
+    const openMenu = () => { clearTimeout(mt); mm().hidden = false; mb().setAttribute('aria-expanded', 'true'); requestAnimationFrame(() => mm().classList.add('open')); setTimeout(() => { const f = mm().querySelector('button'); if (f && isOpen()) f.focus({ preventScroll: true }); }, 40); };
+    const closeMenu = (ret) => { if (!mm() || mm().hidden) return; mm().classList.remove('open'); mb().setAttribute('aria-expanded', 'false'); clearTimeout(mt); mt = setTimeout(() => { mm().hidden = true; }, calm() ? 0 : 180); if (ret) mb().focus(); };
+    document.addEventListener('click', (e) => { const t = e.target.closest ? e.target : e.target.parentElement; if (t.closest('#moreBtn')) { isOpen() ? closeMenu() : openMenu(); } else if (isOpen() && !(t.closest('#moreMenu') && t.closest('button') && t.closest('button').id === 'reload')) closeMenu(); });
+    document.addEventListener('keydown', (e) => { if (!isOpen()) return; if (e.key === 'Escape') { e.preventDefault(); closeMenu(true); } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const f = [...mm().querySelectorAll('button:not(:disabled)')], i = f.indexOf(document.activeElement); f[(i + (e.key === 'ArrowDown' ? 1 : -1) + f.length) % f.length].focus(); } });
+    document.querySelectorAll('#moreMenu button').forEach((x) => x.setAttribute('role', 'menuitem'));
+    window.addEventListener('scroll', () => { const bar = document.querySelector('.bar'); if (bar) bar.classList.toggle('stuck', scrollY > 6); }, { passive: true });
     o.onTab = (t, fromUser) => { requestAnimationFrame(pill); if (fromUser !== undefined) o.enter(); if (t === 'equipe') setTimeout(() => { o.champion(); o.vs(); }, 60); if (t === 'brawlers') o.enter(); };
     // ---- charts: draw once per chart per player, when visible ----
     const io = ('IntersectionObserver' in window) ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); o.drawn.add(e.target.dataset.k); io.unobserve(e.target); } }), { threshold: .25 }) : null;
