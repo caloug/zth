@@ -528,7 +528,12 @@
     // ---- animations on/off switch (skip / disable) ----
     document.addEventListener('click', (e) => { if (e.target.id === 'motionToggle') { store.set('cf-motion', off() ? 'on' : 'off'); applyOff(); } });
     // ---- brand entrance: once per session, never blocking ----
-    o.brand = () => { let seenB = null; try { seenB = sessionStorage.getItem('zth-brand'); sessionStorage.setItem('zth-brand', '1'); } catch (_) {} if (!seenB && !calm()) root.dataset.brand = 'in'; setTimeout(() => { delete root.dataset.brand; }, 700); };
+    o.brand = () => {
+      const sp = document.getElementById('splash'); if (!sp) return; let seenB = null; try { seenB = sessionStorage.getItem('zth-brand'); sessionStorage.setItem('zth-brand', '1'); } catch (_) {}
+      if (seenB || calm()) { sp.remove(); return; }
+      const done = () => { if (!sp.isConnected) return; sp.classList.add('out'); setTimeout(() => sp.remove(), 320); };
+      sp.addEventListener('click', done); document.addEventListener('keydown', done, { once: true }); setTimeout(done, 1500);
+    };
     o.init = () => { applyOff(); o.brand(); setTimeout(() => { o.info(document.getElementById('wrT'), 'Taux calculé sur les combats archivés des 60 derniers jours. Le nombre de victoires et de défaites est toujours affiché à côté.'); o.info(document.getElementById('mbT'), 'Sous 10 combats avec un brawler sur une map, le résultat est une tendance provisoire : trop peu de parties pour conclure.'); o.info(document.querySelector('#podium') && document.querySelector('#podium').closest('section').querySelector('h2'), 'Gain de trophées sur les 7 derniers jours, d\'après l\'historique enregistré par le site.'); }, 0); };
     return o;
   })();
@@ -984,7 +989,7 @@
   };
 
   // ---------- tabs: move each tagged section into its pane, then switch panes ----------
-  (function introCard() { const c = $('introCard'); if (!c) return; let seenIt = false; try { seenIt = localStorage.getItem('cf-intro') === '1'; } catch (_) {} c.hidden = seenIt; $('introX').onclick = () => { c.hidden = true; try { localStorage.setItem('cf-intro', '1'); } catch (_) {} }; })();
+  (function introCard() { const c = $('introCard'); if (!c) return; let seenIt = false; try { seenIt = localStorage.getItem('cf-intro2') === '1'; } catch (_) {} c.hidden = seenIt; $('introX').onclick = () => { c.hidden = true; try { localStorage.setItem('cf-intro2', '1'); } catch (_) {} }; })();
   (function guides() {
     const G = [["8-Bit","8bit"],["Alli","alli"],["Amber","amber"],["Angelo","angelo"],["Ash","ash"],["Barley","barley"],["Bea","bea"],["Belle","belle"],["Berry","berry"],["Bibi","bibi"],["Bo","bo"],["Bolt","bolt"],["Bonnie","bonnie"],["Brock","brock"],["Bull","bull"],["Buster","buster"],["Buzz","buzz"],["Byron","byron"],["Carl","carl"],["Charlie","charlie"],["Chester","chester"],["Chuck","chuck"],["Clancy","clancy"],["Colette","colette"],["Colt","colt"],["Cordelius","cordelius"],["Cosmo","cosmo"],["Crow","crow"],["Damian","damian"],["Darryl","darryl"],["Doug","doug"],["Draco","draco"],["Dynamike","dynamike"],["Edgar","edgar"],["El Primo","elprimo"],["Emz","emz"],["Eve","eve"],["Fang","fang"],["Finx","finx"],["Frank","frank"],["Gale","gale"],["Gene","gene"],["Gigi","gigi"],["Glowy","glowy"],["Gray","gray"],["Griff","griff"],["Grom","grom"],["Gus","gus"],["Hank","hank"],["Jacky","jacky"],["Jae-Yong","jaeyong"],["Janet","janet"],["Jessie","jessie"],["Juju","juju"],["Kaze","kaze"],["Kenji","kenji"],["Kit","kit"],["Larry & Lawrie","larrylawrie"],["Leon","leon"],["Lily","lily"],["Lola","lola"],["Lou","lou"],["Lumi","lumi"],["Maisie","maisie"],["Mandy","mandy"],["Max","max"],["Meeple","meeple"],["Meg","meg"],["Melodie","melodie"],["Mico","mico"],["Mina","mina"],["Moe","moe"],["Mortis","mortis"],["Mr. P","mrp"],["Najia","najia"],["Nani","nani"],["Nita","nita"],["Nori","nori"],["Ollie","ollie"],["Otis","otis"],["Pam","pam"],["Pearl","pearl"],["Penny","penny"],["Pierce","pierce"],["Piper","piper"],["Poco","poco"],["R-T","rt"],["Rico","rico"],["Rosa","rosa"],["Ruffs","ruffs"],["Sam","sam"],["Sandy","sandy"],["Shade","shade"],["Shelly","shelly"],["Sirius","sirius"],["Spike","spike"],["Sprout","sprout"],["Squeak","squeak"],["Starr Nova","starrnova"],["Stu","stu"],["Surge","surge"],["Tara","tara"],["Tick","tick"],["Trunk","trunk"],["Vince","vince"],["Wendy","wendy"],["Willow","willow"],["Ziggy","ziggy"]], grid = document.getElementById('gdGrid'), inp = document.getElementById('gdFilter');
     if (!grid) return;
