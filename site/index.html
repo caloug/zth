@@ -304,7 +304,8 @@
   @media (min-width: 700px) { .tabs { justify-content: center; gap: 6px; } .tab { flex: 0 0 96px; } }
   body { padding-bottom: calc(74px + env(safe-area-inset-bottom)); }
   .pane { display: none; flex-direction: column; gap: 18px; }
-  .pane.on { display: flex; animation: fadeIn .28s var(--ease-out); }
+  .pane.on { display: flex; animation: paneIn .34s var(--ease-out); }
+  @keyframes paneIn { from { opacity: 0; transform: translateX(calc(var(--pdir, 0) * 36px)); } to { opacity: 1; transform: none; } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   /* ---- special effects (sober, auto-off with reduce-motion) ---- */
   .hero > * { position: relative; z-index: 1; }
@@ -342,6 +343,12 @@
     @keyframes popIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
     .pane.on .tl-img { animation: tlReveal .7s var(--ease-out) backwards; }
     @keyframes tlReveal { from { opacity: 0; transform: scale(.97) translateY(8px); } to { opacity: 1; transform: none; } }
+    /* switching friend: the hero slides in from the side of the new player, chips pop, sections stagger in */
+    body.swap .hero { animation: heroSwap .5s var(--ease-out); }
+    @keyframes heroSwap { from { opacity: .25; transform: translateX(calc(var(--dir, 1) * 34px)) scale(.97); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+    body.swap .chip.on, body.swap .chip.sel, body.swap .chip[aria-pressed="true"] { animation: tabPop .35s var(--ease-out); }
+    body.swap .avatar { animation: avaSpin .55s var(--ease-out); }
+    @keyframes avaSpin { from { transform: rotate(calc(var(--dir, 1) * -18deg)) scale(.7); opacity: 0; } to { transform: none; opacity: 1; } }
     .tab.on { animation: tabPop .25s var(--ease-out); }
     @keyframes tabPop { 0% { transform: scale(.92); } 60% { transform: scale(1.05); } 100% { transform: none; } }
   }
@@ -1074,8 +1081,10 @@
   try { sel = normTag(new URLSearchParams(location.search).get('p')); } catch (_) {}
   if (!sel) { try { sel = localStorage.getItem('cf-player'); } catch (_) {} }
   // Change the selected player everywhere: state, saved choice, and the address bar (so the link is shareable).
-  const setSel = (tag) => { sel = tag; try { localStorage.setItem('cf-player', tag); } catch (_) {}
+  let swapT; const setSel = (tag) => { const prevSel = sel; sel = tag; try { localStorage.setItem('cf-player', tag); } catch (_) {}
     try { const u = new URL(location.href); u.searchParams.set('p', tag); history.replaceState(null, '', u); } catch (_) {}
+    const order = (data && data.players || []).map((x) => x.tag), dir = Math.sign(order.indexOf(tag) - order.indexOf(prevSel)) || 1;
+    document.body.style.setProperty('--dir', dir); document.body.classList.add('swap', 'intro'); clearTimeout(swapT); swapT = setTimeout(() => document.body.classList.remove('swap', 'intro'), 900);
     document.body.classList.add('anim'); clearTimeout(animT); animT = setTimeout(() => document.body.classList.remove('anim'), 800); render(); };
   let A = null, B = null, animT;
 
@@ -1438,7 +1447,9 @@
   let curTab = 'overview';
   function setTab(t, fromUser) {
     if (!TAB_LIST.includes(t)) t = 'overview';
+    const pdir = Math.sign(TAB_LIST.indexOf(t) - TAB_LIST.indexOf(curTab));
     curTab = t;
+    document.querySelectorAll('.pane').forEach((pn) => pn.style.setProperty('--pdir', pdir));
     document.querySelectorAll('.tab').forEach((b) => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
     document.querySelectorAll('.pane').forEach((pn) => pn.classList.toggle('on', pn.dataset.pane === t));
     try { localStorage.setItem('cf-tab', t); } catch (_) {}
