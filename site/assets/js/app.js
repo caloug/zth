@@ -113,7 +113,16 @@
   };
 
   // Line chart. series: [{name, color, pts:[[x, y|null], ...]}]; opts: {time, height, fmtX(x), tipTitle(x), tipVal(v)}
-  function lineChart(box, series, opts = {}) {
+  // Un graphique n'est reconstruit que si sa largeur, son thème ou ses données ont changé ; caché, il est laissé tel quel.
+  function memoChart(fn) {
+    return function (box, a, ...rest) {
+      if (!box.clientWidth) return;
+      let sig; try { sig = Math.round(box.clientWidth) + '|' + document.body.classList.contains('light') + '|' + JSON.stringify([a, rest[0]]); } catch (_) { sig = null; }
+      if (sig && box._sig === sig && box.firstChild) return; box._sig = sig; return fn.call(this, box, a, ...rest);
+    };
+  }
+  const lineChart = memoChart(lineChartRaw), barChart = memoChart(barChartRaw), signedBars = memoChart(signedBarsRaw);
+  function lineChartRaw(box, series, opts = {}) {
     box.replaceChildren();
     const W = Math.max(280, Math.round(box.clientWidth || 340)), H = opts.height || 220, L = 54, R = 10, T = 10, B = 24;
     const xs = series.flatMap((s) => s.pts.map((p) => p[0])), ys = series.flatMap((s) => s.pts.map((p) => p[1]).filter((v) => v != null));
@@ -147,7 +156,7 @@
   }
 
   // Vertical bar chart. items: [{label, value, color, tip}]
-  function barChart(box, items, opts = {}) {
+  function barChartRaw(box, items, opts = {}) {
     box.replaceChildren();
     const W = Math.max(280, Math.round(box.clientWidth || 340)), H = opts.height || 190, L = 30, R = 6, T = 16, B = 34;
     const max = Math.max(1, ...items.map((i) => i.value)); const n = items.length; const slot = (W - L - R) / n; const bw = Math.min(46, slot * 0.72);
@@ -383,7 +392,7 @@
 
   // ---------- graphs ----------
   const RANGES = [['24h', '24 h', 864e5], ['7j', '7 j', 6048e5], ['30j', '30 j', 2592e6], ['all', 'Tout', Infinity]];
-  function signedBars(box, items, opts = {}) {
+  function signedBarsRaw(box, items, opts = {}) {
     box.replaceChildren();
     const W = Math.max(280, Math.round(box.clientWidth || 340)), H = opts.height || 190, L = 42, R = 8, T = 16, B = 26;
     const max = Math.max(1, ...items.map((i) => Math.abs(i.value)));
@@ -462,6 +471,7 @@
       });
     };
     o.afterData = (prev, d, snap, first) => {
+      if (first && o.splashDone) o.splashDone();
       const lv = document.querySelector('.live'); if (lv && !calm() && !first) { lv.classList.remove('ping'); void lv.offsetWidth; lv.classList.add('ping'); }
       if (!first && prev) {
         o.flip(snap);
@@ -475,7 +485,10 @@
     o.kpis = () => { if (calm()) return; document.querySelectorAll('.pane[data-pane="overview"] .big').forEach((n) => { const t = n.textContent.trim(); if (!/^\d[\d\s\u00a0\u202f]*$/.test(t) || n.children.length) return; const v = parseInt(t.replace(/\D/g, ''), 10); if (v > 0) tween(n, 0, v, 700, F); }); };
     o.homeBat = () => { const src = document.getElementById('batL'), dst = document.getElementById('batHome'); if (!src || !dst) return; dst.replaceChildren(...[...src.children].slice(0, 3).map((n) => n.cloneNode(true))); document.getElementById('homeBat').hidden = !dst.children.length; };
     document.addEventListener('click', (e) => { if (e.target.id === 'homeAll') setTab('combats', true); });
+    const fadeChips = () => { const c = document.getElementById('chips'); if (c) c.classList.toggle('fade', c.scrollWidth > c.clientWidth + 1); };
+    window.addEventListener('resize', fadeChips);
     o.afterRender = (switching) => {
+      requestAnimationFrame(fadeChips);
       try { o.homeBat(); } catch (_) {} requestAnimationFrame(pill);
       if (switching) { o.enter(); o.ring(); o.kpis(); }
       o.switching = false;
@@ -538,8 +551,8 @@
     o.brand = () => {
       const sp = document.getElementById('splash'); if (!sp) return; let seenB = null; try { seenB = sessionStorage.getItem('zth-brand'); sessionStorage.setItem('zth-brand', '1'); } catch (_) {}
       if (seenB || calm()) { sp.remove(); return; }
-      const done = () => { if (!sp.isConnected) return; sp.classList.add('out'); setTimeout(() => sp.remove(), 320); };
-      sp.addEventListener('click', done); document.addEventListener('keydown', done, { once: true }); setTimeout(done, 650);
+      const done = () => { if (!sp.isConnected) return; sp.classList.add('out'); setTimeout(() => sp.remove(), 200); }; o.splashDone = done;
+      sp.addEventListener('click', done); document.addEventListener('keydown', done, { once: true }); setTimeout(done, 400);
     };
     o.init = () => { applyOff(); o.brand(); requestAnimationFrame(pill); setTimeout(() => { o.info(document.getElementById('wrT'), 'Taux calculé sur les combats archivés des 60 derniers jours. Le nombre de victoires et de défaites est toujours affiché à côté.'); o.info(document.getElementById('mbT'), 'Sous 10 combats avec un brawler sur une map, le résultat est une tendance provisoire : trop peu de parties pour conclure.'); o.info(document.querySelector('#podium') && document.querySelector('#podium').closest('section').querySelector('h2'), 'Gain de trophées sur les 7 derniers jours, d\'après l\'historique enregistré par le site.'); }, 0); };
     return o;
@@ -549,7 +562,7 @@
     if (!data) return;
     const ps = data.players; const p = player(); const pi = ps.indexOf(p);
     // range buttons
-    document.querySelectorAll('[data-rng]').forEach((g) => { g.replaceChildren(...RANGES.map(([k, lab]) => { const b = el('button', null, lab); b.type = 'button'; b.setAttribute('aria-pressed', k === range); b.onclick = () => { range = k; drawGraphs(); }; return b; })); });
+    document.querySelectorAll('[data-rng]').forEach((g) => { if (g.children.length === RANGES.length) { [...g.children].forEach((b, i) => b.setAttribute('aria-pressed', RANGES[i][0] === range)); return; } g.replaceChildren(...RANGES.map(([k, lab]) => { const b = el('button', null, lab); b.type = 'button'; b.setAttribute('aria-pressed', k === range); b.onclick = () => { range = k; drawGraphs(); }; return b; })); });
     const pts = (hist && hist.points) || []; const span = RANGES.find((r) => r[0] === range)[2];
     const tEnd = pts.length ? new Date(pts[pts.length - 1].t).getTime() : Date.now();
     const win = pts.filter((q) => tEnd - new Date(q.t).getTime() <= span);
@@ -1017,16 +1030,24 @@
   const scrolls = {};
   function setTab(t, fromUser) {
     if (!TAB_LIST.includes(t)) t = 'overview';
-    const pdir = Math.sign(TAB_LIST.indexOf(t) - TAB_LIST.indexOf(curTab));
+    const prev = curTab, pdir = Math.sign(TAB_LIST.indexOf(t) - TAB_LIST.indexOf(curTab));
     if (fromUser) scrolls[curTab] = scrollY;
     curTab = t; M.onTab(t, fromUser);
-    document.querySelectorAll('.pane').forEach((pn) => pn.style.setProperty('--pdir', pdir));
-    document.querySelectorAll('.tab').forEach((b) => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-    document.querySelectorAll('.pane').forEach((pn) => pn.classList.toggle('on', pn.dataset.pane === t));
-    try { localStorage.setItem('cf-tab', t); } catch (_) {}
-    try { history.replaceState(null, '', '#' + t); } catch (_) {}
-    if (data) { try { drawGraphs(); } catch (_) {} }        // size charts now that their pane is visible
-    if (fromUser) scrollTo({ top: scrolls[t] || 0, behavior: 'instant' });
+    const apply = () => {
+      document.querySelectorAll('.pane').forEach((pn) => pn.style.setProperty('--pdir', pdir));
+      document.querySelectorAll('.tab').forEach((b) => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+      document.querySelectorAll('.pane').forEach((pn) => pn.classList.toggle('on', pn.dataset.pane === t));
+      try { localStorage.setItem('cf-tab', t); } catch (_) {}
+      try { history.replaceState(null, '', '#' + t); } catch (_) {}
+      if (data) { try { drawGraphs(); } catch (_) {} }        // size charts now that their pane is visible
+      if (fromUser) scrollTo({ top: scrolls[t] || 0, behavior: 'instant' });
+      if (M.pill) M.pill();
+    };
+    // sortie + entrée en fondu (opacité seulement) via View Transitions ; sans support : fondu d'entrée simple
+    if (fromUser && t !== prev && document.startViewTransition && !M.calm()) {
+      const root = document.documentElement; root.classList.add('vt');
+      try { const vt = document.startViewTransition(apply); vt.finished.finally(() => root.classList.remove('vt')); } catch (_) { root.classList.remove('vt'); apply(); }
+    } else apply();
   }
   document.querySelectorAll('.tab').forEach((b) => { b.onclick = () => setTab(b.dataset.tab, true); });
   function setSub(sub) {

@@ -360,7 +360,6 @@
   @keyframes troDown { 0% { transform: none; } 40% { transform: translateY(3px); opacity: .7; } 100% { transform: none; opacity: 1; } }
   /* tabs: short fade + tiny vertical move; sliding active indicator */
   .pane.on { animation: paneIn var(--motion-normal) var(--motion-ease-out); }
-  @keyframes paneIn { from { opacity: 0; transform: translateX(calc(var(--pdir, 0) * 14px)); } to { opacity: 1; transform: none; } }
   .tabs { overflow: visible; }
   .tab.on { background: transparent; }
   /* player switch: avatar, name, then key stats in a short stagger */
@@ -538,3 +537,22 @@
   .bar .more-btn { flex: none; }
   .menu .btn { display: flex; align-items: center; justify-content: flex-start; gap: 8px; width: 100%; text-align: left; }
   .menu .btx { display: inline !important; }
+
+  /* ================= v3.2 : sortie d'onglet, rythme à trois surfaces ================= */
+  .tabs { overflow: visible; }
+  /* page : opacité seulement (jamais de transform sur un panneau plein de SVG) */
+  @keyframes paneIn { from { opacity: 0; } to { opacity: 1; } }
+  html.vt .pane.on { animation: none; view-transition-name: pane; }
+  ::view-transition-old(root) { display: none; } ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+  ::view-transition-group(pane) { animation: none; }
+  ::view-transition-old(pane) { animation: vtOut .18s var(--motion-ease) both; height: auto; } ::view-transition-new(pane) { animation: vtIn .22s var(--motion-ease-out) both; height: auto; }
+  @keyframes vtOut { to { opacity: 0; } } @keyframes vtIn { from { opacity: 0; } to { opacity: 1; } }
+  /* masque des puces seulement quand elles défilent */
+  .chips { -webkit-mask-image: none; mask-image: none; }
+  .chips.fade { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%); }
+  @media (min-width: 700px) { .chips.fade { -webkit-mask-image: none; mask-image: none; } }
+  .splash { transition-duration: .2s; }
+  /* trois surfaces : chiffres clés = cartes ; semaine + graphiques = --panel2 ; listes = à plat */
+  .pane .card:not(.acc):not(.intro-card) { background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; padding: 18px 2px 4px; }
+  .pane #wkCard, .pane .card:has(.chart) { background: var(--panel2); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
+  body.light .pane #wkCard, body.light .pane .card:has(.chart) { box-shadow: none; }
