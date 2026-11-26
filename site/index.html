@@ -152,6 +152,8 @@
   .tro-num { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
   .brand { font-size: 20px; color: var(--fg); margin-right: 6px; }
   .brand b { color: var(--y); }
+  .brand { display: inline-flex; align-items: center; gap: 7px; }
+  .logo { width: 26px; height: 26px; border-radius: 7px; display: block; }
   .ico { width: 22px; height: 22px; object-fit: contain; flex: none; vertical-align: middle; }
   .ico.s { width: 18px; height: 18px; } .ico.l { width: 30px; height: 30px; }
   .hero-id { display: flex; gap: 14px; align-items: center; }
@@ -310,13 +312,37 @@
     .chip.lead { animation: leadpulse 2.4s ease-in-out infinite; }
     @keyframes leadpulse { 0%,100% { box-shadow: 0 0 0 1px var(--y), 0 0 8px rgba(255,201,60,.35); } 50% { box-shadow: 0 0 0 1px var(--y), 0 0 15px rgba(255,201,60,.6); } }
   }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  .splash { display: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    /* animated logo in the top bar: gentle float + one shine pass */
+    .logo { animation: logoFloat 4.5s var(--ease-io) infinite; }
+    @keyframes logoFloat { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-2px) rotate(-4deg); } }
+    .brand:hover .logo { animation: logoPop .5s var(--ease-out); }
+    @keyframes logoPop { 0% { transform: scale(1); } 40% { transform: scale(1.25) rotate(-8deg); } 100% { transform: scale(1); } }
+    /* splash: first visit of the session only, never blocks input */
+    body.splashing .splash { display: flex; position: fixed; inset: 0; z-index: 999; flex-direction: column; align-items: center; justify-content: center; gap: 14px; pointer-events: none;
+      background: radial-gradient(circle at 50% 45%, #2a1370, var(--bg) 70%); animation: splashOut .45s var(--ease-in) 1.05s forwards; }
+    .splash img { width: 132px; height: 132px; border-radius: 30px; box-shadow: 0 0 50px rgba(108,59,255,.7); animation: splashLogo .8s var(--ease-out) backwards, logoFloat 3s var(--ease-io) .8s infinite; }
+    .splash b { font-family: "Lilita One", system-ui, sans-serif; font-weight: 400; font-size: 30px; color: var(--y); animation: fadeUp .5s var(--ease-out) .3s backwards; } .splash b span { color: #fff; }
+    @keyframes splashLogo { from { opacity: 0; transform: scale(.4) rotate(-14deg); } 60% { transform: scale(1.1) rotate(3deg); } to { opacity: 1; transform: none; } }
+    @keyframes splashOut { to { opacity: 0; visibility: hidden; } }
+    /* staggered pop-in for calendar days, guide chips and picks when their tab opens */
+    .pane.on .cal-cell:not(.empty) { animation: popIn .35s var(--ease-out) backwards; }
+    .pane.on .gd-grid > * { animation: popIn .3s var(--ease-out) backwards; }
+    @keyframes popIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+    .pane.on .tl-img { animation: tlReveal .7s var(--ease-out) backwards; }
+    @keyframes tlReveal { from { opacity: 0; transform: scale(.97) translateY(8px); } to { opacity: 1; transform: none; } }
+    .tab.on { animation: tabPop .25s var(--ease-out); }
+    @keyframes tabPop { 0% { transform: scale(.92); } 60% { transform: scale(1.05); } 100% { transform: none; } }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } .splash { display: none !important; } }
 </style>
 </head>
 <body class="loading">
+<div class="splash" id="splash" aria-hidden="true"><img src="icon-512.png" alt="" width="132" height="132"><b>ZTH <span>Stats</span></b></div>
 <div class="wrap">
   <div class="bar">
-    <span class="left"><span class="brand"><b>ZTH</b> Stats</span><span class="live"></span>mis à jour <span id="ago">…</span></span>
+    <span class="left"><span class="brand"><img class="logo" src="icon-192.png" alt="" width="26" height="26"><b>ZTH</b> Stats</span><span class="live"></span>mis à jour <span id="ago">…</span></span>
     <button class="btn" id="share">🔗 Partager ce joueur</button>
     <button class="btn" id="card">📸 Ma carte</button>
     <button class="btn" id="reload"><span class="ri">⟳</span> Actualiser</button>
@@ -1079,7 +1105,12 @@
     if (p.currentStreak >= 3) pill(null, "🔥 " + p.currentStreak + " victoires d'affilée");
     else if (p.currentStreak <= -3) pill(null, "🧊 " + (-p.currentStreak) + " défaites d'affilée");
     const hs = $('hSeen'), sv = seen(p.lastBattle); hs.replaceChildren(el('span', 'sdot ' + sv.cls), el('span', null, sv.label)); hs.title = "D'apres la derniere partie - l'API Brawl Stars ne donne pas le statut en ligne"; hs.hidden = false;
-    $('hTro').replaceChildren('🏆', F(p.trophies));
+    (function () { const t = $('hTro'), to = +p.trophies || 0, calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      cancelAnimationFrame(t._raf);
+      if (calm || !document.body.classList.contains('anim')) { t.replaceChildren('🏆', F(to)); return; }
+      const t0 = performance.now(), D = 900;
+      const step = (now) => { const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3); t.replaceChildren('🏆', F(Math.round(to * e))); if (k < 1) t._raf = requestAnimationFrame(step); };
+      t._raf = requestAnimationFrame(step); })();
     const nearRec = !p.highestTrophies || p.trophies / p.highestTrophies >= 0.99;
     if (nearRec) {
       const step = p.trophies >= 100000 ? 10000 : 5000, nx = Math.floor(p.trophies / step) * step + step;
@@ -1376,6 +1407,10 @@
   $('reload').onclick = async () => { const r = $('reload'); r.classList.add('spinning'); try { await load(); } finally { setTimeout(() => r.classList.remove('spinning'), 520); } };
 
   // ---------- tabs: move each tagged section into its pane, then switch panes ----------
+  (function splash() {
+    try { if (matchMedia('(prefers-reduced-motion: reduce)').matches || sessionStorage.getItem('zth-splash')) return; sessionStorage.setItem('zth-splash', '1'); } catch (e) { return; }
+    document.body.classList.add('splashing'); setTimeout(() => document.body.classList.remove('splashing'), 1600);
+  })();
   (function guides() {
     const G = [["8-Bit","8bit"],["Alli","alli"],["Amber","amber"],["Angelo","angelo"],["Ash","ash"],["Barley","barley"],["Bea","bea"],["Belle","belle"],["Berry","berry"],["Bibi","bibi"],["Bo","bo"],["Bolt","bolt"],["Bonnie","bonnie"],["Brock","brock"],["Bull","bull"],["Buster","buster"],["Buzz","buzz"],["Byron","byron"],["Carl","carl"],["Charlie","charlie"],["Chester","chester"],["Chuck","chuck"],["Clancy","clancy"],["Colette","colette"],["Colt","colt"],["Cordelius","cordelius"],["Cosmo","cosmo"],["Crow","crow"],["Damian","damian"],["Darryl","darryl"],["Doug","doug"],["Draco","draco"],["Dynamike","dynamike"],["Edgar","edgar"],["El Primo","elprimo"],["Emz","emz"],["Eve","eve"],["Fang","fang"],["Finx","finx"],["Frank","frank"],["Gale","gale"],["Gene","gene"],["Gigi","gigi"],["Glowy","glowy"],["Gray","gray"],["Griff","griff"],["Grom","grom"],["Gus","gus"],["Hank","hank"],["Jacky","jacky"],["Jae-Yong","jaeyong"],["Janet","janet"],["Jessie","jessie"],["Juju","juju"],["Kaze","kaze"],["Kenji","kenji"],["Kit","kit"],["Larry & Lawrie","larrylawrie"],["Leon","leon"],["Lily","lily"],["Lola","lola"],["Lou","lou"],["Lumi","lumi"],["Maisie","maisie"],["Mandy","mandy"],["Max","max"],["Meeple","meeple"],["Meg","meg"],["Melodie","melodie"],["Mico","mico"],["Mina","mina"],["Moe","moe"],["Mortis","mortis"],["Mr. P","mrp"],["Najia","najia"],["Nani","nani"],["Nita","nita"],["Nori","nori"],["Ollie","ollie"],["Otis","otis"],["Pam","pam"],["Pearl","pearl"],["Penny","penny"],["Pierce","pierce"],["Piper","piper"],["Poco","poco"],["R-T","rt"],["Rico","rico"],["Rosa","rosa"],["Ruffs","ruffs"],["Sam","sam"],["Sandy","sandy"],["Shade","shade"],["Shelly","shelly"],["Sirius","sirius"],["Spike","spike"],["Sprout","sprout"],["Squeak","squeak"],["Starr Nova","starrnova"],["Stu","stu"],["Surge","surge"],["Tara","tara"],["Tick","tick"],["Trunk","trunk"],["Vince","vince"],["Wendy","wendy"],["Willow","willow"],["Ziggy","ziggy"]], grid = document.getElementById('gdGrid'), inp = document.getElementById('gdFilter');
     if (!grid) return;
