@@ -1,5 +1,5 @@
 // ZTH Stats service worker: offline app shell + fresh stats when online.
-const CACHE = 'zth-v20';
+const CACHE = 'zth-v21';
 const SHELL = ['./', './index.html', './assets/css/styles.css', './assets/js/app.js', './manifest.webmanifest', './fonts/LilitaOne.woff2',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });

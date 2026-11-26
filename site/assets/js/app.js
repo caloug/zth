@@ -432,7 +432,14 @@
     // ---- triggers for list entrances (user actions only, never the silent refresh) ----
     let inT; o.enter = () => { if (calm()) return; document.body.classList.add('mo-in'); clearTimeout(inT); inT = setTimeout(() => document.body.classList.remove('mo-in'), 700); };
     // ---- active nav indicator ----
-    o.onTab = (t, fromUser) => { if (fromUser !== undefined) o.enter(); if (t === 'equipe') setTimeout(() => { o.champion(); o.vs(); }, 60); if (t === 'brawlers') o.enter(); };
+    // ---- sliding nav pill + overflow menu ----
+    const pill = () => { const a = document.querySelector('.tab.on'), i = document.getElementById('tabPill'); if (!a || !i) return; i.style.setProperty('--x', a.offsetLeft + 'px'); i.style.setProperty('--w', a.offsetWidth + 'px'); };
+    o.pill = pill; window.addEventListener('resize', pill);
+    const mb = () => document.getElementById('moreBtn'), mm = () => document.getElementById('moreMenu');
+    const closeMenu = () => { if (mm() && !mm().hidden) { mm().hidden = true; mb().setAttribute('aria-expanded', 'false'); } };
+    document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#moreBtn')) { const open = mm().hidden; mm().hidden = !open; mb().setAttribute('aria-expanded', String(open)); } else if (!(e.target.closest && e.target.closest('#moreMenu')) || (e.target.closest('#moreMenu') && e.target.closest('button') && e.target.id !== 'reload')) closeMenu(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMenu(); } });
+    o.onTab = (t, fromUser) => { requestAnimationFrame(pill); if (fromUser !== undefined) o.enter(); if (t === 'equipe') setTimeout(() => { o.champion(); o.vs(); }, 60); if (t === 'brawlers') o.enter(); };
     // ---- charts: draw once per chart per player, when visible ----
     const io = ('IntersectionObserver' in window) ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); o.drawn.add(e.target.dataset.k); io.unobserve(e.target); } }), { threshold: .25 }) : null;
     o.charts = () => {
@@ -469,7 +476,7 @@
     o.homeBat = () => { const src = document.getElementById('batL'), dst = document.getElementById('batHome'); if (!src || !dst) return; dst.replaceChildren(...[...src.children].slice(0, 3).map((n) => n.cloneNode(true))); document.getElementById('homeBat').hidden = !dst.children.length; };
     document.addEventListener('click', (e) => { if (e.target.id === 'homeAll') setTab('combats', true); });
     o.afterRender = (switching) => {
-      try { o.homeBat(); } catch (_) {}
+      try { o.homeBat(); } catch (_) {} requestAnimationFrame(pill);
       if (switching) { o.enter(); o.ring(); o.kpis(); }
       o.switching = false;
     };
@@ -506,7 +513,7 @@
     o.vs = () => { const h = document.getElementById('h2h'); if (!h || !h.getBoundingClientRect().height || calm()) return; const sig = [...document.querySelectorAll('#hA, #hB')].map((e) => e.value).join('|') || 'x'; if (h.dataset.vs === sig) return; h.dataset.vs = sig; h.classList.remove('vs-in'); void h.offsetWidth; h.classList.add('vs-in'); setTimeout(() => h.classList.remove('vs-in'), 900); };
     // ---- modal: focus trap, Escape, focus restore ----
     o.modal = ({ title, body, actions, onClose }) => {
-      const prevFocus = o.ret || document.activeElement; o.ret = null; const back = document.createElement('div'); back.className = 'modal-back'; const m = document.createElement('div'); m.className = 'modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', title);
+      let prevFocus = o.ret || document.activeElement; o.ret = null; if (prevFocus && prevFocus.closest && prevFocus.closest('#moreMenu')) prevFocus = document.getElementById('moreBtn'); const back = document.createElement('div'); back.className = 'modal-back'; const m = document.createElement('div'); m.className = 'modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', title);
       const h = document.createElement('h2'); h.textContent = title; const x = document.createElement('button'); x.type = 'button'; x.className = 'btn modal-x'; x.setAttribute('aria-label', 'Fermer'); x.textContent = '✕';
       const bar = document.createElement('div'); bar.className = 'modal-act'; (actions || []).forEach((a) => bar.append(a)); m.append(x, h, body, bar); back.append(m); document.body.append(back);
       const close = () => { document.removeEventListener('keydown', key, true); back.classList.add('out'); setTimeout(() => { back.remove(); if (onClose) onClose(); if (prevFocus && prevFocus.focus) prevFocus.focus(); }, calm() ? 0 : 180); };
@@ -532,9 +539,9 @@
       const sp = document.getElementById('splash'); if (!sp) return; let seenB = null; try { seenB = sessionStorage.getItem('zth-brand'); sessionStorage.setItem('zth-brand', '1'); } catch (_) {}
       if (seenB || calm()) { sp.remove(); return; }
       const done = () => { if (!sp.isConnected) return; sp.classList.add('out'); setTimeout(() => sp.remove(), 320); };
-      sp.addEventListener('click', done); document.addEventListener('keydown', done, { once: true }); setTimeout(done, 1500);
+      sp.addEventListener('click', done); document.addEventListener('keydown', done, { once: true }); setTimeout(done, 650);
     };
-    o.init = () => { applyOff(); o.brand(); setTimeout(() => { o.info(document.getElementById('wrT'), 'Taux calculé sur les combats archivés des 60 derniers jours. Le nombre de victoires et de défaites est toujours affiché à côté.'); o.info(document.getElementById('mbT'), 'Sous 10 combats avec un brawler sur une map, le résultat est une tendance provisoire : trop peu de parties pour conclure.'); o.info(document.querySelector('#podium') && document.querySelector('#podium').closest('section').querySelector('h2'), 'Gain de trophées sur les 7 derniers jours, d\'après l\'historique enregistré par le site.'); }, 0); };
+    o.init = () => { applyOff(); o.brand(); requestAnimationFrame(pill); setTimeout(() => { o.info(document.getElementById('wrT'), 'Taux calculé sur les combats archivés des 60 derniers jours. Le nombre de victoires et de défaites est toujours affiché à côté.'); o.info(document.getElementById('mbT'), 'Sous 10 combats avec un brawler sur une map, le résultat est une tendance provisoire : trop peu de parties pour conclure.'); o.info(document.querySelector('#podium') && document.querySelector('#podium').closest('section').querySelector('h2'), 'Gain de trophées sur les 7 derniers jours, d\'après l\'historique enregistré par le site.'); }, 0); };
     return o;
   })();
   function drawGraphs() { drawGraphsRaw(); try { M.charts(); } catch (_) {} }
@@ -1007,9 +1014,11 @@
 
   M.init();
   let curTab = 'overview';
+  const scrolls = {};
   function setTab(t, fromUser) {
     if (!TAB_LIST.includes(t)) t = 'overview';
     const pdir = Math.sign(TAB_LIST.indexOf(t) - TAB_LIST.indexOf(curTab));
+    if (fromUser) scrolls[curTab] = scrollY;
     curTab = t; M.onTab(t, fromUser);
     document.querySelectorAll('.pane').forEach((pn) => pn.style.setProperty('--pdir', pdir));
     document.querySelectorAll('.tab').forEach((b) => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
@@ -1017,7 +1026,7 @@
     try { localStorage.setItem('cf-tab', t); } catch (_) {}
     try { history.replaceState(null, '', '#' + t); } catch (_) {}
     if (data) { try { drawGraphs(); } catch (_) {} }        // size charts now that their pane is visible
-    if (fromUser) { const y = $('tabs').getBoundingClientRect().top + scrollY - 4; if (scrollY > y) scrollTo({ top: y, behavior: 'smooth' }); }
+    if (fromUser) scrollTo({ top: scrolls[t] || 0, behavior: 'instant' });
   }
   document.querySelectorAll('.tab').forEach((b) => { b.onclick = () => setTab(b.dataset.tab, true); });
   function setSub(sub) {

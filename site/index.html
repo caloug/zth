@@ -27,10 +27,13 @@
 <div class="wrap">
   <div class="bar">
     <span class="left"><span class="brand"><img class="logo" src="icon-192.png" alt="" width="26" height="26"><b>ZTH</b> Stats</span><span class="live"></span>mis à jour <span id="ago">…</span></span>
-    <button class="btn" id="share">Partager</button>
-    <button class="btn" id="card">Ma carte</button>
-    <button class="btn" id="reload" aria-label="Actualiser"><span class="ri">⟳</span><span class="btx"> Actualiser</span></button>
-    <button class="btn" id="theme">Clair</button>
+    <button class="btn more-btn" id="moreBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" aria-label="Plus d'actions">⋯</button>
+    <div class="menu" id="moreMenu" role="menu" hidden>
+      <button class="btn" id="share">Partager</button>
+      <button class="btn" id="card">Ma carte</button>
+      <button class="btn" id="reload" aria-label="Actualiser"><span class="ri">⟳</span><span class="btx"> Actualiser</span></button>
+      <button class="btn" id="theme">Clair</button>
+    </div>
   </div>
   <p class="err" id="loadErr" hidden>Impossible de charger les stats pour l'instant. Les dernières données connues restent affichées. <button class="btn" id="retry" type="button">Réessayer</button> Nouvel essai automatique dans 1 minute.</p>
   <p class="warnbox" id="staleBar" hidden></p>
@@ -58,6 +61,7 @@
   <div class="chips" id="chips"></div>
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
+    <span class="tab-pill" id="tabPill" aria-hidden="true"></span>
     <button class="tab on" type="button" role="tab" data-tab="overview" aria-label="Accueil"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg></span><span class="tl">Accueil</span></button>
     <button class="tab" type="button" role="tab" data-tab="combats" aria-label="Combats"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19 19 5"/><path d="M14 5h5v5"/><path d="M5 5l14 14" opacity=".0"/><path d="M5 5l5 5"/><path d="M19 19l-5-5"/></svg></span><span class="tl">Combats</span></button>
     <button class="tab" type="button" role="tab" data-tab="brawlers" aria-label="Brawlers"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span><span class="tl">Brawlers</span></button>
