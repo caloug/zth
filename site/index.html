@@ -279,12 +279,8 @@
     .btn:active, .chip:active, .flt button:active, .rng button:active, tbody tr:active { transform: scale(.96); }
     /* bars animate only on intentional renders (first load / player switch), never the silent 5-min refresh */
     body.anim .fill, body.anim .prog-fill, body.anim .hb { transition: width .55s var(--ease-out); }
-    /* one-time staggered section entrance on first load */
-    body.intro .pane.on > *:nth-child(-n+8) { animation: fadeUp .45s var(--ease-out) backwards; }
-    body.intro .pane.on > *:nth-child(1){animation-delay:0ms} body.intro .pane.on > *:nth-child(2){animation-delay:45ms} body.intro .pane.on > *:nth-child(3){animation-delay:90ms} body.intro .pane.on > *:nth-child(4){animation-delay:135ms} body.intro .pane.on > *:nth-child(5){animation-delay:180ms} body.intro .pane.on > *:nth-child(6){animation-delay:225ms} body.intro .pane.on > *:nth-child(7){animation-delay:270ms} body.intro .pane.on > *:nth-child(8){animation-delay:315ms}
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
     /* gentle pulse only on healthy live dot + "online" status dots */
-    .live:not(.warn):not(.dead), .sdot.on { animation: pulse 2.2s var(--ease-io) infinite; }
     @keyframes pulse { 0%,100% { box-shadow: 0 0 6px var(--ok); } 50% { box-shadow: 0 0 12px var(--ok); transform: scale(1.1); } }
     .btn.spinning .ri { animation: spin .5s var(--ease-io); }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -321,63 +317,65 @@
   .pane.on { display: flex; animation: paneIn .34s var(--ease-out); }
   @keyframes paneIn { from { opacity: 0; transform: translateX(calc(var(--pdir, 0) * 36px)); } to { opacity: 1; transform: none; } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  /* ---- special effects (sober, auto-off with reduce-motion) ---- */
+  /* ---- motion: only what helps orientation (short, no ambient loops) ---- */
   .hero > * { position: relative; z-index: 1; }
-  .rk { position: relative; overflow: hidden; }
-  .chip.lead { border-color: var(--y); box-shadow: 0 0 0 1px var(--y), 0 0 10px rgba(255,201,60,.45); }
   @media (prefers-reduced-motion: no-preference) {
-    .hero::before { content: ""; position: absolute; inset: -30%; z-index: 0; pointer-events: none; filter: blur(12px);
-      background: radial-gradient(circle at 25% 30%, rgba(255,61,127,.55), transparent 42%), radial-gradient(circle at 75% 55%, rgba(108,59,255,.55), transparent 46%), radial-gradient(circle at 55% 85%, rgba(255,201,60,.4), transparent 42%);
-      }
-    @keyframes aurora { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(5%,-4%) scale(1.12); } 66% { transform: translate(-4%,4%) scale(1.06); } }
-    .tro-num { background: linear-gradient(100deg, var(--y) 35%, #fff 50%, var(--y) 65%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-    @keyframes shimmer { to { background-position: -220% 0; } }
-    .rk::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.28) 50%, transparent 58%); transform: translateX(-130%); }
-    @keyframes sweep { 0% { transform: translateX(-130%); } 18% { transform: translateX(130%); } 100% { transform: translateX(130%); } }
-    @keyframes leadpulse { 0%,100% { box-shadow: 0 0 0 1px var(--y), 0 0 8px rgba(255,201,60,.35); } 50% { box-shadow: 0 0 0 1px var(--y), 0 0 15px rgba(255,201,60,.6); } }
+    body.swap .hero { animation: heroSwap .28s var(--ease-out); }
+    @keyframes heroSwap { from { opacity: .4; transform: translateX(calc(var(--dir, 1) * 14px)); } to { opacity: 1; transform: none; } }
   }
-  .splash { display: none; }
-  @media (prefers-reduced-motion: no-preference) {
-    /* animated logo in the top bar: gentle float + one shine pass */
-    @keyframes logoFloat { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-2px) rotate(-4deg); } }
-    .brand:hover .logo { animation: logoPop .5s var(--ease-out); }
-    @keyframes logoPop { 0% { transform: scale(1); } 40% { transform: scale(1.25) rotate(-8deg); } 100% { transform: scale(1); } }
-    /* splash: first visit of the session only, never blocks input */
-    body.splashing .splash { display: flex; position: fixed; inset: 0; z-index: 999; flex-direction: column; align-items: center; justify-content: center; gap: 14px; pointer-events: none;
-      background: radial-gradient(circle at 50% 45%, #2a1370, var(--bg) 70%); animation: splashOut .45s var(--ease-in) 1.05s forwards; }
-    .splash img { width: 132px; height: 132px; border-radius: 30px; box-shadow: 0 0 50px rgba(108,59,255,.7); animation: splashLogo .8s var(--ease-out) backwards, logoFloat 3s var(--ease-io) .8s infinite; }
-    .splash b { font-family: "Lilita One", system-ui, sans-serif; font-weight: 400; font-size: 30px; color: var(--y); animation: fadeUp .5s var(--ease-out) .3s backwards; } .splash b span { color: #fff; }
-    @keyframes splashLogo { from { opacity: 0; transform: scale(.4) rotate(-14deg); } 60% { transform: scale(1.1) rotate(3deg); } to { opacity: 1; transform: none; } }
-    @keyframes splashOut { to { opacity: 0; visibility: hidden; } }
-    /* staggered pop-in for calendar days, guide chips and picks when their tab opens */
-    .pane.on .cal-cell:not(.empty) { animation: popIn .35s var(--ease-out) backwards; }
-    .pane.on .gd-grid > * { animation: popIn .3s var(--ease-out) backwards; }
-    @keyframes popIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
-    .pane.on .tl-img { animation: tlReveal .7s var(--ease-out) backwards; }
-    @keyframes tlReveal { from { opacity: 0; transform: scale(.97) translateY(8px); } to { opacity: 1; transform: none; } }
-    /* switching friend: the hero slides in from the side of the new player, chips pop, sections stagger in */
-    body.swap .hero { animation: heroSwap .5s var(--ease-out); }
-    @keyframes heroSwap { from { opacity: .25; transform: translateX(calc(var(--dir, 1) * 34px)) scale(.97); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
-    body.swap .chip.on, body.swap .chip.sel, body.swap .chip[aria-pressed="true"] { animation: tabPop .35s var(--ease-out); }
-    body.swap .avatar { animation: avaSpin .55s var(--ease-out); }
-    @keyframes avaSpin { from { transform: rotate(calc(var(--dir, 1) * -18deg)) scale(.7); opacity: 0; } to { transform: none; opacity: 1; } }
-    .tab.on { animation: tabPop .25s var(--ease-out); }
-    @keyframes tabPop { 0% { transform: scale(.92); } 60% { transform: scale(1.05); } 100% { transform: none; } }
-  }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } .splash { display: none !important; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; }  }
+
+  /* ================= ZTH design system v2 : competitive gaming intelligence ================= */
+  :root { --r: 12px; --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --font-display: "Lilita One", system-ui, sans-serif; }
+  /* typography: display font only for brand and the hero moments; everything else readable sans */
+  h2, .big, .wr-num, .rk-n, .award .n, .bc-t, .ev-m, .tab, .seg button, .cal-title, .cal-cell .cal-wr { font-family: var(--font-ui); font-weight: 700; letter-spacing: 0; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .brand, .name, .tro-num { font-family: var(--font-display); font-weight: 400; }
+  .tab { font-weight: 600; }
+  .big, .tro-num, td.num, .mp-v, .bc-s, .wr-num, .rk-n { font-variant-numeric: tabular-nums; }
+  .big { font-size: 26px; }
+  /* flatter, calmer hero: no glow, no pink wash */
+  .hero { border-radius: var(--r); background: linear-gradient(135deg, #1B0B40 0%, #3B1D9C 100%); padding: 20px 18px; }
+  .hero::after { display: none; }
+  .tro-num { color: var(--y); background: none; -webkit-text-fill-color: currentColor; }
+  /* open layout: sections are separated by thin lines instead of a box each */
+  .pane > .card:not(.acc):not(.intro-card), .pane > .two > .card { background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 18px 0 4px; overflow: visible; }
+  .pane > .card:not(.acc):first-child { border-top: 0; padding-top: 4px; }
+  .grid > .card.acc { border-radius: var(--r); }
+  .pane { gap: 4px; }
+  .pane > .grid { margin-bottom: 8px; }
+  .intro-card { border-radius: var(--r); }
+  /* smaller radii, fewer pills */
+  .btn, .chip, .tab, .flt, .flt button, .rng, .rng button, .seg, .seg button { border-radius: 10px; }
+  .chip.lead { box-shadow: none; border-color: var(--line); }
+  .chip[aria-pressed="true"] { box-shadow: none; }
+  /* neutral activity indicator: last battle, never a fake "online" light */
+  .sdot, .sdot.on, .sdot.idle, .sdot.off { background: var(--muted); box-shadow: none; }
+  .sdot.on { opacity: 1; } .sdot.idle { opacity: .6; } .sdot.off { opacity: .35; }
+  /* header actions stay on one row; text collapses on small phones */
+  .bar { gap: 6px; }
+  .bar .btn { padding-inline: 11px; }
+  @media (max-width: 520px) { .bar .btn .btx { display: none; } .bar .left { flex: 1 0 100%; } }
+  /* keyboard focus */
+  :focus-visible { outline: 2px solid var(--y); outline-offset: 2px; border-radius: 6px; }
+  .tab .ti svg { display: block; }
+  .tab .ti { filter: none; opacity: .65; transition: opacity var(--t) var(--ease-out); }
+  .tab.on .ti { opacity: 1; transform: none; color: var(--y); }
+  .tab.on { background: color-mix(in srgb, var(--purple) 22%, transparent); }
+  body { background: var(--bg); }
 </style>
 </head>
 <body class="loading">
-<div class="splash" id="splash" aria-hidden="true"><img src="icon-512.png" alt="" width="132" height="132"><b>ZTH <span>Stats</span></b></div>
 <div class="wrap">
   <div class="bar">
     <span class="left"><span class="brand"><img class="logo" src="icon-192.png" alt="" width="26" height="26"><b>ZTH</b> Stats</span><span class="live"></span>mis à jour <span id="ago">…</span></span>
-    <button class="btn" id="share">🔗 Partager ce joueur</button>
-    <button class="btn" id="card">📸 Ma carte</button>
-    <button class="btn" id="reload"><span class="ri">⟳</span> Actualiser</button>
-    <button class="btn" id="theme">☀️ Clair</button>
+    <button class="btn" id="share">Partager</button>
+    <button class="btn" id="card">Ma carte</button>
+    <button class="btn" id="reload" aria-label="Actualiser"><span class="ri">⟳</span><span class="btx"> Actualiser</span></button>
+    <button class="btn" id="theme">Clair</button>
   </div>
-  <p class="err" id="loadErr" hidden>Impossible de charger les stats pour l'instant. Nouvel essai dans 1 minute.</p>
+  <p class="err" id="loadErr" hidden>Impossible de charger les stats pour l'instant. Les dernières données connues restent affichées. <button class="btn" id="retry" type="button">Réessayer</button> Nouvel essai automatique dans 1 minute.</p>
+  <p class="warnbox" id="staleBar" hidden></p>
 
   <section class="hero">
     <div class="hero-top">
@@ -402,15 +400,13 @@
   <div class="chips" id="chips"></div>
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
-    <button class="tab on" type="button" role="tab" data-tab="overview" aria-label="Accueil"><span class="ti">🏠</span><span class="tl">Accueil</span></button>
-    <button class="tab" type="button" role="tab" data-tab="classe" aria-label="Progression"><span class="ti">💎</span><span class="tl">Progrès</span></button>
-    <button class="tab" type="button" role="tab" data-tab="combats" aria-label="Combats"><span class="ti">🎮</span><span class="tl">Combats</span></button>
-    <button class="tab" type="button" role="tab" data-tab="brawlers" aria-label="Brawlers"><span class="ti">👾</span><span class="tl">Brawlers</span></button>
-    <button class="tab" type="button" role="tab" data-tab="equipe" aria-label="Équipe"><span class="ti">👥</span><span class="tl">Équipe</span></button>
-    <button class="tab" type="button" role="tab" data-tab="tierlist" aria-label="Guides"><span class="ti">📚</span><span class="tl">Guides</span></button>
+    <button class="tab on" type="button" role="tab" data-tab="overview" aria-label="Accueil"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg></span><span class="tl">Accueil</span></button>
+    <button class="tab" type="button" role="tab" data-tab="combats" aria-label="Combats"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19 19 5"/><path d="M14 5h5v5"/><path d="M5 5l14 14" opacity=".0"/><path d="M5 5l5 5"/><path d="M19 19l-5-5"/></svg></span><span class="tl">Combats</span></button>
+    <button class="tab" type="button" role="tab" data-tab="brawlers" aria-label="Brawlers"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span><span class="tl">Brawlers</span></button>
+    <button class="tab" type="button" role="tab" data-tab="equipe" aria-label="Équipe"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19c.6-3.4 3-5 6-5s5.4 1.6 6 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M16.5 14.2c2.4.2 4 1.6 4.5 4.3"/></svg></span><span class="tl">Équipe</span></button>
+    <button class="tab" type="button" role="tab" data-tab="tierlist" aria-label="Guides"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg></span><span class="tl">Guides</span></button>
   </nav>
   <div class="pane on" data-pane="overview"></div>
-  <div class="pane" data-pane="classe"></div>
   <div class="pane" data-pane="combats"></div>
   <div class="pane" data-pane="brawlers"></div>
   <div class="pane" data-pane="equipe"></div>
@@ -420,17 +416,17 @@
   <section class="grid" data-tab="overview" data-o="1">
     <div class="card acc" style="--c: var(--purple)"><p class="lbl">Victoires récentes</p><div class="wr" id="kWr">—</div></div>
     <div class="card acc" style="--c: #2BB673"><p class="lbl">Victoires 3c3</p><div class="big" id="k3">—</div><p class="note" id="kSd">—</p></div>
-    <div class="card acc" style="--c: var(--pink)"><p class="lbl">Brawler n°1 en trophées</p><div class="big" id="kTop">—</div><p class="note" id="kTopT">—</p><img class="kimg" id="kTopI" alt="" hidden></div>
+    <div class="card acc" style="--c: var(--pink)"><p class="lbl">Brawler avec le plus de trophées</p><div class="big" id="kTop">—</div><p class="note" id="kTopT">—</p><img class="kimg" id="kTopI" alt="" hidden></div>
     <div class="card acc" style="--c: #FF8A2B"><p class="lbl">Meilleure série</p><div class="big" id="kStr">—</div><p class="note" id="kStrT">—</p><img class="kimg" id="kStrI" alt="" hidden></div>
     <div class="card acc" style="--c: var(--y)"><p class="lbl">Collection</p><div class="big" id="kOwn">—</div><p class="note" id="kMax">—</p></div>
   </section>
 
-  <section class="card" id="rankedCard" data-tab="classe" data-o="1" hidden>
+  <section class="card" id="rankedCard" data-tab="overview" data-o="1.5" hidden>
     <h2>Classé</h2>
     <div id="ranked"></div>
   </section>
 
-  <section class="card" id="raceCard" data-tab="classe" data-o="2" hidden>
+  <section class="card" id="raceCard" data-tab="equipe" data-o="1.1" hidden>
     <h2>Classé : qui est devant ?</h2>
     <div class="bars" id="race"></div>
     <p class="note">Points de classé actuels. Le trait jaune montre le record absolu de chaque joueur.</p>
@@ -443,7 +439,7 @@
     <p class="note" id="wkN"></p>
   </section>
 
-  <div class="seg" id="cSeg" data-tab="combats" data-o="0" role="group" aria-label="Type de combats"><button type="button" class="on" data-sub="all">Tout</button><button type="button" data-sub="trophy">🏆 Trophées</button><button type="button" data-sub="ranked">⚔️ Ranked</button></div>
+  <div class="seg" id="cSeg" data-tab="combats" data-o="0" role="group" aria-label="Type de combats"><button type="button" class="on" data-sub="all">Tout</button><button type="button" data-sub="trophy">Trophées</button><button type="button" data-sub="ranked">Ranked</button></div>
   <section class="card" data-tab="combats" data-o="1">
     <div class="ghead"><h2 id="batT">🕹️ Derniers combats</h2><div class="flt" id="batF"></div></div>
     <div class="bl" id="batL"></div>
@@ -477,7 +473,7 @@
       <div class="ghead"><h2>Trophées dans le temps</h2><div class="rng" data-rng></div></div>
       <div class="chart" id="gTro"></div><div class="legend" id="gTroL"></div>
     </div>
-    <div class="card" id="gEloCard" data-tab="classe" data-o="3">
+    <div class="card" id="gEloCard" data-tab="equipe" data-o="1.2">
       <div class="ghead"><h2>Points de classé dans le temps</h2><div class="rng" data-rng></div></div>
       <div class="chart" id="gElo"></div><div class="legend" id="gEloL"></div>
     </div>
@@ -516,7 +512,7 @@
 
   <section class="card" data-tab="tierlist" data-o="1"><h2>📊 Tier List des Brawlers</h2>
     <a class="tl-link" href="tierlist.webp" target="_blank" rel="noopener"><img class="tl-img" src="tierlist.webp" alt="Tier list des Brawlers (Compétitif), mise à jour le 24 novembre 2026" width="2247" height="2576" loading="lazy"></a>
-    <p class="note">Tier list compétitive du 24 nov. 2026 · source : Prodigy (code créateur « Prodigy »). Touche l'image pour l'ouvrir en grand et zoomer.</p></section>
+    <p class="note">Contenu externe, non produit par ZTH · source : Prodigy · tier list datée du 24 nov. 2026, ajoutée le même jour · peut être dépassée après une mise à jour du jeu. Touche l'image pour l'ouvrir en grand.</p></section>
   <section class="card" data-tab="tierlist" data-o="1.2"><h2>🏆 Objectif Master</h2>
     <p class="note" style="margin:0 0 10px">Résumé d'un guide de Prodigy sur la montée en Ranked. L'auteur précise qu'il n'est pas pro et ne détient pas la vérité absolue : prends ça comme des conseils, pas des règles.</p>
     <div class="pk"><h3>🧍 Solo Ranked</h3><p>Le matchmaking cherche à équilibrer les gains et pertes d'ELO, mais les résultats varient beaucoup. Tu peux aussi tomber contre des équipes avec des duos.</p></div>
@@ -563,7 +559,7 @@
     <div class="chart" id="gWR"></div><div class="legend" id="gWRL"></div>
     <p class="note">⚔️ Classé = parties Classé (pick & ban). 🏆 Trophées = parties normales (ladder). Calculé à partir des combats archivés au cours des 60 derniers jours (les graphes jour / semaine / mois gardent un historique plus long).</p>
   </section>
-  <section class="card" data-tab="combats" data-o="7"><h2 id="mbT">🎯 Meilleur brawler par map</h2><div id="mapBr"></div><p class="note">Le brawler avec lequel ce joueur gagne le plus sur chaque map (min. 10 combats avec ce brawler sur la map ; moins de 20 = résultat provisoire).</p></section>
+  <section class="card" data-tab="combats" data-o="7"><h2 id="mbT">🎯 Meilleur brawler par map</h2><div id="mapBr"></div><p class="note">Le brawler avec lequel ce joueur gagne le plus sur chaque map (min. 3 combats). Sous 10 combats, c'est une tendance provisoire : un échantillon limité ne prouve rien. Le nombre de combats est toujours affiché.</p></section>
   <section class="card" data-tab="combats" data-sub="trophy" data-o="101"><h2>📅 Calendrier — Trophées</h2><div id="calLad"></div><p class="note">Chaque jour coloré selon ton taux de victoire en parties normales (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
   <section class="card" data-tab="combats" data-sub="trophy" data-o="102"><div class="ghead"><h2>Taux de victoire — Trophées</h2><div class="flt" id="wrViewLad"></div></div><div class="chart" id="gWRlad"></div></section>
   <section class="card" data-tab="combats" data-sub="trophy" data-o="103"><h2>🏆 Derniers combats Trophées</h2><div class="bl" id="batLad"></div></section>
@@ -576,7 +572,7 @@
   <section class="card" data-tab="equipe" data-o="7">
     <h2>Comparer les joueurs</h2>
     <div class="tablewrap"><table>
-      <thead><tr><th>Joueur</th><th>Tag</th><th class="num">Trophées</th><th class="num">Record</th><th class="num">Victoires 3c3</th><th class="num">% Classé</th><th class="num">% Troph.</th><th>Brawler n°1 (🏆)</th><th>Dernière partie</th></tr></thead>
+      <thead><tr><th>Joueur</th><th>Tag</th><th class="num">Trophées</th><th class="num">Record</th><th class="num">Victoires 3c3</th><th class="num">% Classé</th><th class="num">% Troph.</th><th>Plus de trophées</th><th>Dernière partie</th></tr></thead>
       <tbody id="cmp"></tbody>
     </table></div>
     <p class="note">Touche une ligne pour voir ce joueur. « Victoires récentes » : les 25 derniers combats ; au Survivant, finir dans le top 4 (solo) ou top 2 (duo/trio) compte comme victoire.</p>
@@ -655,7 +651,7 @@
   const until = (s) => { const ms = battleDate(s) - Date.now(); if (ms <= 0) return 'terminé'; const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `encore ${h} h ${String(m).padStart(2, '0')}` : `encore ${m} min`; };
   const ago = (s) => { const m = Math.round((Date.now() - battleDate(s)) / 6e4); return m < 60 ? `il y a ${Math.max(1, m)} min` : m < 1440 ? `il y a ${Math.round(m / 60)} h` : `il y a ${Math.round(m / 1440)} j`; };
   // Brawl Stars' API has no real "online" flag, so the most recent battle is used as "last seen".
-  const seen = (s) => { if (!s) return { cls: 'off', label: 'Pas de partie récente' }; const m = Math.floor((Date.now() - battleDate(s)) / 6e4); const cls = m < 30 ? 'on' : m < 1440 ? 'idle' : 'off'; return { cls, label: 'Vu ' + (m < 3 ? 'à l\'instant' : ago(s)) }; };
+  const seen = (s) => { if (!s) return { cls: 'off', label: 'Pas de partie récente' }; const m = Math.floor((Date.now() - battleDate(s)) / 6e4); const cls = m < 30 ? 'on' : m < 1440 ? 'idle' : 'off'; return { cls, label: 'Dernier combat ' + (m < 3 ? 'à l\'instant' : ago(s)) }; };
   const TYPES = { soloRanked: ['Classé', 'rk2'], teamRanked: ['Classé', 'rk2'], ranked: ['Trophées', ''], friendly: ['Amical', ''], challenge: ['Défi', ''], tournament: ['Tournoi', ''], championshipChallenge: ['Championnat', 'rk2'] };
   let batFilter = 'all', batAll = false, bgSort = 'tr', bgAll = false, mpSort = 'n', mpScope = 'me', mpAll = false, wrView = 'week';
   const DDay = new Intl.DateTimeFormat('fr-CH', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -819,7 +815,7 @@
     const listFor = (type) => [...((p.recent && p.recent.list) || [])].reverse().filter((b) => type === 'ranked' ? (b.type === 'soloRanked' || b.type === 'teamRanked') : b.type === 'ranked');
     const fillBat = (boxId, type) => { const bl = $(boxId); if (!bl) return; bl.replaceChildren(); const l = listFor(type); if (!l.length) bl.append(el('div', 'empty', 'Aucun combat ' + (type === 'ranked' ? 'classé' : 'trophées') + ' récent enregistré.')); l.slice(0, 25).forEach((b) => bl.append(battleRowEl(b))); };
     fillBat('batLad', 'ladder'); fillBat('batRk', 'ranked');
-    const fillMaps = (boxId, arr) => { const ml = $(boxId); if (!ml) return; ml.replaceChildren(); const maps = (arr || []).filter((m) => m.wr != null).slice(0, 15); if (!maps.length) ml.append(el('div', 'empty', 'Pas encore assez de combats par map (10 minimum avec un même brawler).')); maps.forEach((m) => ml.append(mapRowEl(m))); };
+    const fillMaps = (boxId, arr) => { const ml = $(boxId); if (!ml) return; ml.replaceChildren(); const maps = (arr || []).filter((m) => m.wr != null).slice(0, 15); if (!maps.length) ml.append(el('div', 'empty', 'Pas encore assez de combats par map (3 minimum avec un même brawler).')); maps.forEach((m) => ml.append(mapRowEl(m))); };
     fillMaps('mpLad', p.mapsLadder); fillMaps('mpRk', p.mapsRanked);
   }
   function renderExtras(p, ps) {
@@ -887,7 +883,7 @@
       const ic = el('div', 'mp-i'); if (m.mapId) ic.append(img(IMG.map(m.mapId), 'mm', '')); if (m.modeId != null) ic.append(img(IMG.mode(m.modeId), 'mo', ''));
       const n = el('div', 'mp-n'); n.append(el('b', null, m.map || '—'), el('small', null, mode(m.mode || 'unknown')));
       const br = el('div', 'mb-br'); if (m.brawlerId) br.append(img(IMG.brawler(m.brawlerId), null, m.brawler)); br.append(el('span', null, m.brawler));
-      const v = el('div', 'mp-v'); v.textContent = m.wr + ' %'; v.style.color = m.wr >= 55 ? 'var(--ok)' : m.wr < 45 ? 'var(--bad)' : 'var(--y)'; v.append(el('small', null, m.games + ' combats' + (m.games < 20 ? ' · provisoire' : '')));
+      const v = el('div', 'mp-v'); v.textContent = m.wr + ' %'; v.style.color = m.wr >= 55 ? 'var(--ok)' : m.wr < 45 ? 'var(--bad)' : 'var(--y)'; v.append(el('small', null, m.games + ' combats' + (m.games < 10 ? ' · tendance provisoire' : '')));
       r.append(ic, n, br, v); mb.append(r); });
     // weekly podium
     const pod = $('podium'); pod.replaceChildren();
@@ -1100,7 +1096,7 @@
   let A = null, B = null, animT;
 
   // ---------- theme ----------
-  const setTheme = (light) => { document.body.classList.toggle('light', light); $('theme').textContent = light ? '🌙 Sombre' : '☀️ Clair'; };
+  const setTheme = (light) => { document.body.classList.toggle('light', light); $('theme').textContent = light ? 'Sombre' : 'Clair'; };
   let light = false; try { light = localStorage.getItem('cf-theme') === 'light'; } catch (_) {}
   setTheme(light);
   $('theme').onclick = () => { light = !light; setTheme(light); if (data) drawGraphs(); try { localStorage.setItem('cf-theme', light ? 'light' : 'dark'); } catch (_) {} };
@@ -1136,12 +1132,7 @@
     if (p.currentStreak >= 3) pill(null, "🔥 " + p.currentStreak + " victoires d'affilée");
     else if (p.currentStreak <= -3) pill(null, "🧊 " + (-p.currentStreak) + " défaites d'affilée");
     const hs = $('hSeen'), sv = seen(p.lastBattle); hs.replaceChildren(el('span', 'sdot ' + sv.cls), el('span', null, sv.label)); hs.title = "D'apres la derniere partie - l'API Brawl Stars ne donne pas le statut en ligne"; hs.hidden = false;
-    (function () { const t = $('hTro'), to = +p.trophies || 0, calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      cancelAnimationFrame(t._raf);
-      if (calm || !document.body.classList.contains('anim')) { t.replaceChildren('🏆', F(to)); return; }
-      const t0 = performance.now(), D = 900;
-      const step = (now) => { const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3); t.replaceChildren('🏆', F(Math.round(to * e))); if (k < 1) t._raf = requestAnimationFrame(step); };
-      t._raf = requestAnimationFrame(step); })();
+    $('hTro').replaceChildren('🏆', F(p.trophies));
     const nearRec = !p.highestTrophies || p.trophies / p.highestTrophies >= 0.99;
     if (nearRec) {
       const step = p.trophies >= 100000 ? 10000 : 5000, nx = Math.floor(p.trophies / step) * step + step;
@@ -1316,7 +1307,7 @@
     const head = el('div', 'h2h-row'); const ha = el('div', 'win', a.name); ha.style.cssText = 'text-align:right;color:#FFC93C';
     const hb = el('div', 'win', b.name); hb.style.color = '#FF3D7F'; head.append(ha, el('div', 'h2h-l', 'contre'), hb); h.append(head);
     [['Trophées', (x) => x.trophies], ['Record de trophées', (x) => x.highestTrophies], ['Points de classé', (x) => elo(x)], ['Record classé', (x) => x.ranked?.highestAllTimeRankedElo], ['Victoires 3c3', (x) => x.wins3v3], ['Victoires solo', (x) => x.soloWins],
-     ['Victoires duo', (x) => x.duoWins], ['% victoires récentes', (x) => x.recent.winRate, ' %'], ['Brawlers niveau 11', (x) => x.maxPower], ['Brawler n°1 en trophées 🏆', (x) => x.topBrawler?.trophies]]
+     ['Victoires duo', (x) => x.duoWins], ['% victoires récentes', (x) => x.recent.winRate, ' %'], ['Brawlers niveau 11', (x) => x.maxPower], ['Brawler avec le plus de trophées 🏆', (x) => x.topBrawler?.trophies]]
       .forEach(([lab, get, suf]) => {
         const va = get(a), vb = get(b), mx = Math.max(va || 0, vb || 0) || 1;
         const side = (v, col, left, win) => { const s = el('div', 'side' + (left ? ' l' : '')); const bar = el('div', 'hb'); bar.style.background = col; bar.style.width = (v == null ? 0 : v / mx * 70) + '%';
@@ -1375,7 +1366,7 @@
         const first = !data; if (first) document.body.classList.add('anim'); data = d; render(); document.body.classList.remove('loading');
         if (first) { document.body.classList.add('intro'); setTimeout(() => document.body.classList.remove('intro'), 1200); clearTimeout(animT); animT = setTimeout(() => document.body.classList.remove('anim'), 900); }
       }
-      $('loadErr').hidden = true;
+      $('loadErr').hidden = true; checkStale();
     } catch (e) { $('loadErr').hidden = false; }
   }
   $('share').onclick = async () => {
@@ -1413,7 +1404,7 @@
     if (p.wr && p.wr.ranked.rate != null) tiles.push(['🎯  WR Classé', p.wr.ranked.rate + ' %']);
     if (p.wr && p.wr.ladder.rate != null) tiles.push(['🏆  WR Trophées', p.wr.ladder.rate + ' %']);
     if (p.currentStreak >= 3) tiles.push(['🔥  Série', p.currentStreak + ' d\'affilée']);
-    if (p.topBrawler) tiles.push(['⭐  Brawler n°1 en trophées', p.topBrawler.name]);
+    if (p.topBrawler) tiles.push(['⭐  Brawler avec le plus de trophées', p.topBrawler.name]);
     tiles.push(['🧱  Collection', p.brawlersOwned + ' / ' + p.brawlersTotal]);
     tiles.push(['💥  Victoires 3c3', F(p.wins3v3)]);
     const tt = tiles.slice(0, 4), tileW = (W - 140 - 40) / 2, tileH = 175, ox = 70, oy = 740;
@@ -1439,17 +1430,13 @@
 
   // ---------- tabs: move each tagged section into its pane, then switch panes ----------
   (function introCard() { const c = $('introCard'); if (!c) return; let seenIt = false; try { seenIt = localStorage.getItem('cf-intro') === '1'; } catch (_) {} c.hidden = seenIt; $('introX').onclick = () => { c.hidden = true; try { localStorage.setItem('cf-intro', '1'); } catch (_) {} }; })();
-  (function splash() {
-    try { if (matchMedia('(prefers-reduced-motion: reduce)').matches || sessionStorage.getItem('zth-splash')) return; sessionStorage.setItem('zth-splash', '1'); } catch (e) { return; }
-    document.body.classList.add('splashing'); setTimeout(() => document.body.classList.remove('splashing'), 1600);
-  })();
   (function guides() {
     const G = [["8-Bit","8bit"],["Alli","alli"],["Amber","amber"],["Angelo","angelo"],["Ash","ash"],["Barley","barley"],["Bea","bea"],["Belle","belle"],["Berry","berry"],["Bibi","bibi"],["Bo","bo"],["Bolt","bolt"],["Bonnie","bonnie"],["Brock","brock"],["Bull","bull"],["Buster","buster"],["Buzz","buzz"],["Byron","byron"],["Carl","carl"],["Charlie","charlie"],["Chester","chester"],["Chuck","chuck"],["Clancy","clancy"],["Colette","colette"],["Colt","colt"],["Cordelius","cordelius"],["Cosmo","cosmo"],["Crow","crow"],["Damian","damian"],["Darryl","darryl"],["Doug","doug"],["Draco","draco"],["Dynamike","dynamike"],["Edgar","edgar"],["El Primo","elprimo"],["Emz","emz"],["Eve","eve"],["Fang","fang"],["Finx","finx"],["Frank","frank"],["Gale","gale"],["Gene","gene"],["Gigi","gigi"],["Glowy","glowy"],["Gray","gray"],["Griff","griff"],["Grom","grom"],["Gus","gus"],["Hank","hank"],["Jacky","jacky"],["Jae-Yong","jaeyong"],["Janet","janet"],["Jessie","jessie"],["Juju","juju"],["Kaze","kaze"],["Kenji","kenji"],["Kit","kit"],["Larry & Lawrie","larrylawrie"],["Leon","leon"],["Lily","lily"],["Lola","lola"],["Lou","lou"],["Lumi","lumi"],["Maisie","maisie"],["Mandy","mandy"],["Max","max"],["Meeple","meeple"],["Meg","meg"],["Melodie","melodie"],["Mico","mico"],["Mina","mina"],["Moe","moe"],["Mortis","mortis"],["Mr. P","mrp"],["Najia","najia"],["Nani","nani"],["Nita","nita"],["Nori","nori"],["Ollie","ollie"],["Otis","otis"],["Pam","pam"],["Pearl","pearl"],["Penny","penny"],["Pierce","pierce"],["Piper","piper"],["Poco","poco"],["R-T","rt"],["Rico","rico"],["Rosa","rosa"],["Ruffs","ruffs"],["Sam","sam"],["Sandy","sandy"],["Shade","shade"],["Shelly","shelly"],["Sirius","sirius"],["Spike","spike"],["Sprout","sprout"],["Squeak","squeak"],["Starr Nova","starrnova"],["Stu","stu"],["Surge","surge"],["Tara","tara"],["Tick","tick"],["Trunk","trunk"],["Vince","vince"],["Wendy","wendy"],["Willow","willow"],["Ziggy","ziggy"]], grid = document.getElementById('gdGrid'), inp = document.getElementById('gdFilter');
     if (!grid) return;
     G.forEach(([n, slug]) => { const a = document.createElement('a'); a.href = 'https://powerleagueprodigy.com/' + slug; a.target = '_blank'; a.rel = 'noopener'; a.textContent = n; a.dataset.n = n.toLowerCase(); grid.appendChild(a); });
     inp.addEventListener('input', () => { const q = inp.value.trim().toLowerCase(); grid.querySelectorAll('a').forEach((a) => { a.style.display = !q || a.dataset.n.includes(q) ? '' : 'none'; }); });
   })();
-  const TAB_LIST = ['overview', 'classe', 'combats', 'brawlers', 'equipe', 'tierlist'];
+  const TAB_LIST = ['overview', 'combats', 'brawlers', 'equipe', 'tierlist'];
   (function layoutTabs() {
     TAB_LIST.forEach((t) => {
       const pane = document.querySelector(`.pane[data-pane="${t}"]`); if (!pane) return;
@@ -1480,10 +1467,14 @@
   }
   document.querySelectorAll('#cSeg button').forEach((b) => { b.onclick = () => setSub(b.dataset.sub); });
   (function initSub() { let h = '', sub = 'all'; try { h = location.hash.replace('#', ''); sub = localStorage.getItem('cf-sub') || 'all'; } catch (_) {} if (h === 'trophy' || h === 'ranked') sub = h; setSub(sub); })();
-  (function initTab() { let t; try { t = location.hash.replace('#', '') || localStorage.getItem('cf-tab'); } catch (_) {} if (t === 'trophy' || t === 'ranked') t = 'combats'; setTab(TAB_LIST.includes(t) ? t : 'overview'); })();
+  (function initTab() { let t; try { t = location.hash.replace('#', '') || localStorage.getItem('cf-tab'); } catch (_) {} if (t === 'trophy' || t === 'ranked') t = 'combats'; if (t === 'classe') t = 'equipe'; setTab(TAB_LIST.includes(t) ? t : 'overview'); })();
 
   load();
-  setInterval(load, 60 * 1000);
+  $('retry').onclick = () => load();
+  function checkStale() { const b = $('staleBar'); if (!b || !data) return; const m = Math.floor((Date.now() - new Date(data.updatedAt)) / 6e4); if (m < 30) { b.hidden = true; return; } b.hidden = false; b.textContent = '⚠️ Ces stats datent d\'il y a ' + (m < 120 ? m + ' min' : Math.round(m / 60) + ' h') + ' : la mise à jour automatique est peut-être en panne.'; }
+  const plainHeads = () => document.querySelectorAll('h2').forEach((h) => { const n = h.firstChild; if (n && n.nodeType === 3) { const t = n.textContent.replace(/^[\p{Extended_Pictographic}\uFE0F\u200d\s]+/u, ''); if (t !== n.textContent) n.textContent = t; } });
+  plainHeads(); setInterval(plainHeads, 1500);
+  setInterval(load, 60 * 1000); setInterval(checkStale, 60 * 1000);
   setInterval(tick, 20 * 1000);
   if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();

@@ -370,7 +370,7 @@ async function main() {
     for (const b of mine) { if (!b.b) continue; const key = b.id || b.mp; if (!key) continue;
       const mm = byMap.get(key) || { map: b.mp, mapId: b.id || null, mode: b.m, modeId: b.mi ?? null, n: 0, br: new Map() };
       mm.n++; const br = mm.br.get(b.b) || { name: b.b, id: b.bi, w: 0, l: 0 }; if (b.r === 'win') br.w++; else if (b.r === 'loss') br.l++; mm.br.set(b.b, br); byMap.set(key, mm); }
-    pl.mapBrawler = [...byMap.values()].map((mm) => { const best = [...mm.br.values()].filter((v) => v.w + v.l >= 10).map((v) => ({ ...v, wr: Math.round(v.w / (v.w + v.l) * 100), g: v.w + v.l })).sort((a, b) => b.wr - a.wr || b.g - a.g)[0];
+    pl.mapBrawler = [...byMap.values()].map((mm) => { const best = [...mm.br.values()].filter((v) => v.w + v.l >= 3).map((v) => ({ ...v, wr: Math.round(v.w / (v.w + v.l) * 100), g: v.w + v.l })).sort((a, b) => b.wr - a.wr || b.g - a.g)[0];
       return best ? { map: mm.map, mapId: mm.mapId, mode: mm.mode, modeId: mm.modeId, n: mm.n, brawler: best.name, brawlerId: best.id, wr: best.wr, games: best.g } : null; }).filter(Boolean).sort((a, b) => b.n - a.n).slice(0, 12);
     // win rate split: ranked (classé) vs ladder (trophées)
     const rate = (arr) => { const w = arr.filter((b) => b.r === 'win').length, l = arr.filter((b) => b.r === 'loss').length; return { w, l, rate: w + l ? Math.round(w / (w + l) * 100) : null }; };
