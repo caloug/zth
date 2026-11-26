@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Caleb's Friends — Brawl Stars</title>
+<title>ZTH Stats — Brawl Stars</title>
 <meta name="description" content="Stats Brawl Stars de l'équipe, mises à jour toutes les 5 minutes.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://caloug.github.io/zth/">
-<meta property="og:title" content="ZTH · Caleb's Friends — Stats Brawl Stars">
+<meta property="og:title" content="ZTH Stats — Ton escouade, tes stats, votre rivalité">
 <meta property="og:description" content="Trophées, classé, face-à-face et records de l'équipe. Mis à jour toutes les 5 minutes.">
 <meta property="og:image" content="https://caloug.github.io/zth/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
@@ -152,6 +152,7 @@
   .tro-num { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
   .brand { font-size: 20px; color: var(--fg); margin-right: 6px; }
   .brand b { color: var(--y); }
+  .warnbox { margin: 8px 0 0; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--bad) 22%, transparent); border: 1px solid var(--bad); font-size: 12.5px; }
   .brand { display: inline-flex; align-items: center; gap: 7px; }
   .logo { width: 26px; height: 26px; border-radius: 7px; display: block; }
   .ico { width: 22px; height: 22px; object-fit: contain; flex: none; vertical-align: middle; }
@@ -293,6 +294,12 @@
   .tab { flex: 0 0 auto; font: inherit; font-size: 14px; font-family: "Lilita One", system-ui, sans-serif; padding: 9px 16px; min-height: 42px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 99px; cursor: pointer; white-space: nowrap; transition: background var(--t) var(--ease-out), color var(--t) var(--ease-out), border-color var(--t) var(--ease-out); }
   .tab.on { background: var(--purple); color: #fff; border-color: var(--purple); }
   .tab:active { transform: scale(.96); }
+  .seg { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
+  .seg button { flex: 1; font: inherit; font-family: "Lilita One", system-ui, sans-serif; font-size: 14px; padding: 9px 6px; min-height: 40px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); cursor: pointer; }
+  .seg button.on { background: var(--purple); color: #fff; }
+  .pane[data-sub="all"] > [data-sub], .pane[data-sub="trophy"] > :not([data-sub="trophy"]):not(.seg), .pane[data-sub="ranked"] > :not([data-sub="ranked"]):not(.seg) { display: none !important; }
+  .intro-card { position: relative; } .intro-card h2 { margin: 0 0 4px; } .intro-card p { margin: 0; color: var(--muted); font-size: 14px; }
+  .intro-card .x { position: absolute; top: 8px; right: 8px; border: 0; background: transparent; color: var(--muted); font-size: 18px; cursor: pointer; min-width: 32px; min-height: 32px; }
   /* bottom navigation bar (Instagram-style): always visible, thumb-reachable */
   .tabs { position: fixed; top: auto; bottom: 0; left: 0; right: 0; margin: 0; z-index: 50; gap: 0; justify-content: space-around; padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line);
     background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
@@ -314,19 +321,17 @@
   @media (prefers-reduced-motion: no-preference) {
     .hero::before { content: ""; position: absolute; inset: -30%; z-index: 0; pointer-events: none; filter: blur(12px);
       background: radial-gradient(circle at 25% 30%, rgba(255,61,127,.55), transparent 42%), radial-gradient(circle at 75% 55%, rgba(108,59,255,.55), transparent 46%), radial-gradient(circle at 55% 85%, rgba(255,201,60,.4), transparent 42%);
-      animation: aurora 16s ease-in-out infinite; }
+      }
     @keyframes aurora { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(5%,-4%) scale(1.12); } 66% { transform: translate(-4%,4%) scale(1.06); } }
-    .tro-num { background: linear-gradient(100deg, var(--y) 35%, #fff 50%, var(--y) 65%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 4.5s linear infinite; }
+    .tro-num { background: linear-gradient(100deg, var(--y) 35%, #fff 50%, var(--y) 65%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
     @keyframes shimmer { to { background-position: -220% 0; } }
-    .rk::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.28) 50%, transparent 58%); transform: translateX(-130%); animation: sweep 5.5s ease-in-out infinite; }
+    .rk::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.28) 50%, transparent 58%); transform: translateX(-130%); }
     @keyframes sweep { 0% { transform: translateX(-130%); } 18% { transform: translateX(130%); } 100% { transform: translateX(130%); } }
-    .chip.lead { animation: leadpulse 2.4s ease-in-out infinite; }
     @keyframes leadpulse { 0%,100% { box-shadow: 0 0 0 1px var(--y), 0 0 8px rgba(255,201,60,.35); } 50% { box-shadow: 0 0 0 1px var(--y), 0 0 15px rgba(255,201,60,.6); } }
   }
   .splash { display: none; }
   @media (prefers-reduced-motion: no-preference) {
     /* animated logo in the top bar: gentle float + one shine pass */
-    .logo { animation: logoFloat 4.5s var(--ease-io) infinite; }
     @keyframes logoFloat { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-2px) rotate(-4deg); } }
     .brand:hover .logo { animation: logoPop .5s var(--ease-out); }
     @keyframes logoPop { 0% { transform: scale(1); } 40% { transform: scale(1.25) rotate(-8deg); } 100% { transform: scale(1); } }
@@ -377,6 +382,7 @@
           <p class="meta" id="hMeta">Récupération des stats de l'équipe</p>
           <div class="pills" id="hPills"></div>
           <p class="seen" id="hSeen" hidden></p>
+          <p class="warnbox" id="hWarn" hidden>⚠️ Les combats n'ont pas pu être chargés pour l'instant : les stats de combats peuvent être incomplètes.</p>
         </div>
       </div>
       <div class="tro"><div class="tro-num" id="hTro">—</div><p class="tro-lbl">trophées</p></div>
@@ -390,27 +396,24 @@
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
     <button class="tab on" type="button" role="tab" data-tab="overview" aria-label="Accueil"><span class="ti">🏠</span><span class="tl">Accueil</span></button>
-    <button class="tab" type="button" role="tab" data-tab="classe" aria-label="Classé"><span class="ti">💎</span><span class="tl">Classé</span></button>
+    <button class="tab" type="button" role="tab" data-tab="classe" aria-label="Progression"><span class="ti">💎</span><span class="tl">Progrès</span></button>
     <button class="tab" type="button" role="tab" data-tab="combats" aria-label="Combats"><span class="ti">🎮</span><span class="tl">Combats</span></button>
-    <button class="tab" type="button" role="tab" data-tab="trophy" aria-label="Troph."><span class="ti">🏆</span><span class="tl">Troph.</span></button>
-    <button class="tab" type="button" role="tab" data-tab="ranked" aria-label="Ranked"><span class="ti">⚔️</span><span class="tl">Ranked</span></button>
     <button class="tab" type="button" role="tab" data-tab="brawlers" aria-label="Brawlers"><span class="ti">👾</span><span class="tl">Brawlers</span></button>
     <button class="tab" type="button" role="tab" data-tab="equipe" aria-label="Équipe"><span class="ti">👥</span><span class="tl">Équipe</span></button>
-    <button class="tab" type="button" role="tab" data-tab="tierlist" aria-label="Tier List"><span class="ti">📊</span><span class="tl">Tier List</span></button>
+    <button class="tab" type="button" role="tab" data-tab="tierlist" aria-label="Guides"><span class="ti">📚</span><span class="tl">Guides</span></button>
   </nav>
   <div class="pane on" data-pane="overview"></div>
   <div class="pane" data-pane="classe"></div>
   <div class="pane" data-pane="combats"></div>
-  <div class="pane" data-pane="trophy"></div>
-  <div class="pane" data-pane="ranked"></div>
   <div class="pane" data-pane="brawlers"></div>
   <div class="pane" data-pane="equipe"></div>
   <div class="pane" data-pane="tierlist"></div>
 
+  <section class="card intro-card" id="introCard" data-tab="overview" data-o="0" hidden><button type="button" class="x" id="introX" aria-label="Fermer">✕</button><h2>ZTH — Ton escouade. Tes stats. Votre rivalité.</h2><p>Suis la progression de tes amis sur Brawl Stars, compare vos performances, découvre vos meilleurs brawlers et vise le podium de la semaine.</p></section>
   <section class="grid" data-tab="overview" data-o="1">
     <div class="card acc" style="--c: var(--purple)"><p class="lbl">Victoires récentes</p><div class="wr" id="kWr">—</div></div>
     <div class="card acc" style="--c: #2BB673"><p class="lbl">Victoires 3c3</p><div class="big" id="k3">—</div><p class="note" id="kSd">—</p></div>
-    <div class="card acc" style="--c: var(--pink)"><p class="lbl">Meilleur brawler</p><div class="big" id="kTop">—</div><p class="note" id="kTopT">—</p><img class="kimg" id="kTopI" alt="" hidden></div>
+    <div class="card acc" style="--c: var(--pink)"><p class="lbl">Brawler n°1 en trophées</p><div class="big" id="kTop">—</div><p class="note" id="kTopT">—</p><img class="kimg" id="kTopI" alt="" hidden></div>
     <div class="card acc" style="--c: #FF8A2B"><p class="lbl">Meilleure série</p><div class="big" id="kStr">—</div><p class="note" id="kStrT">—</p><img class="kimg" id="kStrI" alt="" hidden></div>
     <div class="card acc" style="--c: var(--y)"><p class="lbl">Collection</p><div class="big" id="kOwn">—</div><p class="note" id="kMax">—</p></div>
   </section>
@@ -433,6 +436,7 @@
     <p class="note" id="wkN"></p>
   </section>
 
+  <div class="seg" id="cSeg" data-tab="combats" data-o="0" role="group" aria-label="Type de combats"><button type="button" class="on" data-sub="all">Tout</button><button type="button" data-sub="trophy">🏆 Trophées</button><button type="button" data-sub="ranked">⚔️ Ranked</button></div>
   <section class="card" data-tab="combats" data-o="1">
     <div class="ghead"><h2 id="batT">🕹️ Derniers combats</h2><div class="flt" id="batF"></div></div>
     <div class="bl" id="batL"></div>
@@ -550,28 +554,28 @@
     <div class="ghead"><h2 id="wrT">🎯 Taux de victoire</h2><div class="flt" id="wrView"></div></div>
     <div class="wr-now" id="wrNow"></div>
     <div class="chart" id="gWR"></div><div class="legend" id="gWRL"></div>
-    <p class="note">⚔️ Classé = parties Classé (pick & ban). 🏆 Trophées = parties normales (ladder). Enregistré depuis le début du suivi.</p>
+    <p class="note">⚔️ Classé = parties Classé (pick & ban). 🏆 Trophées = parties normales (ladder). Calculé à partir des combats archivés au cours des 60 derniers jours (les graphes jour / semaine / mois gardent un historique plus long).</p>
   </section>
-  <section class="card" data-tab="combats" data-o="7"><h2 id="mbT">🎯 Meilleur brawler par map</h2><div id="mapBr"></div><p class="note">Le brawler avec lequel ce joueur gagne le plus sur chaque map (min. 3 combats enregistrés).</p></section>
-  <section class="card" data-tab="trophy" data-o="1"><h2>📅 Calendrier — Trophées</h2><div id="calLad"></div><p class="note">Chaque jour coloré selon ton taux de victoire en parties normales (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
-  <section class="card" data-tab="trophy" data-o="2"><div class="ghead"><h2>Taux de victoire — Trophées</h2><div class="flt" id="wrViewLad"></div></div><div class="chart" id="gWRlad"></div></section>
-  <section class="card" data-tab="trophy" data-o="3"><h2>🏆 Derniers combats Trophées</h2><div class="bl" id="batLad"></div></section>
-  <section class="card" data-tab="trophy" data-o="4"><h2>🗺️ Maps — Trophées</h2><div id="mpLad"></div></section>
-  <section class="card" data-tab="ranked" data-o="1"><h2>📅 Calendrier — Ranked</h2><div id="calRk"></div><p class="note">Chaque jour coloré selon ton taux de victoire en Classé (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
-  <section class="card" data-tab="ranked" data-o="2"><div class="ghead"><h2>Taux de victoire — Classé</h2><div class="flt" id="wrViewRk"></div></div><div class="chart" id="gWRrk"></div></section>
-  <section class="card" data-tab="ranked" data-o="3"><h2>⚔️ Derniers combats Classé</h2><div class="bl" id="batRk"></div></section>
-  <section class="card" data-tab="ranked" data-o="4"><h2>🗺️ Maps — Classé</h2><div id="mpRk"></div></section>
+  <section class="card" data-tab="combats" data-o="7"><h2 id="mbT">🎯 Meilleur brawler par map</h2><div id="mapBr"></div><p class="note">Le brawler avec lequel ce joueur gagne le plus sur chaque map (min. 10 combats avec ce brawler sur la map ; moins de 20 = résultat provisoire).</p></section>
+  <section class="card" data-tab="combats" data-sub="trophy" data-o="101"><h2>📅 Calendrier — Trophées</h2><div id="calLad"></div><p class="note">Chaque jour coloré selon ton taux de victoire en parties normales (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
+  <section class="card" data-tab="combats" data-sub="trophy" data-o="102"><div class="ghead"><h2>Taux de victoire — Trophées</h2><div class="flt" id="wrViewLad"></div></div><div class="chart" id="gWRlad"></div></section>
+  <section class="card" data-tab="combats" data-sub="trophy" data-o="103"><h2>🏆 Derniers combats Trophées</h2><div class="bl" id="batLad"></div></section>
+  <section class="card" data-tab="combats" data-sub="trophy" data-o="104"><h2>🗺️ Maps — Trophées</h2><div id="mpLad"></div></section>
+  <section class="card" data-tab="combats" data-sub="ranked" data-o="201"><h2>📅 Calendrier — Ranked</h2><div id="calRk"></div><p class="note">Chaque jour coloré selon ton taux de victoire en Classé (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
+  <section class="card" data-tab="combats" data-sub="ranked" data-o="202"><div class="ghead"><h2>Taux de victoire — Classé</h2><div class="flt" id="wrViewRk"></div></div><div class="chart" id="gWRrk"></div></section>
+  <section class="card" data-tab="combats" data-sub="ranked" data-o="203"><h2>⚔️ Derniers combats Classé</h2><div class="bl" id="batRk"></div></section>
+  <section class="card" data-tab="combats" data-sub="ranked" data-o="204"><h2>🗺️ Maps — Classé</h2><div id="mpRk"></div></section>
   <section class="card" data-tab="equipe" data-o="0.5"><h2>🏆 Podium de la semaine</h2><div class="podium" id="podium"></div><p class="note">Qui a gagné le plus de trophées ces 7 derniers jours.</p></section>
   <section class="card" data-tab="equipe" data-o="7">
     <h2>Comparer les joueurs</h2>
     <div class="tablewrap"><table>
-      <thead><tr><th>Joueur</th><th>Tag</th><th class="num">Trophées</th><th class="num">Record</th><th class="num">Victoires 3c3</th><th class="num">% Classé</th><th class="num">% Troph.</th><th>Meilleur brawler</th><th>Dernière partie</th></tr></thead>
+      <thead><tr><th>Joueur</th><th>Tag</th><th class="num">Trophées</th><th class="num">Record</th><th class="num">Victoires 3c3</th><th class="num">% Classé</th><th class="num">% Troph.</th><th>Brawler n°1 (🏆)</th><th>Dernière partie</th></tr></thead>
       <tbody id="cmp"></tbody>
     </table></div>
     <p class="note">Touche une ligne pour voir ce joueur. « Victoires récentes » : les 25 derniers combats ; au Survivant, finir dans le top 4 (solo) ou top 2 (duo/trio) compte comme victoire.</p>
   </section>
 
-  <p class="foot">Données de l'API officielle Brawl Stars, actualisées toutes les 5 minutes environ. Images : <a href="https://brawlify.com" style="color:inherit">Brawlify</a>.<br>
+  <p class="foot">Données de l'API officielle Brawl Stars, actualisées toutes les 5 minutes environ. Images : <a href="https://brawlify.com" style="color:inherit">Brawlify</a>.<br>Ces stats sont publiques : toute personne qui a le lien peut les voir (tags, combats récents, heures de jeu). Pour retirer un joueur, il suffit de le demander à C.A.<br>
     <span class="legal">Ce contenu n'est pas affilié à Supercell, ni approuvé, sponsorisé ou spécifiquement validé par Supercell, et Supercell n'en est pas responsable. Pour plus d'informations, voir la <a href="https://supercell.com/fan-content-policy" style="color:inherit">Politique de contenu des fans de Supercell</a>.</span></p>
 </div>
 
@@ -808,7 +812,7 @@
     const listFor = (type) => [...((p.recent && p.recent.list) || [])].reverse().filter((b) => type === 'ranked' ? (b.type === 'soloRanked' || b.type === 'teamRanked') : b.type === 'ranked');
     const fillBat = (boxId, type) => { const bl = $(boxId); if (!bl) return; bl.replaceChildren(); const l = listFor(type); if (!l.length) bl.append(el('div', 'empty', 'Aucun combat ' + (type === 'ranked' ? 'classé' : 'trophées') + ' récent enregistré.')); l.slice(0, 25).forEach((b) => bl.append(battleRowEl(b))); };
     fillBat('batLad', 'ladder'); fillBat('batRk', 'ranked');
-    const fillMaps = (boxId, arr) => { const ml = $(boxId); if (!ml) return; ml.replaceChildren(); const maps = (arr || []).filter((m) => m.wr != null).slice(0, 15); if (!maps.length) ml.append(el('div', 'empty', 'Pas encore assez de combats enregistrés par map.')); maps.forEach((m) => ml.append(mapRowEl(m))); };
+    const fillMaps = (boxId, arr) => { const ml = $(boxId); if (!ml) return; ml.replaceChildren(); const maps = (arr || []).filter((m) => m.wr != null).slice(0, 15); if (!maps.length) ml.append(el('div', 'empty', 'Pas encore assez de combats par map (10 minimum avec un même brawler).')); maps.forEach((m) => ml.append(mapRowEl(m))); };
     fillMaps('mpLad', p.mapsLadder); fillMaps('mpRk', p.mapsRanked);
   }
   function renderExtras(p, ps) {
@@ -876,7 +880,7 @@
       const ic = el('div', 'mp-i'); if (m.mapId) ic.append(img(IMG.map(m.mapId), 'mm', '')); if (m.modeId != null) ic.append(img(IMG.mode(m.modeId), 'mo', ''));
       const n = el('div', 'mp-n'); n.append(el('b', null, m.map || '—'), el('small', null, mode(m.mode || 'unknown')));
       const br = el('div', 'mb-br'); if (m.brawlerId) br.append(img(IMG.brawler(m.brawlerId), null, m.brawler)); br.append(el('span', null, m.brawler));
-      const v = el('div', 'mp-v'); v.textContent = m.wr + ' %'; v.style.color = m.wr >= 55 ? 'var(--ok)' : m.wr < 45 ? 'var(--bad)' : 'var(--y)'; v.append(el('small', null, m.games + ' combats'));
+      const v = el('div', 'mp-v'); v.textContent = m.wr + ' %'; v.style.color = m.wr >= 55 ? 'var(--ok)' : m.wr < 45 ? 'var(--bad)' : 'var(--y)'; v.append(el('small', null, m.games + ' combats' + (m.games < 20 ? ' · provisoire' : '')));
       r.append(ic, n, br, v); mb.append(r); });
     // weekly podium
     const pod = $('podium'); pod.replaceChildren();
@@ -1111,6 +1115,7 @@
     const ps = data.players; const p = player(); sel = p.tag;
 
     // hero
+    $('hWarn').hidden = !p.incomplete;
     $('hName').textContent = p.name; $('hName').style.color = p.nameColor || '';
     $('hMeta').textContent = '#' + p.tag + ' · Niveau ' + F(p.expLevel) + (p.prestige ? ' · Prestige total ' + F(p.prestige) : '');
     const av = $('hAva'); if (p.icon) { av.src = IMG.icon(p.icon); av.alt = 'Icône de ' + p.name; av.hidden = false; } else av.hidden = true;
@@ -1304,7 +1309,7 @@
     const head = el('div', 'h2h-row'); const ha = el('div', 'win', a.name); ha.style.cssText = 'text-align:right;color:#FFC93C';
     const hb = el('div', 'win', b.name); hb.style.color = '#FF3D7F'; head.append(ha, el('div', 'h2h-l', 'contre'), hb); h.append(head);
     [['Trophées', (x) => x.trophies], ['Record de trophées', (x) => x.highestTrophies], ['Points de classé', (x) => elo(x)], ['Record classé', (x) => x.ranked?.highestAllTimeRankedElo], ['Victoires 3c3', (x) => x.wins3v3], ['Victoires solo', (x) => x.soloWins],
-     ['Victoires duo', (x) => x.duoWins], ['% victoires récentes', (x) => x.recent.winRate, ' %'], ['Brawlers niveau 11', (x) => x.maxPower], ['Meilleur brawler 🏆', (x) => x.topBrawler?.trophies]]
+     ['Victoires duo', (x) => x.duoWins], ['% victoires récentes', (x) => x.recent.winRate, ' %'], ['Brawlers niveau 11', (x) => x.maxPower], ['Brawler n°1 en trophées 🏆', (x) => x.topBrawler?.trophies]]
       .forEach(([lab, get, suf]) => {
         const va = get(a), vb = get(b), mx = Math.max(va || 0, vb || 0) || 1;
         const side = (v, col, left, win) => { const s = el('div', 'side' + (left ? ' l' : '')); const bar = el('div', 'hb'); bar.style.background = col; bar.style.width = (v == null ? 0 : v / mx * 70) + '%';
@@ -1401,7 +1406,7 @@
     if (p.wr && p.wr.ranked.rate != null) tiles.push(['🎯  WR Classé', p.wr.ranked.rate + ' %']);
     if (p.wr && p.wr.ladder.rate != null) tiles.push(['🏆  WR Trophées', p.wr.ladder.rate + ' %']);
     if (p.currentStreak >= 3) tiles.push(['🔥  Série', p.currentStreak + ' d\'affilée']);
-    if (p.topBrawler) tiles.push(['⭐  Meilleur brawler', p.topBrawler.name]);
+    if (p.topBrawler) tiles.push(['⭐  Brawler n°1 en trophées', p.topBrawler.name]);
     tiles.push(['🧱  Collection', p.brawlersOwned + ' / ' + p.brawlersTotal]);
     tiles.push(['💥  Victoires 3c3', F(p.wins3v3)]);
     const tt = tiles.slice(0, 4), tileW = (W - 140 - 40) / 2, tileH = 175, ox = 70, oy = 740;
@@ -1426,6 +1431,7 @@
   $('reload').onclick = async () => { const r = $('reload'); r.classList.add('spinning'); try { await load(); } finally { setTimeout(() => r.classList.remove('spinning'), 520); } };
 
   // ---------- tabs: move each tagged section into its pane, then switch panes ----------
+  (function introCard() { const c = $('introCard'); if (!c) return; let seenIt = false; try { seenIt = localStorage.getItem('cf-intro') === '1'; } catch (_) {} c.hidden = seenIt; $('introX').onclick = () => { c.hidden = true; try { localStorage.setItem('cf-intro', '1'); } catch (_) {} }; })();
   (function splash() {
     try { if (matchMedia('(prefers-reduced-motion: reduce)').matches || sessionStorage.getItem('zth-splash')) return; sessionStorage.setItem('zth-splash', '1'); } catch (e) { return; }
     document.body.classList.add('splashing'); setTimeout(() => document.body.classList.remove('splashing'), 1600);
@@ -1436,7 +1442,7 @@
     G.forEach(([n, slug]) => { const a = document.createElement('a'); a.href = 'https://powerleagueprodigy.com/' + slug; a.target = '_blank'; a.rel = 'noopener'; a.textContent = n; a.dataset.n = n.toLowerCase(); grid.appendChild(a); });
     inp.addEventListener('input', () => { const q = inp.value.trim().toLowerCase(); grid.querySelectorAll('a').forEach((a) => { a.style.display = !q || a.dataset.n.includes(q) ? '' : 'none'; }); });
   })();
-  const TAB_LIST = ['overview', 'classe', 'combats', 'trophy', 'ranked', 'brawlers', 'equipe', 'tierlist'];
+  const TAB_LIST = ['overview', 'classe', 'combats', 'brawlers', 'equipe', 'tierlist'];
   (function layoutTabs() {
     TAB_LIST.forEach((t) => {
       const pane = document.querySelector(`.pane[data-pane="${t}"]`); if (!pane) return;
@@ -1458,7 +1464,16 @@
     if (fromUser) { const y = $('tabs').getBoundingClientRect().top + scrollY - 4; if (scrollY > y) scrollTo({ top: y, behavior: 'smooth' }); }
   }
   document.querySelectorAll('.tab').forEach((b) => { b.onclick = () => setTab(b.dataset.tab, true); });
-  (function initTab() { let t; try { t = location.hash.replace('#', '') || localStorage.getItem('cf-tab'); } catch (_) {} setTab(TAB_LIST.includes(t) ? t : 'overview'); })();
+  function setSub(sub) {
+    if (!['all', 'trophy', 'ranked'].includes(sub)) sub = 'all';
+    const pn = document.querySelector('.pane[data-pane="combats"]'); if (pn) pn.dataset.sub = sub;
+    document.querySelectorAll('#cSeg button').forEach((b) => b.classList.toggle('on', b.dataset.sub === sub));
+    try { localStorage.setItem('cf-sub', sub); } catch (_) {}
+    if (data) { try { drawGraphs(); } catch (_) {} }
+  }
+  document.querySelectorAll('#cSeg button').forEach((b) => { b.onclick = () => setSub(b.dataset.sub); });
+  (function initSub() { let h = '', sub = 'all'; try { h = location.hash.replace('#', ''); sub = localStorage.getItem('cf-sub') || 'all'; } catch (_) {} if (h === 'trophy' || h === 'ranked') sub = h; setSub(sub); })();
+  (function initTab() { let t; try { t = location.hash.replace('#', '') || localStorage.getItem('cf-tab'); } catch (_) {} if (t === 'trophy' || t === 'ranked') t = 'combats'; setTab(TAB_LIST.includes(t) ? t : 'overview'); })();
 
   load();
   setInterval(load, 60 * 1000);
