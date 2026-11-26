@@ -293,6 +293,16 @@
   .tab { flex: 0 0 auto; font: inherit; font-size: 14px; font-family: "Lilita One", system-ui, sans-serif; padding: 9px 16px; min-height: 42px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 99px; cursor: pointer; white-space: nowrap; transition: background var(--t) var(--ease-out), color var(--t) var(--ease-out), border-color var(--t) var(--ease-out); }
   .tab.on { background: var(--purple); color: #fff; border-color: var(--purple); }
   .tab:active { transform: scale(.96); }
+  /* bottom navigation bar (Instagram-style): always visible, thumb-reachable */
+  .tabs { position: fixed; top: auto; bottom: 0; left: 0; right: 0; margin: 0; z-index: 50; gap: 0; justify-content: space-around; padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .tab { flex: 1 1 0; min-width: 0; min-height: 50px; padding: 4px 2px; border: 0; background: transparent; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 10px; color: var(--muted); }
+  .tab .ti { font-size: 21px; line-height: 1; filter: grayscale(.9) opacity(.75); transition: filter var(--t) var(--ease-out), transform var(--t) var(--ease-out); }
+  .tab .tl { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tab.on { background: color-mix(in srgb, var(--purple) 22%, transparent); color: var(--fg); border: 0; }
+  .tab.on .ti { filter: none; transform: translateY(-1px) scale(1.12); }
+  @media (min-width: 700px) { .tabs { justify-content: center; gap: 6px; } .tab { flex: 0 0 96px; } }
+  body { padding-bottom: calc(74px + env(safe-area-inset-bottom)); }
   .pane { display: none; flex-direction: column; gap: 18px; }
   .pane.on { display: flex; animation: fadeIn .28s var(--ease-out); }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -372,14 +382,14 @@
   <div class="chips" id="chips"></div>
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
-    <button class="tab on" type="button" role="tab" data-tab="overview">Vue d'ensemble</button>
-    <button class="tab" type="button" role="tab" data-tab="classe">Classé</button>
-    <button class="tab" type="button" role="tab" data-tab="combats">Combats</button>
-    <button class="tab" type="button" role="tab" data-tab="trophy">🏆 Troph.</button>
-    <button class="tab" type="button" role="tab" data-tab="ranked">⚔️ Ranked</button>
-    <button class="tab" type="button" role="tab" data-tab="brawlers">Brawlers</button>
-    <button class="tab" type="button" role="tab" data-tab="equipe">Équipe</button>
-    <button class="tab" type="button" role="tab" data-tab="tierlist">📊 Tier List &amp; Guides</button>
+    <button class="tab on" type="button" role="tab" data-tab="overview" aria-label="Accueil"><span class="ti">🏠</span><span class="tl">Accueil</span></button>
+    <button class="tab" type="button" role="tab" data-tab="classe" aria-label="Classé"><span class="ti">💎</span><span class="tl">Classé</span></button>
+    <button class="tab" type="button" role="tab" data-tab="combats" aria-label="Combats"><span class="ti">🎮</span><span class="tl">Combats</span></button>
+    <button class="tab" type="button" role="tab" data-tab="trophy" aria-label="Troph."><span class="ti">🏆</span><span class="tl">Troph.</span></button>
+    <button class="tab" type="button" role="tab" data-tab="ranked" aria-label="Ranked"><span class="ti">⚔️</span><span class="tl">Ranked</span></button>
+    <button class="tab" type="button" role="tab" data-tab="brawlers" aria-label="Brawlers"><span class="ti">👾</span><span class="tl">Brawlers</span></button>
+    <button class="tab" type="button" role="tab" data-tab="equipe" aria-label="Équipe"><span class="ti">👥</span><span class="tl">Équipe</span></button>
+    <button class="tab" type="button" role="tab" data-tab="tierlist" aria-label="Tier List"><span class="ti">📊</span><span class="tl">Tier List</span></button>
   </nav>
   <div class="pane on" data-pane="overview"></div>
   <div class="pane" data-pane="classe"></div>
