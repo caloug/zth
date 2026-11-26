@@ -363,6 +363,91 @@
   .tab.on .ti { opacity: 1; transform: none; color: var(--y); }
   .tab.on { background: color-mix(in srgb, var(--purple) 22%, transparent); }
   body { background: var(--bg); }
+
+  /* ================= motion system (tokens + rules). Every rule is off under reduced motion or when switched off ================= */
+  :root { --motion-fast: 150ms; --motion-normal: 220ms; --motion-slow: 600ms; --motion-ease: cubic-bezier(.4, 0, .2, 1); --motion-ease-out: cubic-bezier(.16, 1, .3, 1); }
+  html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="off"] *::after { animation: none !important; transition: none !important; }
+  .tro-ic { display: inline-block; } .tro-n { font-variant-numeric: tabular-nums; }
+  .lnk { background: none; border: 0; color: inherit; text-decoration: underline; font: inherit; cursor: pointer; padding: 8px 2px; min-height: 36px; }
+  /* buttons: one consistent feedback */
+  .btn { transition: background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease); }
+  @media (hover: hover) { .btn:hover:not(:disabled) { background: color-mix(in srgb, var(--purple) 18%, var(--panel)); border-color: var(--purple); } }
+  .btn:active:not(:disabled) { transform: scale(.97); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.pri { background: var(--purple); border-color: var(--purple); color: #fff; }
+  .btn.spinning .ri { animation: spin .8s linear infinite; }
+  .live.ping { animation: ping .7s var(--motion-ease-out); }
+  @keyframes ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 70%, transparent); } 100% { box-shadow: 0 0 0 10px transparent; } }
+  .upd { animation: updFlash 1.5s var(--motion-ease) 1; border-radius: 8px; }
+  @keyframes updFlash { 0% { background-color: color-mix(in srgb, var(--purple) 45%, transparent); } 100% { background-color: transparent; } }
+  .tro-ic.up { animation: troUp .45s var(--motion-ease-out); } .tro-ic.down { animation: troDown .45s var(--motion-ease-out); }
+  @keyframes troUp { 0% { transform: scale(1); } 40% { transform: scale(1.18) translateY(-2px); } 100% { transform: none; } }
+  @keyframes troDown { 0% { transform: none; } 40% { transform: translateY(3px); opacity: .7; } 100% { transform: none; opacity: 1; } }
+  /* tabs: short fade + tiny vertical move; sliding active indicator */
+  .pane.on { animation: paneIn var(--motion-normal) var(--motion-ease-out); }
+  @keyframes paneIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .tabs { overflow: visible; }
+  .tab-ind { position: absolute; top: 0; left: 0; height: 3px; width: var(--w, 0); transform: translateX(var(--x, 0)); background: var(--purple); border-radius: 0 0 3px 3px; transition: transform var(--motion-normal) var(--motion-ease-out), width var(--motion-normal) var(--motion-ease-out); pointer-events: none; }
+  .tab.on { background: transparent; }
+  /* player switch: avatar, name, then key stats in a short stagger */
+  @media (prefers-reduced-motion: no-preference) {
+    body.swap .avatar { animation: avIn .3s var(--motion-ease-out); }
+    @keyframes avIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+    body.swap .name { animation: fadeUp .22s var(--motion-ease-out) .08s backwards; }
+    body.swap .pane[data-pane="overview"] .grid > .card { animation: fadeUp .26s var(--motion-ease-out) backwards; }
+    body.swap .pane[data-pane="overview"] .grid > .card:nth-child(2) { animation-delay: 50ms; } body.swap .pane[data-pane="overview"] .grid > .card:nth-child(3) { animation-delay: 90ms; }
+    body.swap .pane[data-pane="overview"] .grid > .card:nth-child(4) { animation-delay: 130ms; } body.swap .pane[data-pane="overview"] .grid > .card:nth-child(5) { animation-delay: 170ms; }
+    /* lists: short entrance only after a user action (tab/player), capped stagger */
+    body.mo-in .bl > *, body.mo-in .mb-row, body.mo-in .mp { animation: fadeUp .2s var(--motion-ease-out) backwards; }
+    body.mo-in .bl > *:nth-child(n+2) { animation-delay: 14ms; } body.mo-in .bl > *:nth-child(n+4) { animation-delay: 30ms; } body.mo-in .bl > *:nth-child(n+7) { animation-delay: 48ms; } body.mo-in .bl > *:nth-child(n+10) { animation-delay: 60ms; }
+    body.mo-in .pane[data-pane="brawlers"] .bc:nth-child(-n+18) { animation: fadeUp .22s var(--motion-ease-out) backwards; }
+    body.mo-in .pane[data-pane="brawlers"] .bc:nth-child(n+7) { animation-delay: 30ms; } body.mo-in .pane[data-pane="brawlers"] .bc:nth-child(n+13) { animation-delay: 55ms; }
+    /* charts draw once, left to right / from the baseline */
+    .anim-chart:not(.in) path[fill="none"][stroke-linecap="round"] { stroke-dasharray: 1; stroke-dashoffset: 1; }
+    .anim-chart.in path[fill="none"][stroke-linecap="round"] { stroke-dasharray: 1; stroke-dashoffset: 0; transition: stroke-dashoffset .9s var(--motion-ease-out); }
+    .anim-chart:not(.in) rect[rx] { transform: scaleY(0); } .anim-chart rect[rx] { transform-box: fill-box; transform-origin: 50% 100%; }
+    .anim-chart.in rect[rx] { transform: none; transition: transform .7s var(--motion-ease-out); }
+    .anim-chart:not(.in) circle, .anim-chart:not(.in) .tip-dot { opacity: 0; } .anim-chart.in circle { opacity: 1; transition: opacity .3s ease .8s; }
+    /* ranking rows: movers are highlighted, nothing else moves */
+    .mv-up { animation: mvUp 1.4s var(--motion-ease); } @keyframes mvUp { 0%, 60% { background-color: color-mix(in srgb, var(--purple) 30%, transparent); } 100% { background-color: transparent; } }
+    .mv-down { animation: mvDown 1.2s var(--motion-ease); } @keyframes mvDown { 0%, 50% { opacity: .6; } 100% { opacity: 1; } }
+    .pod-row.reveal { animation: champ .7s var(--motion-ease-out); } @keyframes champ { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+    /* versus intro */
+    .h2h.vs-in .h2h-row:first-child > :first-child { animation: vsL .45s var(--motion-ease-out) backwards; } .h2h.vs-in .h2h-row:first-child > :last-child { animation: vsR .45s var(--motion-ease-out) backwards; }
+    .h2h.vs-in .h2h-row:first-child .h2h-l { animation: vsPop .35s var(--motion-ease-out) .2s backwards; }
+    .h2h.vs-in .h2h-row:not(:first-child) { animation: fadeUp .3s var(--motion-ease-out) .35s backwards; }
+    @keyframes vsL { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } } @keyframes vsR { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+    @keyframes vsPop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+    /* brand + selection + filters + theme */
+    html[data-brand="in"] .logo { animation: brandIn .4s var(--motion-ease-out); } @keyframes brandIn { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: none; } }
+    .bc { transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease); }
+    @media (hover: hover) { .bc:hover { transform: scale(1.04); box-shadow: 0 6px 16px rgba(0,0,0,.28); } }
+    .bc:active { transform: scale(.97); }
+    .bc-info.show { animation: fadeUp .22s var(--motion-ease-out); }
+    .refilter { animation: refilter .2s var(--motion-ease-out); } @keyframes refilter { from { opacity: .55; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    html.theming *, html.theming *::before, html.theming *::after { transition: background-color .22s var(--motion-ease), color .22s var(--motion-ease), border-color .22s var(--motion-ease), fill .22s var(--motion-ease), stroke .22s var(--motion-ease) !important; }
+    .toast { animation: fadeUp .22s var(--motion-ease-out); } .toast.out, .ach.out, .modal-back.out { opacity: 0; transition: opacity .2s; }
+    .ach { animation: achIn .45s var(--motion-ease-out); } @keyframes achIn { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+    .pt { animation: pt .75s var(--motion-ease-out) forwards; } @keyframes pt { from { opacity: 1; transform: translate(0,0) scale(1); } to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.4); } }
+    .modal-back { animation: fadeIn .18s var(--motion-ease); } .modal { animation: modalIn .22s var(--motion-ease-out); } @keyframes modalIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+    .tipbox.on { animation: fadeIn .15s var(--motion-ease); }
+  }
+  .bc.sel { border-color: var(--purple); box-shadow: 0 0 0 2px var(--purple); }
+  .bc-info { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-size: 13px; }
+  #toasts { position: fixed; left: 0; right: 0; bottom: calc(84px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 80; pointer-events: none; padding: 0 12px; }
+  .toast, .ach { pointer-events: auto; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-size: 13px; max-width: 440px; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+  .toast.ok { border-color: var(--ok); } .toast.bad { border-color: var(--bad); }
+  .ach { display: flex; align-items: center; gap: 12px; border-color: var(--y); } .ach b { display: block; font-size: 14px; } .ach small { color: var(--muted); display: block; }
+  .ach-b { font-size: 26px; } .ach-x { margin-left: auto; background: none; border: 0; color: var(--muted); font-size: 16px; cursor: pointer; min-width: 36px; min-height: 36px; }
+  .pt { position: fixed; width: 7px; height: 7px; border-radius: 50%; z-index: 90; pointer-events: none; }
+  .champ { margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--y); text-transform: uppercase; letter-spacing: .05em; }
+  .modal-back { position: fixed; inset: 0; z-index: 100; background: rgba(5,3,16,.66); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; width: min(420px, 100%); max-height: 92vh; overflow: auto; }
+  .modal h2 { margin: 0 36px 12px 0; } .modal-x { position: absolute; top: 10px; right: 10px; min-height: 36px; min-width: 36px; padding: 0; }
+  .card-prev { width: 100%; height: auto; border-radius: 10px; display: block; } .modal-act { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+  .info { margin-left: 6px; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--muted); background: transparent; color: var(--muted); font: 700 12px/1 var(--font-ui); cursor: pointer; vertical-align: 2px; padding: 0; }
+  .tipbox { position: absolute; z-index: 70; width: 260px; padding: 10px 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-size: 12.5px; line-height: 1.45; box-shadow: 0 8px 24px rgba(0,0,0,.35); opacity: 0; pointer-events: none; }
+  .tipbox.on { opacity: 1; }
 </style>
 </head>
 <body class="loading">
@@ -400,6 +485,7 @@
   <div class="chips" id="chips"></div>
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
+    <span class="tab-ind" id="tabInd" aria-hidden="true"></span>
     <button class="tab on" type="button" role="tab" data-tab="overview" aria-label="Accueil"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg></span><span class="tl">Accueil</span></button>
     <button class="tab" type="button" role="tab" data-tab="combats" aria-label="Combats"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19 19 5"/><path d="M14 5h5v5"/><path d="M5 5l14 14" opacity=".0"/><path d="M5 5l5 5"/><path d="M19 19l-5-5"/></svg></span><span class="tl">Combats</span></button>
     <button class="tab" type="button" role="tab" data-tab="brawlers" aria-label="Brawlers"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span><span class="tl">Brawlers</span></button>
@@ -493,6 +579,7 @@
     <div class="ghead"><h2 id="bgT">🧱 Brawlers</h2>
       <label class="ctl" style="margin:0">Trier : <select id="bgS"><option value="tr">Trophées</option><option value="pw">Niveau</option><option value="st">Meilleure série</option><option value="nm">Nom</option></select></label></div>
     <div class="bgrid" id="bg"></div>
+    <div class="bc-info" id="bcInfo" aria-live="polite" hidden></div>
     <button class="btn more" id="bgMore" hidden>Afficher tous les brawlers</button>
   </section>
 
@@ -578,7 +665,7 @@
     <p class="note">Touche une ligne pour voir ce joueur. « Victoires récentes » : les 25 derniers combats ; au Survivant, finir dans le top 4 (solo) ou top 2 (duo/trio) compte comme victoire.</p>
   </section>
 
-  <p class="foot">Données de l'API officielle Brawl Stars, actualisées toutes les 5 minutes environ. Images : <a href="https://brawlify.com" style="color:inherit">Brawlify</a>.<br>Ces stats sont publiques : toute personne qui a le lien peut les voir (tags, combats récents, heures de jeu). Pour retirer un joueur, il suffit de le demander à C.A.<br>
+  <p class="foot">Données de l'API officielle Brawl Stars, actualisées toutes les 5 minutes environ. Images : <a href="https://brawlify.com" style="color:inherit">Brawlify</a>.<br>Ces stats sont publiques : toute personne qui a le lien peut les voir (tags, combats récents, heures de jeu). Pour retirer un joueur, il suffit de le demander à C.A.<br><button type="button" class="lnk" id="motionToggle">Animations : activées</button><br>
     <span class="legal">Ce contenu n'est pas affilié à Supercell, ni approuvé, sponsorisé ou spécifiquement validé par Supercell, et Supercell n'en est pas responsable. Pour plus d'informations, voir la <a href="https://supercell.com/fan-content-policy" style="color:inherit">Politique de contenu des fans de Supercell</a>.</span></p>
 </div>
 
@@ -890,7 +977,7 @@
     const wk = ps.filter((x) => x.week).map((x) => ({ x, t: x.week.trophies })).sort((a, b) => b.t - a.t);
     const medal = ['🥇', '🥈', '🥉'];
     if (!wk.length) pod.append(el('div', 'empty', 'Pas encore de données cette semaine.'));
-    wk.slice(0, 3).forEach((e, i) => { const r = el('div', 'pod-row'); r.append(el('span', 'pod-m', medal[i] || '•')); if (e.x.icon) r.append(img(IMG.icon(e.x.icon), null, '')); else r.append(el('span')); r.append(el('b', null, e.x.name)); const v = el('span', 'pod-v', (e.t >= 0 ? '+' : '') + F(e.t) + ' 🏆'); v.style.color = e.t >= 0 ? 'var(--ok)' : 'var(--bad)'; r.append(v); pod.append(r); });
+    wk.slice(0, 3).forEach((e, i) => { const r = el('div', 'pod-row'); r.dataset.k = e.x.tag; r.append(el('span', 'pod-m', medal[i] || '•')); if (e.x.icon) r.append(img(IMG.icon(e.x.icon), null, '')); else r.append(el('span')); r.append(el('b', null, e.x.name)); const v = el('span', 'pod-v', (e.t >= 0 ? '+' : '') + F(e.t) + ' 🏆'); v.style.color = e.t >= 0 ? 'var(--ok)' : 'var(--bad)'; r.append(v); pod.append(r); });
     renderTypeTabs(p);
 
     // recent battles
@@ -984,7 +1071,139 @@
     attachTip(box, svg, W, H, (xPx) => { const i = Math.floor((xPx - L) / slot); const it = items[i]; if (!it) return null;
       return { x: L + slot * (i + .5), noLine: true, lines: [[null, it.tip || it.label], ['', (it.value >= 0 ? '+' : '') + F(it.value) + ' 🏆']], top: Y(Math.max(0, it.value)) }; });
   }
-  function drawGraphs() {
+  // =====================================================================
+  //  ZTH motion system — every animation has one trigger and is gated by M.calm()
+  // =====================================================================
+  const M = (() => {
+    const mq = matchMedia('(prefers-reduced-motion: reduce)');
+    const off = () => { try { return localStorage.getItem('cf-motion') === 'off'; } catch (_) { return false; } };
+    const calm = () => mq.matches || off();
+    const store = { get: (k) => { try { return localStorage.getItem(k); } catch (_) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} } };
+    const root = document.documentElement;
+    const applyOff = () => { root.dataset.motion = calm() ? 'off' : 'on'; const b = document.getElementById('motionToggle'); if (b) b.textContent = off() ? 'Animations : désactivées' : 'Animations : activées'; };
+    mq.addEventListener && mq.addEventListener('change', applyOff);
+    const o = { switching: false, tro: new Map(), drawn: new Set(), calm };
+    // ---- tween a number (data-driven count-up) ----
+    const tween = (node, from, to, dur, fmt) => {
+      cancelAnimationFrame(node._raf); if (calm() || from === to) { node.textContent = fmt(to); return; }
+      const t0 = performance.now(); const step = (now) => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); node.textContent = fmt(Math.round(from + (to - from) * e)); if (k < 1) node._raf = requestAnimationFrame(step); };
+      node._raf = requestAnimationFrame(step);
+    };
+    o.tween = tween;
+    // ---- hero trophies: count-up on first open / player switch / real change ----
+    o.hero = (p) => {
+      const t = document.getElementById('hTro'); let ic = t.querySelector('.tro-ic'), n = t.querySelector('.tro-n');
+      if (!ic) { ic = document.createElement('span'); ic.className = 'tro-ic'; ic.textContent = '🏆'; n = document.createElement('span'); n.className = 'tro-n'; t.replaceChildren(ic, n); }
+      const to = +p.trophies || 0, prev = o.tro.get(p.tag); let from = null;
+      if (o.switching || prev == null) from = 0; else if (prev !== to) from = prev;
+      o.tro.set(p.tag, to);
+      if (from == null || from === to) { n.textContent = F(to); return; }
+      const big = Math.abs(to - from) > 20000; tween(n, from, to, big ? 500 : Math.min(900, 500 + Math.abs(to - from) / 40), F);
+      if (prev != null && prev !== to && !o.switching) { ic.classList.remove('up', 'down'); void ic.offsetWidth; ic.classList.add(to > prev ? 'up' : 'down'); }
+    };
+    // ---- triggers for list entrances (user actions only, never the silent refresh) ----
+    let inT; o.enter = () => { if (calm()) return; document.body.classList.add('mo-in'); clearTimeout(inT); inT = setTimeout(() => document.body.classList.remove('mo-in'), 700); };
+    // ---- active nav indicator ----
+    const ind = () => { const a = document.querySelector('.tab.on'), i = document.getElementById('tabInd'); if (!a || !i) return; i.style.setProperty('--x', a.offsetLeft + 'px'); i.style.setProperty('--w', a.offsetWidth + 'px'); };
+    window.addEventListener('resize', ind);
+    o.onTab = (t, fromUser) => { requestAnimationFrame(ind); if (fromUser !== undefined) o.enter(); if (t === 'equipe') setTimeout(() => { o.champion(); o.vs(); }, 60); if (t === 'brawlers') o.enter(); };
+    // ---- charts: draw once per chart per player, when visible ----
+    const io = ('IntersectionObserver' in window) ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); o.drawn.add(e.target.dataset.k); io.unobserve(e.target); } }), { threshold: .25 }) : null;
+    o.charts = () => {
+      document.querySelectorAll('.chart svg').forEach((svg) => {
+        const box = svg.parentElement, key = (box.id || box.className) + '|' + sel; svg.querySelectorAll('path[fill="none"][stroke-linecap="round"]').forEach((p) => { p.setAttribute('pathLength', '1'); });
+        if (calm() || !io || o.drawn.has(key)) { svg.classList.add('in'); return; }
+        if (box.clientWidth === 0) return; // hidden pane: draw when it is opened
+        svg.classList.add('anim-chart'); svg.dataset.k = key; io.observe(svg);
+      });
+    };
+    // ---- before/after a data refresh: FLIP for ranking rows, pulse on changed stats ----
+    o.snap = () => { const m = {}; ['race', 'podium', 'cmp'].forEach((id) => { const c = document.getElementById(id); if (!c) return; m[id] = [...c.querySelectorAll('[data-k]')].map((r) => [r.dataset.k, r.getBoundingClientRect().top, r.getBoundingClientRect().height]); }); return m; };
+    o.flip = (snap) => {
+      if (calm()) return;
+      Object.keys(snap).forEach((id) => { const c = document.getElementById(id), old = snap[id]; if (!c || !old.length) return;
+        const rows = [...c.querySelectorAll('[data-k]')]; if (old.map((r) => r[0]).join() === rows.map((r) => r.dataset.k).join()) return;
+        rows.forEach((r) => { const was = old.find((x) => x[0] === r.dataset.k); const h = r.getBoundingClientRect(); if (!was || !was[2] || !h.height) return; const dy = was[1] - h.top; if (!dy) return;
+          r.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 450, easing: 'cubic-bezier(.16,1,.3,1)' });
+          const cls = dy > 0 ? 'mv-up' : 'mv-down'; r.classList.add(cls); setTimeout(() => r.classList.remove(cls), 1400); });
+      });
+    };
+    o.afterData = (prev, d, snap, first) => {
+      const lv = document.querySelector('.live'); if (lv && !calm() && !first) { lv.classList.remove('ping'); void lv.offsetWidth; lv.classList.add('ping'); }
+      if (!first && prev) {
+        o.flip(snap);
+        const a = prev.players.find((x) => x.tag === sel), b = d.players.find((x) => x.tag === sel);
+        if (a && b && !calm()) [['hTro', a.trophies, b.trophies], ['k3', a.wins3v3, b.wins3v3], ['kWr', a.recent && a.recent.winRate, b.recent && b.recent.winRate]].forEach(([id, x, y]) => { if (x !== y) { const e = document.getElementById(id); if (e) { e.classList.remove('upd'); void e.offsetWidth; e.classList.add('upd'); setTimeout(() => e.classList.remove('upd'), 1700); } } });
+      }
+      o.detect(d);
+      o.afterRender(first);
+    };
+    o.afterRender = (switching) => {
+      if (switching) { o.enter(); o.ring(); }
+      o.switching = false;
+      requestAnimationFrame(ind);
+    };
+    // ---- progress ring: grows to the real value on first open / switch ----
+    o.ring = () => { if (calm()) return; const c = document.querySelector('#kWr svg circle:last-child'); if (!c) return; const fin = c.getAttribute('stroke-dasharray'); if (!fin) return; const C = fin.split(' ')[1];
+      c.style.transition = 'none'; c.setAttribute('stroke-dasharray', '0 ' + C); void c.getBoundingClientRect(); c.style.transition = 'stroke-dasharray .6s cubic-bezier(.16,1,.3,1)'; c.setAttribute('stroke-dasharray', fin); };
+    // ---- toast / achievement ----
+    const host = () => { let h = document.getElementById('toasts'); if (!h) { h = document.createElement('div'); h.id = 'toasts'; h.setAttribute('aria-live', 'polite'); document.body.append(h); } return h; };
+    o.toast = (text, kind) => { const t = document.createElement('div'); t.className = 'toast ' + (kind || ''); t.textContent = (kind === 'ok' ? '✓ ' : kind === 'bad' ? '⚠ ' : '') + text; host().append(t); setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 220); }, 3800); };
+    o.burst = (anchor) => { if (calm() || !anchor) return; const r = anchor.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      for (let i = 0; i < 12; i++) { const s = document.createElement('i'); s.className = 'pt'; const a = (i / 12) * Math.PI * 2 + Math.random() * .4, d = 28 + Math.random() * 26; s.style.cssText = `left:${cx}px;top:${cy}px;--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d}px;background:${i % 3 ? '#FFC93C' : '#6C3BFF'}`; document.body.append(s); setTimeout(() => s.remove(), 800); } };
+    o.achieve = (icon, title, detail) => { const c = document.createElement('div'); c.className = 'ach'; c.setAttribute('role', 'status');
+      const b = document.createElement('span'); b.className = 'ach-b'; b.textContent = icon; const tx = document.createElement('div'); tx.innerHTML = '<b></b><small></small>'; tx.firstChild.textContent = title; tx.lastChild.textContent = detail;
+      const x = document.createElement('button'); x.type = 'button'; x.className = 'ach-x'; x.setAttribute('aria-label', 'Fermer'); x.textContent = '✕'; const close = () => { c.classList.add('out'); setTimeout(() => c.remove(), 220); }; x.onclick = close;
+      c.append(b, tx, x); host().append(c); setTimeout(() => o.burst(b), 120); setTimeout(close, 9000); };
+    // ---- genuine achievements only: compared with what this browser saw before ----
+    o.detect = (d) => d.players.forEach((p) => {
+      const mile = Math.floor((p.trophies || 0) / 5000) * 5000, mk = 'cf-mile:' + p.tag, sm = store.get(mk);
+      if (sm == null) store.set(mk, String(mile)); else if (mile > +sm) { store.set(mk, String(mile)); o.achieve('🏆', F(mile) + ' trophées', p.name + ' vient de dépasser ce palier (' + F(p.trophies) + ' actuellement).'); }
+      const rk = p.ranked && p.ranked.rankedRank, rkk = 'cf-rank:' + p.tag, sr = store.get(rkk);
+      if (rk != null) { if (sr == null) store.set(rkk, String(rk)); else if (rk > +sr) { store.set(rkk, String(rk)); o.achieve('⚔️', 'Promotion Ranked', p.name + ' monte au rang ' + rankTier(rk).name + '.'); } }
+      const bs = p.bestStreak && p.bestStreak.n, bk = 'cf-streak:' + p.tag, sb = store.get(bk);
+      if (bs) { if (sb == null) store.set(bk, String(bs)); else if (bs > +sb) { store.set(bk, String(bs)); o.achieve('🔥', 'Nouveau record de série', p.name + ' : ' + bs + ' victoires de suite avec ' + p.bestStreak.brawler + '.'); } }
+    });
+    // ---- weekly champion reveal (once per week, tie-aware) ----
+    o.champion = () => {
+      if (!data) return; const wk = data.players.filter((x) => x.week && x.week.trophies != null).map((x) => ({ x, t: x.week.trophies })).sort((a, b) => b.t - a.t);
+      if (!wk.length || wk[0].t <= 0) return; const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); const key = 'cf-champ:' + d.toISOString().slice(0, 10); if (store.get(key)) return;
+      const first = document.querySelector('#podium .pod-row'); if (!first || !first.getBoundingClientRect().height) return; store.set(key, '1');
+      const tie = wk.length > 1 && wk[1].t === wk[0].t; const lab = document.createElement('span'); lab.className = 'champ'; lab.textContent = tie ? 'Égalité en tête' : 'Champion de la semaine'; first.append(lab);
+      if (!calm()) { first.classList.add('reveal'); o.burst(first); const v = first.querySelector('b + *, .pod-v, span:last-of-type'); }
+    };
+    // ---- head-to-head: players enter from each side, once per comparison ----
+    o.vs = () => { const h = document.getElementById('h2h'); if (!h || !h.getBoundingClientRect().height || calm()) return; const sig = [...document.querySelectorAll('#hA, #hB')].map((e) => e.value).join('|') || 'x'; if (h.dataset.vs === sig) return; h.dataset.vs = sig; h.classList.remove('vs-in'); void h.offsetWidth; h.classList.add('vs-in'); setTimeout(() => h.classList.remove('vs-in'), 900); };
+    // ---- modal: focus trap, Escape, focus restore ----
+    o.modal = ({ title, body, actions, onClose }) => {
+      const prevFocus = o.ret || document.activeElement; o.ret = null; const back = document.createElement('div'); back.className = 'modal-back'; const m = document.createElement('div'); m.className = 'modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', title);
+      const h = document.createElement('h2'); h.textContent = title; const x = document.createElement('button'); x.type = 'button'; x.className = 'btn modal-x'; x.setAttribute('aria-label', 'Fermer'); x.textContent = '✕';
+      const bar = document.createElement('div'); bar.className = 'modal-act'; (actions || []).forEach((a) => bar.append(a)); m.append(x, h, body, bar); back.append(m); document.body.append(back);
+      const close = () => { document.removeEventListener('keydown', key, true); back.classList.add('out'); setTimeout(() => { back.remove(); if (onClose) onClose(); if (prevFocus && prevFocus.focus) prevFocus.focus(); }, calm() ? 0 : 180); };
+      const key = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } else if (e.key === 'Tab') { const f = [...m.querySelectorAll('button,a[href],input,select')].filter((n) => !n.disabled); if (!f.length) return; const a = f[0], z = f[f.length - 1]; if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); } } };
+      document.addEventListener('keydown', key, true); x.onclick = close; back.addEventListener('click', (e) => { if (e.target === back) close(); }); (actions && actions[0] || x).focus(); return close;
+    };
+    // ---- theme: one short transition on the whole page ----
+    o.themeFx = () => { if (calm()) return; root.classList.add('theming'); setTimeout(() => root.classList.remove('theming'), 320); };
+    // ---- info tooltips (never the only place for essential info) ----
+    let tipEl; const closeTip = () => { if (tipEl) { tipEl.classList.remove('on'); } };
+    o.info = (h, text) => { if (!h || h.querySelector('.info')) return; const b = document.createElement('button'); b.type = 'button'; b.className = 'info'; b.textContent = 'i'; b.setAttribute('aria-label', 'Explication : ' + text);
+      const show = () => { if (!tipEl) { tipEl = document.createElement('div'); tipEl.className = 'tipbox'; tipEl.setAttribute('role', 'tooltip'); tipEl.id = 'tipbox'; document.body.append(tipEl); } tipEl.textContent = text; const r = b.getBoundingClientRect(); tipEl.style.left = Math.max(8, Math.min(innerWidth - 268, r.left - 120)) + 'px'; tipEl.style.top = (r.bottom + 8 + scrollY) + 'px'; tipEl.classList.add('on'); b.setAttribute('aria-describedby', 'tipbox'); };
+      b.onclick = (e) => { e.stopPropagation(); tipEl && tipEl.classList.contains('on') ? closeTip() : show(); }; b.onmouseenter = show; b.onmouseleave = closeTip; b.onfocus = show; b.onblur = closeTip; h.append(' ', b); };
+    document.addEventListener('click', closeTip); document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeTip(); });
+    // ---- brawler selection ----
+    document.addEventListener('click', (e) => { const c = e.target.closest && e.target.closest('#bg .bc'); if (!c) return; const was = c.classList.contains('sel'); document.querySelectorAll('#bg .bc.sel').forEach((n) => n.classList.remove('sel')); const bi = document.getElementById('bcInfo'); if (was) { bi.hidden = true; return; } c.classList.add('sel'); bi.textContent = c.title; bi.hidden = false; bi.classList.remove('show'); void bi.offsetWidth; bi.classList.add('show'); });
+    // ---- filters: short fade on the section that changed ----
+    document.addEventListener('click', (e) => { const f = e.target.closest && e.target.closest('.flt button, .seg button, .rng button'); if (!f || calm()) return; const sec = f.closest('section, .card'); if (!sec) return; setTimeout(() => { sec.classList.remove('refilter'); void sec.offsetWidth; sec.classList.add('refilter'); setTimeout(() => sec.classList.remove('refilter'), 260); }, 0); });
+    // ---- animations on/off switch (skip / disable) ----
+    document.addEventListener('click', (e) => { if (e.target.id === 'motionToggle') { store.set('cf-motion', off() ? 'on' : 'off'); applyOff(); } });
+    // ---- brand entrance: once per session, never blocking ----
+    o.brand = () => { let seenB = null; try { seenB = sessionStorage.getItem('zth-brand'); sessionStorage.setItem('zth-brand', '1'); } catch (_) {} if (!seenB && !calm()) root.dataset.brand = 'in'; setTimeout(() => { delete root.dataset.brand; }, 700); };
+    o.init = () => { applyOff(); o.brand(); requestAnimationFrame(ind); setTimeout(() => { o.info(document.getElementById('wrT'), 'Taux calculé sur les combats archivés des 60 derniers jours. Le nombre de victoires et de défaites est toujours affiché à côté.'); o.info(document.getElementById('mbT'), 'Sous 10 combats avec un brawler sur une map, le résultat est une tendance provisoire : trop peu de parties pour conclure.'); o.info(document.querySelector('#podium') && document.querySelector('#podium').closest('section').querySelector('h2'), 'Gain de trophées sur les 7 derniers jours, d\'après l\'historique enregistré par le site.'); }, 0); };
+    return o;
+  })();
+  function drawGraphs() { drawGraphsRaw(); try { M.charts(); } catch (_) {} }
+  function drawGraphsRaw() {
     if (!data) return;
     const ps = data.players; const p = player(); const pi = ps.indexOf(p);
     // range buttons
@@ -1092,11 +1311,11 @@
     try { const u = new URL(location.href); u.searchParams.set('p', tag); history.replaceState(null, '', u); } catch (_) {}
     const order = (data && data.players || []).map((x) => x.tag), dir = Math.sign(order.indexOf(tag) - order.indexOf(prevSel)) || 1;
     document.body.style.setProperty('--dir', dir); document.body.classList.add('swap', 'intro'); clearTimeout(swapT); swapT = setTimeout(() => document.body.classList.remove('swap', 'intro'), 900);
-    document.body.classList.add('anim'); clearTimeout(animT); animT = setTimeout(() => document.body.classList.remove('anim'), 800); render(); };
+    document.body.classList.add('anim'); clearTimeout(animT); animT = setTimeout(() => document.body.classList.remove('anim'), 800); M.switching = true; render(); M.afterRender(true); };
   let A = null, B = null, animT;
 
   // ---------- theme ----------
-  const setTheme = (light) => { document.body.classList.toggle('light', light); $('theme').textContent = light ? 'Sombre' : 'Clair'; };
+  const setTheme = (light) => { M.themeFx(); document.body.classList.toggle('light', light); $('theme').textContent = light ? 'Sombre' : 'Clair'; };
   let light = false; try { light = localStorage.getItem('cf-theme') === 'light'; } catch (_) {}
   setTheme(light);
   $('theme').onclick = () => { light = !light; setTheme(light); if (data) drawGraphs(); try { localStorage.setItem('cf-theme', light ? 'light' : 'dark'); } catch (_) {} };
@@ -1132,7 +1351,7 @@
     if (p.currentStreak >= 3) pill(null, "🔥 " + p.currentStreak + " victoires d'affilée");
     else if (p.currentStreak <= -3) pill(null, "🧊 " + (-p.currentStreak) + " défaites d'affilée");
     const hs = $('hSeen'), sv = seen(p.lastBattle); hs.replaceChildren(el('span', 'sdot ' + sv.cls), el('span', null, sv.label)); hs.title = "D'apres la derniere partie - l'API Brawl Stars ne donne pas le statut en ligne"; hs.hidden = false;
-    $('hTro').replaceChildren('🏆', F(p.trophies));
+    M.hero(p);
     const nearRec = !p.highestTrophies || p.trophies / p.highestTrophies >= 0.99;
     if (nearRec) {
       const step = p.trophies >= 100000 ? 10000 : 5000, nx = Math.floor(p.trophies / step) * step + step;
@@ -1225,7 +1444,7 @@
       const row = barRow((i === 0 ? '👑 ' : '') + x.name, elo(x), rmax, t.bg, t.name + ' · ' + F(elo(x)), IMG.rank(x.ranked.rankedRank)); row.querySelector('.fill').style.background = t.bg;
       const tr = row.querySelector('.track'); tr.style.overflow = 'visible';
       if (x.ranked.highestAllTimeRankedElo) { const mk = el('div', 'race-mk'); mk.style.left = `calc(${x.ranked.highestAllTimeRankedElo / rmax * 100}% - 1px)`; tr.append(mk); }
-      race.append(row);
+      row.dataset.k = x.tag; race.append(row);
     });
 
     // modes / brawlers
@@ -1324,7 +1543,7 @@
     // compare
     const cb = $('cmp'); cb.replaceChildren();
     [...ps].sort((x, y) => y.trophies - x.trophies).forEach((x) => {
-      const tr = el('tr', x.tag === p.tag ? 'sel' : '');
+      const tr = el('tr', x.tag === p.tag ? 'sel' : ''); tr.dataset.k = x.tag;
       [x.name, '#' + x.tag, F(x.trophies), F(x.highestTrophies), F(x.wins3v3), x.wr && x.wr.ranked.rate != null ? x.wr.ranked.rate + ' %' : '—', x.wr && x.wr.ladder.rate != null ? x.wr.ladder.rate + ' %' : '—', x.topBrawler ? x.topBrawler.name : '—']
         .forEach((v, i) => tr.append(el('td', i >= 2 && i <= 6 ? 'num' : '', v)));
       const sv = seen(x.lastBattle), sc = el('td'); sc.append(el('span', 'sdot ' + sv.cls), ' ' + sv.label.replace('Vu ', '')); tr.append(sc);
@@ -1363,11 +1582,11 @@
       if (!r.ok) throw new Error(r.status);
       const d = await r.json();
       if (!data || d.updatedAt !== data.updatedAt) {
-        const first = !data; if (first) document.body.classList.add('anim'); data = d; render(); document.body.classList.remove('loading');
+        const first = !data, prevData = data, snap = M.snap(); if (first) document.body.classList.add('anim'); data = d; render(); document.body.classList.remove('loading'); M.afterData(prevData, d, snap, first);
         if (first) { document.body.classList.add('intro'); setTimeout(() => document.body.classList.remove('intro'), 1200); clearTimeout(animT); animT = setTimeout(() => document.body.classList.remove('anim'), 900); }
       }
-      $('loadErr').hidden = true; checkStale();
-    } catch (e) { $('loadErr').hidden = false; }
+      $('loadErr').hidden = true; checkStale(); return true;
+    } catch (e) { $('loadErr').hidden = false; return false; }
   }
   $('share').onclick = async () => {
     const p = data && player(); if (!p) return;
@@ -1417,16 +1636,22 @@
     return await new Promise((res) => c.toBlob(res, 'image/png'));
   }
   async function shareCard() {
-    const p = data && player(); if (!p) return; const btn = $('card'), old = btn.textContent; btn.textContent = '⏳ …';
+    const p = data && player(); if (!p) return; const btn = $('card'), old = btn.textContent; M.ret = document.activeElement; btn.textContent = '…'; btn.disabled = true;
     try {
-      const b = await buildCard(p); const file = new File([b], 'zth-' + p.name.replace(/[^a-z0-9]/gi, '_') + '.png', { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Stats de ' + p.name, text: p.name + ' · ' + F(p.trophies) + ' 🏆 · caloug.github.io/zth' }); }
-      else { const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(u), 1000); btn.textContent = '✓ Image enregistrée'; setTimeout(() => btn.textContent = old, 2200); return; }
-    } catch (e) { console.warn('card', e); }
-    btn.textContent = old;
+      const blob = await buildCard(p); const name = 'zth-' + p.name.replace(/[^a-z0-9]/gi, '_') + '.png'; const file = new File([blob], name, { type: 'image/png' });
+      const url = URL.createObjectURL(blob); const im = document.createElement('img'); im.src = url; im.alt = 'Carte de stats de ' + p.name; im.className = 'card-prev';
+      const share = el('button', 'btn pri', 'Partager'); const dl = el('a', 'btn', 'Télécharger'); dl.href = url; dl.download = name;
+      share.onclick = async () => { try { if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Stats de ' + p.name, text: p.name + ' · ' + F(p.trophies) + ' trophées' }); else dl.click(); } catch (_) {} };
+      M.modal({ title: 'Carte de ' + p.name, body: im, actions: [share, dl], onClose: () => URL.revokeObjectURL(url) });
+    } catch (e) { console.warn('card', e); M.toast('Impossible de créer la carte', 'bad'); }
+    btn.textContent = old; btn.disabled = false;
   }
   $('card').onclick = shareCard;
-  $('reload').onclick = async () => { const r = $('reload'); r.classList.add('spinning'); try { await load(); } finally { setTimeout(() => r.classList.remove('spinning'), 520); } };
+  $('reload').onclick = async () => {
+    const r = $('reload'); if (r.disabled) return; r.disabled = true; r.classList.add('spinning'); r.setAttribute('aria-busy', 'true');
+    let ok = false; try { ok = await load(); } finally { r.classList.remove('spinning'); r.disabled = false; r.removeAttribute('aria-busy'); }
+    M.toast(ok ? 'Stats actualisées · ' + $('ago').textContent : 'Échec de l\'actualisation — les dernières données sont conservées', ok ? 'ok' : 'bad');
+  };
 
   // ---------- tabs: move each tagged section into its pane, then switch panes ----------
   (function introCard() { const c = $('introCard'); if (!c) return; let seenIt = false; try { seenIt = localStorage.getItem('cf-intro') === '1'; } catch (_) {} c.hidden = seenIt; $('introX').onclick = () => { c.hidden = true; try { localStorage.setItem('cf-intro', '1'); } catch (_) {} }; })();
@@ -1444,11 +1669,13 @@
     });
     const g = $('graphs'); if (g) g.remove(); // its charts have been moved out
   })();
+
+  M.init();
   let curTab = 'overview';
   function setTab(t, fromUser) {
     if (!TAB_LIST.includes(t)) t = 'overview';
     const pdir = Math.sign(TAB_LIST.indexOf(t) - TAB_LIST.indexOf(curTab));
-    curTab = t;
+    curTab = t; M.onTab(t, fromUser);
     document.querySelectorAll('.pane').forEach((pn) => pn.style.setProperty('--pdir', pdir));
     document.querySelectorAll('.tab').forEach((b) => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
     document.querySelectorAll('.pane').forEach((pn) => pn.classList.toggle('on', pn.dataset.pane === t));
