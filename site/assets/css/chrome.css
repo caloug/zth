@@ -1,0 +1,95 @@
+/* ZTH Stats — barre du haut, menu ⋯ et dock de navigation (reconstruits de zéro).
+   Un seul fichier d'autorité : verre dépoli, aucune dépendance aux anciennes règles. */
+:root {
+  --g-bg: rgba(22, 24, 38, .56); --g-hi: rgba(255, 255, 255, .08); --g-line: rgba(255, 255, 255, .13);
+  --g-shadow: 0 20px 48px -16px rgba(0, 0, 0, .7); --dock-txt: #8E94AD; --dock-txt-on: #fff;
+  --pill-a: rgba(123, 92, 255, .78); --pill-b: rgba(255, 77, 141, .42);
+  --spring: cubic-bezier(.34, 1.56, .64, 1); --out: cubic-bezier(.16, 1, .3, 1);
+}
+body.light {
+  --g-bg: rgba(255, 255, 255, .68); --g-hi: rgba(255, 255, 255, .95); --g-line: rgba(20, 23, 42, .10);
+  --g-shadow: 0 18px 40px -16px rgba(20, 23, 42, .38); --dock-txt: #4B5170; --pill-a: rgba(123, 92, 255, .95); --pill-b: rgba(255, 77, 141, .6);
+}
+body { padding-bottom: calc(108px + env(safe-area-inset-bottom)); overflow-x: clip; }
+html { overflow-x: clip; }
+.glass { background: linear-gradient(180deg, var(--g-hi), transparent 55%), var(--g-bg); -webkit-backdrop-filter: blur(22px) saturate(1.7); backdrop-filter: blur(22px) saturate(1.7); }
+
+/* ============ barre du haut ============ */
+.topbar { position: sticky; top: 0; z-index: 45; display: flex; align-items: center; gap: 10px; margin: -14px -14px 0; padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+  background: color-mix(in srgb, var(--bg) 60%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); border-bottom: 1px solid transparent; transition: border-color .2s ease; }
+.topbar[data-stuck] { border-bottom-color: var(--g-line); }
+.tb-brand { display: flex; align-items: center; gap: 8px; font: 400 18px/1 var(--font-display); white-space: nowrap; }
+.tb-brand b { color: var(--y); font-weight: 400; }
+.tb-brand .logo { width: 28px; height: 28px; border-radius: 8px; }
+.tb-status { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb-status .live { margin: 0; flex: none; }
+.tb-actions { position: relative; flex: none; margin-left: auto; }
+
+/* bouton ⋯ */
+.icon-btn { appearance: none; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 14px; border: 1px solid var(--g-line); color: var(--fg); cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: border-color .18s ease, background-color .18s ease, transform .2s var(--spring); }
+.icon-btn .dots { display: flex; gap: 3px; transition: transform .35s var(--spring); }
+.icon-btn .dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.icon-btn[aria-expanded="true"] { border-color: var(--purple); background-color: color-mix(in srgb, var(--purple) 26%, transparent); }
+.icon-btn[aria-expanded="true"] .dots { transform: rotate(90deg); }
+.icon-btn:active { transform: scale(.9); } .icon-btn:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+@media (hover: hover) { .icon-btn:hover { border-color: var(--purple); transform: translateY(-1px); } }
+
+/* ============ menu ⋯ (visibilité + opacité : aucune minuterie, aucun état bloqué) ============ */
+.menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; width: 230px; padding: 6px; border-radius: 20px; border: 1px solid var(--g-line); box-shadow: var(--g-shadow), inset 0 1px 0 var(--g-hi);
+  background: linear-gradient(180deg, var(--g-hi), transparent 50%), color-mix(in srgb, var(--panel) 80%, transparent); -webkit-backdrop-filter: blur(28px) saturate(1.8); backdrop-filter: blur(28px) saturate(1.8);
+  transform-origin: calc(100% - 20px) -8px; opacity: 0; visibility: hidden; transform: translateY(-6px) scale(.9); pointer-events: none;
+  transition: opacity .16s ease, transform .26s var(--out), visibility 0s linear .26s; }
+body.light .menu { background: linear-gradient(180deg, #fff, rgba(255,255,255,.8)); }
+.menu[data-open] { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition-delay: 0s; }
+.menu-item { appearance: none; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 46px; padding: 0 12px; border: 0; border-radius: 14px; background: transparent; color: var(--fg); font: 600 14.5px/1 var(--font-ui); text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background-color .15s ease, transform .2s var(--out); }
+.menu-item:disabled { opacity: .5; cursor: not-allowed; }
+.menu-item .mi-ic { flex: none; display: grid; place-items: center; width: 22px; height: 22px; opacity: .9; }
+.menu-item .mi-ic svg { width: 20px; height: 20px; display: block; }
+.menu-item:focus-visible { outline: 2px solid var(--purple); outline-offset: -2px; }
+.menu-item:active:not(:disabled) { transform: scale(.97); }
+@media (hover: hover) { .menu-item:hover:not(:disabled) { background: color-mix(in srgb, var(--purple) 22%, transparent); transform: translateX(3px); } }
+.menu-item.spinning .ri svg { animation: spin .8s linear infinite; }
+
+/* ============ dock de navigation ============ */
+.dock { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); margin: 0 auto; max-width: 500px; z-index: 50; padding: 6px; border-radius: 30px; border: 1px solid var(--g-line);
+  box-shadow: var(--g-shadow), inset 0 1px 0 var(--g-hi); isolation: isolate; }
+.dock::before { content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 2;
+  background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.03) 42%, rgba(123,92,255,.3)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+body.light .dock::before { background: linear-gradient(180deg, #fff, rgba(255,255,255,.2) 45%, rgba(123,92,255,.25)); }
+.dock-track { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); }
+/* la pastille ne mesure rien : sa position vient de --i (index de l'onglet), donc aucun décalage possible */
+.dock-pill { position: absolute; top: 0; bottom: 0; left: 0; width: 20%; transform: translateX(calc(var(--i, 0) * 100%)); pointer-events: none; z-index: 0; }
+.dock-pill i { position: absolute; inset: 0 2px; border-radius: 24px; background: linear-gradient(135deg, var(--pill-a), var(--pill-b)); border: 1px solid rgba(255,255,255,.22);
+  box-shadow: 0 10px 26px -8px rgba(123, 92, 255, .85), inset 0 1px 0 rgba(255,255,255,.32); }
+.dock-btn { position: relative; z-index: 1; appearance: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 56px; padding: 6px 2px 5px; border: 0; border-radius: 24px; background: transparent; color: var(--dock-txt);
+  font: 600 10.5px/1 var(--font-ui); letter-spacing: .01em; cursor: pointer; overflow: hidden; -webkit-tap-highlight-color: transparent; transition: color .2s ease; }
+.dock-btn .dk-ic { display: grid; place-items: center; transition: transform .3s var(--spring), opacity .2s ease; opacity: .85; }
+.dock-btn .dk-ic svg { width: 22px; height: 22px; display: block; }
+.dock-btn .dk-tx { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dock-btn.on { color: var(--dock-txt-on); } .dock-btn.on .dk-ic { opacity: 1; transform: translateY(-1px) scale(1.1); }
+.dock-btn::after { content: ""; position: absolute; left: 50%; top: 50%; width: 120%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.28), transparent 65%); transform: translate(-50%, -50%) scale(0); opacity: 0; pointer-events: none; }
+.dock-btn:active::after { transform: translate(-50%, -50%) scale(1); opacity: 1; transition: transform .25s var(--out), opacity .1s; }
+.dock-btn:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
+@media (hover: hover) { .dock-btn:not(.on):hover { color: var(--fg); } .dock-btn:not(.on):hover .dk-ic { transform: translateY(-2px); opacity: 1; } }
+
+/* ============ mouvement : seulement si l'appareil l'autorise ============ */
+@media (prefers-reduced-motion: no-preference) {
+  .dock { animation: dockIn .6s var(--spring) .12s backwards; }
+  @keyframes dockIn { from { opacity: 0; translate: 0 48px; scale: .94; } to { opacity: 1; translate: 0 0; scale: 1; } }
+  .dock-pill { transition: transform .42s var(--spring); }
+  .dock-pill.go i { animation: pillStretch .42s var(--out); }
+  @keyframes pillStretch { 0% { transform: scale(1, 1); } 35% { transform: scale(1.22, .9); } 100% { transform: scale(1, 1); } }
+  .dock-btn.on .dk-ic { animation: icPop .45s var(--spring); }
+  @keyframes icPop { 0% { transform: translateY(5px) scale(.7); } 100% { transform: translateY(-1px) scale(1.1); } }
+  .menu[data-open] .menu-item { animation: itemIn .3s var(--out) backwards; }
+  .menu[data-open] .menu-item:nth-child(2) { animation-delay: 35ms; } .menu[data-open] .menu-item:nth-child(3) { animation-delay: 70ms; } .menu[data-open] .menu-item:nth-child(4) { animation-delay: 105ms; }
+  @keyframes itemIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+  .pane.leaving { opacity: 0; transition: opacity .11s ease; }
+  .pane.on { animation: paneIn .2s ease; }
+  @keyframes paneIn { from { opacity: 0; } to { opacity: 1; } }
+}
+@media (prefers-reduced-motion: reduce) { .menu, .menu[data-open] { transition: none; } .dock-pill { transition: none; } }
+html[data-motion="off"] .dock, html[data-motion="off"] .dock *, html[data-motion="off"] .menu, html[data-motion="off"] .menu * { animation: none !important; transition: none !important; }
+@media (min-width: 700px) { .dock { max-width: 480px; } }

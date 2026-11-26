@@ -21,20 +21,24 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ZTH Stats">
 <link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="assets/css/chrome.css">
 </head>
 <body class="loading">
 <div id="splash" class="splash" role="presentation" aria-hidden="true"><img src="icon-192.png" alt="" width="96" height="96"><b>ZTH <span>Stats</span></b><small>Ton escouade. Tes stats.</small></div>
 <div class="wrap">
-  <div class="bar">
-    <span class="left"><span class="brand"><img class="logo" src="icon-192.png" alt="" width="26" height="26"><b>ZTH</b> Stats</span><span class="live"></span>mis à jour <span id="ago">…</span></span>
-    <button class="btn more-btn" id="moreBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" aria-label="Plus d'actions"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
-    <div class="menu" id="moreMenu" role="menu" aria-label="Actions" hidden>
-      <button class="btn" id="share">Partager</button>
-      <button class="btn" id="card">Ma carte</button>
-      <button class="btn" id="reload" aria-label="Actualiser"><span class="ri">⟳</span><span class="btx"> Actualiser</span></button>
-      <button class="btn" id="theme">Clair</button>
+  <header class="topbar" id="topbar">
+    <div class="tb-brand"><img class="logo" src="icon-192.png" alt="" width="28" height="28"><span><b>ZTH</b> Stats</span></div>
+    <div class="tb-status"><span class="live"></span><span>mis à jour <span id="ago">…</span></span></div>
+    <div class="tb-actions">
+      <button class="icon-btn glass" id="moreBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="moreMenu" aria-label="Plus d'actions"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
+      <div class="menu" id="moreMenu" role="menu" aria-label="Actions">
+        <button class="menu-item" id="share" type="button" role="menuitem"><span class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg></span><span class="mi-t">Partager</span></button>
+        <button class="menu-item" id="card" type="button" role="menuitem"><span class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span><span class="mi-t">Ma carte</span></button>
+        <button class="menu-item" id="reload" type="button" role="menuitem" aria-label="Actualiser"><span class="mi-ic ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/></svg></span><span class="mi-t">Actualiser</span></button>
+        <button class="menu-item" id="theme" type="button" role="menuitem"><span class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 010 18z" fill="currentColor"/></svg></span><span class="mi-t">Clair</span></button>
+      </div>
     </div>
-  </div>
+  </header>
   <p class="err" id="loadErr" hidden>Impossible de charger les stats pour l'instant. Les dernières données connues restent affichées. <button class="btn" id="retry" type="button">Réessayer</button> Nouvel essai automatique dans 1 minute.</p>
   <p class="warnbox" id="staleBar" hidden></p>
 
@@ -60,13 +64,15 @@
 
   <div class="chips" id="chips"></div>
 
-  <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
-    <span class="tab-pill" id="tabPill" aria-hidden="true"></span>
-    <button class="tab on" type="button" role="tab" data-tab="overview" aria-label="Accueil"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg></span><span class="tl">Accueil</span></button>
-    <button class="tab" type="button" role="tab" data-tab="combats" aria-label="Combats"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19 19 5"/><path d="M14 5h5v5"/><path d="M5 5l14 14" opacity=".0"/><path d="M5 5l5 5"/><path d="M19 19l-5-5"/></svg></span><span class="tl">Combats</span></button>
-    <button class="tab" type="button" role="tab" data-tab="brawlers" aria-label="Brawlers"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span><span class="tl">Brawlers</span></button>
-    <button class="tab" type="button" role="tab" data-tab="equipe" aria-label="Équipe"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19c.6-3.4 3-5 6-5s5.4 1.6 6 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M16.5 14.2c2.4.2 4 1.6 4.5 4.3"/></svg></span><span class="tl">Équipe</span></button>
-    <button class="tab" type="button" role="tab" data-tab="tierlist" aria-label="Guides"><span class="ti"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg></span><span class="tl">Guides</span></button>
+  <nav class="dock glass" id="tabs" aria-label="Sections" style="--i:0">
+    <div class="dock-track" role="tablist">
+      <span class="dock-pill" id="dockPill" aria-hidden="true"><i></i></span>
+      <button class="dock-btn on" type="button" role="tab" data-go="overview" aria-label="Accueil" aria-selected="true"><span class="dk-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg></span><span class="dk-tx">Accueil</span></button>
+      <button class="dock-btn" type="button" role="tab" data-go="combats" aria-label="Combats" aria-selected="false"><span class="dk-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19 19 5"/><path d="M14 5h5v5"/><path d="M5 5l14 14" opacity=".0"/><path d="M5 5l5 5"/><path d="M19 19l-5-5"/></svg></span><span class="dk-tx">Combats</span></button>
+      <button class="dock-btn" type="button" role="tab" data-go="brawlers" aria-label="Brawlers" aria-selected="false"><span class="dk-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span><span class="dk-tx">Brawlers</span></button>
+      <button class="dock-btn" type="button" role="tab" data-go="equipe" aria-label="Équipe" aria-selected="false"><span class="dk-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19c.6-3.4 3-5 6-5s5.4 1.6 6 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M16.5 14.2c2.4.2 4 1.6 4.5 4.3"/></svg></span><span class="dk-tx">Équipe</span></button>
+      <button class="dock-btn" type="button" role="tab" data-go="tierlist" aria-label="Guides" aria-selected="false"><span class="dk-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg></span><span class="dk-tx">Guides</span></button>
+    </div>
   </nav>
   <div class="pane on" data-pane="overview"></div>
   <div class="pane" data-pane="combats"></div>

@@ -441,18 +441,24 @@
     // ---- triggers for list entrances (user actions only, never the silent refresh) ----
     let inT; o.enter = () => { if (calm()) return; document.body.classList.add('mo-in'); clearTimeout(inT); inT = setTimeout(() => document.body.classList.remove('mo-in'), 700); };
     // ---- active nav indicator ----
-    // ---- sliding nav pill + overflow menu ----
-    const pill = () => { const a = document.querySelector('.tab.on'), i = document.getElementById('tabPill'); if (!a || !i) return; i.style.setProperty('--x', a.offsetLeft + 'px'); i.style.setProperty('--w', a.offsetWidth + 'px'); };
-    o.pill = pill; window.addEventListener('resize', pill);
-    const mb = () => document.getElementById('moreBtn'), mm = () => document.getElementById('moreMenu'); let mt;
-    const isOpen = () => mm() && mm().classList.contains('open');
-    const openMenu = () => { clearTimeout(mt); mm().hidden = false; mb().setAttribute('aria-expanded', 'true'); requestAnimationFrame(() => mm().classList.add('open')); setTimeout(() => { const f = mm().querySelector('button'); if (f && isOpen()) f.focus({ preventScroll: true }); }, 40); };
-    const closeMenu = (ret) => { if (!mm() || mm().hidden) return; mm().classList.remove('open'); mb().setAttribute('aria-expanded', 'false'); clearTimeout(mt); mt = setTimeout(() => { mm().hidden = true; }, calm() ? 0 : 180); if (ret) mb().focus(); };
-    document.addEventListener('click', (e) => { const t = e.target.closest ? e.target : e.target.parentElement; if (t.closest('#moreBtn')) { isOpen() ? closeMenu() : openMenu(); } else if (isOpen() && !(t.closest('#moreMenu') && t.closest('button') && t.closest('button').id === 'reload')) closeMenu(); });
-    document.addEventListener('keydown', (e) => { if (!isOpen()) return; if (e.key === 'Escape') { e.preventDefault(); closeMenu(true); } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const f = [...mm().querySelectorAll('button:not(:disabled)')], i = f.indexOf(document.activeElement); f[(i + (e.key === 'ArrowDown' ? 1 : -1) + f.length) % f.length].focus(); } });
-    document.querySelectorAll('#moreMenu button').forEach((x) => x.setAttribute('role', 'menuitem'));
-    window.addEventListener('scroll', () => { const bar = document.querySelector('.bar'); if (bar) bar.classList.toggle('stuck', scrollY > 6); }, { passive: true });
-    o.onTab = (t, fromUser) => { requestAnimationFrame(pill); if (fromUser !== undefined) o.enter(); if (t === 'equipe') setTimeout(() => { o.champion(); o.vs(); }, 60); if (t === 'brawlers') o.enter(); };
+    // ---- menu ⋯ : un attribut data-open, tout le reste est du CSS ----
+    const mb = () => document.getElementById('moreBtn'), mm = () => document.getElementById('moreMenu');
+    const isOpen = () => !!mm() && mm().hasAttribute('data-open');
+    const openMenu = (focusFirst) => { mm().setAttribute('data-open', ''); mb().setAttribute('aria-expanded', 'true'); if (focusFirst) setTimeout(() => { const f = mm().querySelector('button'); if (f) f.focus({ preventScroll: true }); }, 30); };
+    const closeMenu = (ret) => { if (!isOpen()) return; mm().removeAttribute('data-open'); mb().setAttribute('aria-expanded', 'false'); if (ret) mb().focus(); };
+    document.addEventListener('click', (e) => {
+      const t = e.target instanceof Element ? e.target : e.target.parentElement; if (!t) return;
+      if (t.closest('#moreBtn')) { isOpen() ? closeMenu() : openMenu(e.detail === 0); return; }
+      const item = t.closest('#moreMenu .menu-item'); if (item && item.id === 'reload') return;   // Actualiser reste ouvert pour voir le chargement
+      closeMenu();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen()) { e.preventDefault(); closeMenu(true); return; }
+      if (!isOpen() || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return; e.preventDefault();
+      const f = [...mm().querySelectorAll('.menu-item:not(:disabled)')], i = f.indexOf(document.activeElement); f[(i + (e.key === 'ArrowDown' ? 1 : -1) + f.length) % f.length].focus();
+    });
+    window.addEventListener('scroll', () => { const t = document.getElementById('topbar'); if (t) t.toggleAttribute('data-stuck', scrollY > 6); }, { passive: true });
+    o.onTab = (t, fromUser) => { if (fromUser !== undefined) o.enter(); if (t === 'equipe') setTimeout(() => { o.champion(); o.vs(); }, 60); if (t === 'brawlers') o.enter(); };
     // ---- charts: draw once per chart per player, when visible ----
     const io = ('IntersectionObserver' in window) ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); o.drawn.add(e.target.dataset.k); io.unobserve(e.target); } }), { threshold: .25 }) : null;
     o.charts = () => {
@@ -493,7 +499,7 @@
     window.addEventListener('resize', fadeChips);
     o.afterRender = (switching) => {
       requestAnimationFrame(fadeChips);
-      try { o.homeBat(); } catch (_) {} requestAnimationFrame(pill);
+      try { o.homeBat(); } catch (_) {}
       if (switching) { o.enter(); o.ring(); o.kpis(); }
       o.switching = false;
     };
@@ -558,7 +564,7 @@
       const done = () => { if (!sp.isConnected) return; sp.classList.add('out'); setTimeout(() => sp.remove(), 200); }; o.splashDone = done;
       sp.addEventListener('click', done); document.addEventListener('keydown', done, { once: true }); setTimeout(done, 400);
     };
-    o.init = () => { applyOff(); o.brand(); requestAnimationFrame(pill); setTimeout(() => { o.info(document.getElementById('wrT'), 'Taux calculé sur les combats archivés des 60 derniers jours. Le nombre de victoires et de défaites est toujours affiché à côté.'); o.info(document.getElementById('mbT'), 'Sous 10 combats avec un brawler sur une map, le résultat est une tendance provisoire : trop peu de parties pour conclure.'); o.info(document.querySelector('#podium') && document.querySelector('#podium').closest('section').querySelector('h2'), 'Gain de trophées sur les 7 derniers jours, d\'après l\'historique enregistré par le site.'); }, 0); };
+    o.init = () => { applyOff(); o.brand(); setTimeout(() => { o.info(document.getElementById('wrT'), 'Taux calculé sur les combats archivés des 60 derniers jours. Le nombre de victoires et de défaites est toujours affiché à côté.'); o.info(document.getElementById('mbT'), 'Sous 10 combats avec un brawler sur une map, le résultat est une tendance provisoire : trop peu de parties pour conclure.'); o.info(document.querySelector('#podium') && document.querySelector('#podium').closest('section').querySelector('h2'), 'Gain de trophées sur les 7 derniers jours, d\'après l\'historique enregistré par le site.'); }, 0); };
     return o;
   })();
   function drawGraphs() { drawGraphsRaw(); try { M.charts(); } catch (_) {} }
@@ -674,7 +680,7 @@
   let A = null, B = null, animT;
 
   // ---------- theme ----------
-  const setTheme = (light) => { M.themeFx(); document.body.classList.toggle('light', light); $('theme').textContent = light ? 'Sombre' : 'Clair'; };
+  const setTheme = (light) => { M.themeFx(); document.body.classList.toggle('light', light); $('theme').querySelector('.mi-t').textContent = light ? 'Sombre' : 'Clair'; };
   let light = false; try { light = localStorage.getItem('cf-theme') === 'light'; } catch (_) {}
   setTheme(light);
   $('theme').onclick = () => { light = !light; setTheme(light); if (data) drawGraphs(); try { localStorage.setItem('cf-theme', light ? 'light' : 'dark'); } catch (_) {} };
@@ -950,7 +956,7 @@
   $('share').onclick = async () => {
     const p = data && player(); if (!p) return;
     let url; try { const u = new URL(location.href); u.searchParams.set('p', p.tag); url = u.href; } catch (_) { url = location.href; }
-    const txt = p.name; const btn = $('share'); const done = (ok) => { btn.textContent = ok ? '✓ Lien copié !' : url; setTimeout(() => { btn.textContent = '🔗 Partager ce joueur'; }, 2500); };
+    const txt = p.name; const btn = $('share').querySelector('.mi-t'); const done = (ok) => { btn.textContent = ok ? 'Lien copié ✓' : url; setTimeout(() => { btn.textContent = 'Partager'; }, 2500); };
     try { if (navigator.share) { await navigator.share({ title: 'Stats de ' + txt, url }); return; } } catch (_) { return; }
     try { await navigator.clipboard.writeText(url); done(true); } catch (_) { done(false); }
   };
@@ -995,7 +1001,7 @@
     return await new Promise((res) => c.toBlob(res, 'image/png'));
   }
   async function shareCard() {
-    const p = data && player(); if (!p) return; const btn = $('card'), old = btn.textContent; M.ret = document.activeElement; btn.textContent = '…'; btn.disabled = true;
+    const p = data && player(); if (!p) return; const cardBtn = $('card'), btn = cardBtn.querySelector('.mi-t'), old = btn.textContent; M.ret = document.activeElement; btn.textContent = 'Création…'; cardBtn.disabled = true;
     try {
       const blob = await buildCard(p); const name = 'zth-' + p.name.replace(/[^a-z0-9]/gi, '_') + '.png'; const file = new File([blob], name, { type: 'image/png' });
       const url = URL.createObjectURL(blob); const im = document.createElement('img'); im.src = url; im.alt = 'Carte de stats de ' + p.name; im.className = 'card-prev';
@@ -1003,7 +1009,7 @@
       share.onclick = async () => { try { if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Stats de ' + p.name, text: p.name + ' · ' + F(p.trophies) + ' trophées' }); else dl.click(); } catch (_) {} };
       M.modal({ title: 'Carte de ' + p.name, body: im, actions: [share, dl], onClose: () => URL.revokeObjectURL(url) });
     } catch (e) { console.warn('card', e); M.toast('Impossible de créer la carte', 'bad'); }
-    btn.textContent = old; btn.disabled = false;
+    btn.textContent = old; cardBtn.disabled = false;
   }
   $('card').onclick = shareCard;
   $('reload').onclick = async () => {
@@ -1031,29 +1037,29 @@
 
   M.init();
   let curTab = 'overview';
-  const scrolls = {};
+  const scrolls = {}; let leaveT;
   function setTab(t, fromUser) {
     if (!TAB_LIST.includes(t)) t = 'overview';
-    const prev = curTab, pdir = Math.sign(TAB_LIST.indexOf(t) - TAB_LIST.indexOf(curTab));
+    const prev = curTab, idx = TAB_LIST.indexOf(t);
     if (fromUser) scrolls[curTab] = scrollY;
     curTab = t; M.onTab(t, fromUser);
+    // dock : la position de la pastille vient uniquement de l'index
+    const dock = $('tabs'), dp = $('dockPill'); dock.style.setProperty('--i', idx);
+    document.querySelectorAll('.dock-btn').forEach((b) => { const on = b.dataset.go === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+    if (dp && t !== prev && !M.calm()) { dp.classList.remove('go'); void dp.offsetWidth; dp.classList.add('go'); }
     const apply = () => {
-      document.querySelectorAll('.pane').forEach((pn) => pn.style.setProperty('--pdir', pdir));
-      document.querySelectorAll('.tab').forEach((b) => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-      document.querySelectorAll('.pane').forEach((pn) => pn.classList.toggle('on', pn.dataset.pane === t));
+      document.querySelectorAll('.pane').forEach((pn) => { pn.classList.remove('leaving'); pn.classList.toggle('on', pn.dataset.pane === t); });
       try { localStorage.setItem('cf-tab', t); } catch (_) {}
       try { history.replaceState(null, '', '#' + t); } catch (_) {}
-      if (data) { try { drawGraphs(); } catch (_) {} }        // size charts now that their pane is visible
+      if (data) { try { drawGraphs(); } catch (_) {} }        // dimensionne les graphiques de la page devenue visible
       if (fromUser) scrollTo({ top: scrolls[t] || 0, behavior: 'instant' });
-      if (M.pill) M.pill();
     };
-    // sortie + entrée en fondu (opacité seulement) via View Transitions ; sans support : fondu d'entrée simple
-    if (fromUser && t !== prev && document.startViewTransition && !M.calm()) {
-      const root = document.documentElement; root.classList.add('vt');
-      try { const vt = document.startViewTransition(apply); vt.finished.finally(() => root.classList.remove('vt')); } catch (_) { root.classList.remove('vt'); apply(); }
-    } else apply();
+    // sortie rapide (opacité) puis entrée ; clics rapprochés : le dernier gagne
+    clearTimeout(leaveT);
+    const old = document.querySelector('.pane.on');
+    if (fromUser && t !== prev && old && !M.calm()) { old.classList.add('leaving'); leaveT = setTimeout(apply, 110); } else apply();
   }
-  document.querySelectorAll('.tab').forEach((b) => { b.onclick = () => setTab(b.dataset.tab, true); });
+  document.querySelectorAll('.dock-btn').forEach((b) => { b.onclick = () => setTab(b.dataset.go, true); });
   function setSub(sub) {
     if (!['all', 'trophy', 'ranked'].includes(sub)) sub = 'all';
     const pn = document.querySelector('.pane[data-pane="combats"]'); if (pn) pn.dataset.sub = sub;
