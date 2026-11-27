@@ -35,6 +35,7 @@
       <div class="menu" id="moreMenu" role="menu" aria-label="Actions">
         <button class="menu-item" id="share" type="button" role="menuitem"><span class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg></span><span class="mi-t">Partager</span></button>
         <button class="menu-item" id="card" type="button" role="menuitem"><span class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span><span class="mi-t">Ma carte</span></button>
+        <button class="menu-item" id="report" type="button" role="menuitem"><span class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6a1 1 0 011 1v1H8V5a1 1 0 011-1zM8 6H6a1 1 0 00-1 1v13a1 1 0 001 1h12a1 1 0 001-1V7a1 1 0 00-1-1h-2M9 12h6M9 16h4"/></svg></span><span class="mi-t">Rapport</span></button>
         <button class="menu-item" id="reload" type="button" role="menuitem" aria-label="Actualiser"><span class="mi-ic ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/></svg></span><span class="mi-t">Actualiser</span></button>
         <button class="menu-item" id="theme" type="button" role="menuitem"><span class="mi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 010 18z" fill="currentColor"/></svg></span><span class="mi-t">Clair</span></button>
       </div>
@@ -110,7 +111,7 @@
 
   <div class="seg" id="cSeg" data-tab="combats" data-o="0" role="group" aria-label="Type de combats"><span class="seg-pill" aria-hidden="true"><i></i></span><button type="button" class="on" data-sub="all">Tout</button><button type="button" data-sub="trophy">Trophées</button><button type="button" data-sub="ranked">Ranked</button></div>
   <section class="card" data-tab="combats" data-o="1">
-    <div class="ghead"><h2 id="batT">🕹️ Derniers combats</h2><div class="flt" id="batF"></div></div>
+    <div class="ghead"><h2 id="batT">🕹️ Derniers combats</h2><div class="flt" id="batF"></div><button type="button" class="btn rep-btn" id="repBtn">Rapport</button></div>
     <div class="bl" id="batL"></div>
     <button class="btn more" id="batMore" hidden>Afficher plus</button>
   </section>

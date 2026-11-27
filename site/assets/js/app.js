@@ -1018,6 +1018,113 @@
     M.toast(ok ? 'Stats actualisées · ' + $('ago').textContent : 'Échec de l\'actualisation — les dernières données sont conservées', ok ? 'ok' : 'bad');
   };
 
+  // ---------- rapport automatique: texte prêt à copier (Instagram, Discord, WhatsApp) ----------
+  const REP = { n: 21, kind: 'rk', short: false, tag: null };
+  let repArch = null;
+  const repBrawler = (s) => String(s || '?').toLowerCase().replace(/(^|[\s.\-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+  const repPlural = (n, one, many) => n + ' ' + (n > 1 ? many : one);
+  async function repArchive() {
+    if (repArch) return repArch;
+    try { const r = await fetch('battles.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const j = await r.json(); repArch = Array.isArray(j.battles) ? j.battles : []; } } catch (_) {}
+    return repArch || [];
+  }
+  function repBattles(p, archive) {
+    const want = (t) => REP.kind === 'rk' ? (t === 'soloRanked' || t === 'teamRanked') : t === 'ranked';
+    let list = archive.filter((b) => b.g === p.tag && want(b.ty)).map((b) => ({ t: b.t, m: b.m, mp: b.mp, r: b.r, b: b.b }));
+    if (list.length < REP.n) { // repli: les 25 derniers combats de data.json
+      const rec = ((p.recent && p.recent.list) || []).filter((b) => want(b.type)).map((b) => ({ t: b.time, m: b.mode, mp: b.map, r: b.result, b: b.brawler }));
+      if (rec.length > list.length) list = rec;
+    }
+    list.sort((a, b) => a.t < b.t ? 1 : a.t > b.t ? -1 : 0);
+    return list.slice(0, REP.n).reverse(); // du plus ancien au plus récent
+  }
+  function repStats(list) {
+    const s = { n: list.length, w: 0, l: 0, maxL: 0, maxW: 0, cur: 0, by: { m: {}, mp: {}, b: {} } };
+    let rl = 0, rw = 0;
+    list.forEach((x) => {
+      const win = x.r === 'win', loss = x.r === 'loss';
+      if (win) { s.w++; rw++; rl = 0; } else if (loss) { s.l++; rl++; rw = 0; } else { rl = 0; rw = 0; }
+      s.maxL = Math.max(s.maxL, rl); s.maxW = Math.max(s.maxW, rw);
+      [['m', x.m], ['mp', x.mp], ['b', x.b]].forEach(([k, v]) => { const o = s.by[k][v] || (s.by[k][v] = { k: v, n: 0, w: 0, l: 0 }); o.n++; if (win) o.w++; if (loss) o.l++; });
+    });
+    const last = list[list.length - 1]; s.cur = 0;
+    for (let i = list.length - 1; i >= 0 && last && list[i].r === last.r; i--) s.cur++;
+    s.curType = last ? last.r : null;
+    s.wr = s.w + s.l ? Math.round(100 * s.w / (s.w + s.l)) : null;
+    s.arr = (k) => Object.values(s.by[k]);
+    return s;
+  }
+  function repRange(list) {
+    if (!list.length) return '';
+    const a = battleDate(list[0].t), b = battleDate(list[list.length - 1].t), p2 = (n) => String(n).padStart(2, '0');
+    const hm = (d) => d.getHours() + 'h' + p2(d.getMinutes()), day = (d) => d.toLocaleDateString('fr-CH', { day: 'numeric', month: 'short' });
+    return a.toDateString() === b.toDateString() ? day(a) + ', ' + hm(a) + ' → ' + hm(b) : day(a) + ' → ' + day(b);
+  }
+  function repText(p, list, short) {
+    const s = repStats(list), name = String(p.name || '').replace(/^[^|]*\|/, '').trim() || p.name, NAME = name.toUpperCase();
+    if (!s.n) return 'Aucun combat ' + (REP.kind === 'rk' ? 'classé' : 'en trophées') + ' enregistré pour ' + name + '.';
+    const kind = REP.kind === 'rk' ? 'classé' : 'trophées', wr = s.wr == null ? '—' : s.wr + ' %', trend = s.wr != null && s.wr < 50 ? '📉' : '📈';
+    const bs = s.arr('b').sort((a, b) => b.n - a.n || b.w - a.w);
+    let bad = bs.filter((x) => x.n >= 2 && x.w === 0); if (!bad.length) bad = bs.filter((x) => x.n >= 3 && x.w / x.n <= .25);
+    bad = bad.slice(0, 6);
+    const good = bs.filter((x) => x.n >= 3 && x.w / x.n >= .5).sort((a, b) => b.w - a.w || a.l - b.l).slice(0, 2);
+    const watch = bs.filter((x) => x.n >= 3 && x.w > 0 && x.w / x.n < .35 && !bad.includes(x)).slice(0, 2);
+    const mps = s.arr('mp').sort((a, b) => b.l - a.l || b.n - a.n), curse = mps.find((x) => x.n >= 3 && x.w === 0) || mps.find((x) => x.n >= 4 && x.w / x.n <= .25);
+    const mds = s.arr('m').filter((x) => x.n >= 4).sort((a, b) => a.w / a.n - b.w / b.n), worstMode = mds[0], bestMode = mds[mds.length - 1];
+    const top = bs.slice().sort((a, b) => b.w - a.w)[0], carry = top && s.w >= 3 && top.w >= 2 && top.w / s.w >= .5 ? top : null;
+    const bdl = (x) => repBrawler(x.k) + ' (' + x.w + '/' + x.n + ')';
+    if (short) {
+      const o = [name + ' en ' + kind + ' 👀', s.w + ' V - ' + s.l + ' D (' + wr + ') ' + trend];
+      if (s.maxL >= 3) o.push(repPlural(s.maxL, 'défaite', 'défaites') + " d'affilée 💀"); else if (s.maxW >= 3) o.push(repPlural(s.maxW, 'victoire', 'victoires') + " d'affilée 🔥");
+      if (curse) o.push(curse.k + ' : ' + curse.w + '/' + curse.n + ' 🔥');
+      if (bad.length) o.push('', '🚫 Brawlers interdits :', bad.map(bdl).join(', '));
+      if (good.length) o.push('', '✅ ' + (good.length > 1 ? 'Autorisés : ' : 'Seul autorisé : ') + good.map((x) => repBrawler(x.k)).join(', ') + ' 🐐');
+      o.push('', '#ZTH #BrawlStars'); return o.join('\n');
+    }
+    const o = ['📊 RAPPORT ' + (REP.kind === 'rk' ? 'CLASSÉ' : 'TROPHÉES') + ' DE ' + NAME + ' 📊', '(' + s.n + ' derniers combats, ' + repRange(list) + ')', '',
+      '✅ ' + repPlural(s.w, 'victoire', 'victoires'), '❌ ' + repPlural(s.l, 'défaite', 'défaites'), trend + ' ' + wr + ' de winrate', '', '🔥 Faits marquants :'];
+    const f = [];
+    if (s.maxL >= 3) f.push(repPlural(s.maxL, 'défaite', 'défaites') + " d'affilée 💀");
+    if (s.maxW >= 3) f.push(repPlural(s.maxW, 'victoire', 'victoires') + " d'affilée 🔥");
+    if (worstMode && worstMode.w / worstMode.n < .4) f.push(mode(worstMode.k) + ' : ' + worstMode.w + 'V / ' + worstMode.l + 'D');
+    else if (bestMode && bestMode.w / bestMode.n >= .6) f.push(mode(bestMode.k) + ' : ' + bestMode.w + 'V / ' + bestMode.l + 'D 💪');
+    if (curse) f.push(curse.k + ' : ' + curse.w + ' sur ' + curse.n + ' 🔥 (la map maudite)');
+    if (carry) f.push(repBrawler(carry.k) + ' porte ' + carry.w + ' victoire' + (carry.w > 1 ? 's' : '') + ' sur ' + s.w + ' 🐐');
+    if (!f.length) f.push('Séance régulière, rien d\'extrême');
+    f.forEach((x) => o.push('• ' + x));
+    if (bad.length) { o.push('', '🚫 BRAWLERS INTERDITS À ' + NAME + ' 🚫'); bad.forEach((x) => o.push('• ' + repBrawler(x.k) + ' (' + x.w + '/' + x.n + ')')); }
+    if (good.length || watch.length) o.push('');
+    good.forEach((x) => o.push('✅ Brawler autorisé : ' + repBrawler(x.k) + ' (' + x.w + 'V / ' + x.l + 'D)'));
+    watch.forEach((x) => o.push('⚠️ ' + repBrawler(x.k) + ' : sous surveillance (' + x.w + '/' + x.n + ')'));
+    if (bad.length) o.push('', '⚠️ ' + name + ', tu ne dois plus jouer ' + (bad.length > 1 ? 'ces brawlers' : 'ce brawler') + '. C\'est officiel.');
+    const v = s.wr == null ? '' : s.wr >= 65 ? name + ' est en feu 🔥' : s.wr >= 50 ? 'Séance solide ✅' : s.wr >= 35 ? 'Séance compliquée, ça peut mieux faire 😅' : good.length ? repBrawler(good[0].k) + ' est le seul à avoir bossé 🐐' : 'Séance à oublier 💀';
+    o.push('', '🏆 Verdict : ' + v, '', 'Source : le site ZTH Stats 📈'); return o.join('\n');
+  }
+  async function openReport() {
+    if (!data || !data.players || !data.players.length) return;
+    M.ret = document.activeElement; if (!REP.tag || !data.players.some((x) => x.tag === REP.tag)) REP.tag = sel || data.players[0].tag;
+    const wrap = el('div', 'rep'), row1 = el('div', 'rep-row'), row2 = el('div', 'rep-row');
+    const pick = el('select'); pick.setAttribute('aria-label', 'Joueur'); data.players.forEach((x) => { const o = el('option', null, x.name); o.value = x.tag; pick.append(o); }); pick.value = REP.tag;
+    const grp = (label, items, get, set) => { const g = el('div', 'flt'); g.setAttribute('role', 'group'); g.setAttribute('aria-label', label); const bs = items.map(([v, t]) => { const b = el('button', null, t); b.type = 'button'; b.onclick = () => { set(v); mark(); refresh(); }; b._v = v; g.append(b); return b; }); const mark = () => bs.forEach((b) => b.setAttribute('aria-pressed', String(get() === b._v))); mark(); return g; };
+    row1.append(pick, grp('Mode', [['rk', 'Classé'], ['tr', 'Trophées']], () => REP.kind, (v) => { REP.kind = v; }));
+    row2.append(grp('Nombre de combats', [[10, '10'], [21, '21'], [30, '30']], () => REP.n, (v) => { REP.n = v; }), grp('Format', [[false, 'Complet'], [true, 'Story']], () => REP.short, (v) => { REP.short = v; }));
+    const ta = el('textarea', 'rep-txt'); ta.readOnly = true; ta.rows = 16; ta.setAttribute('aria-label', 'Rapport à copier'); ta.value = 'Chargement des combats…';
+    const note = el('p', 'rep-note', 'Le texte se met à jour tout seul avec les derniers combats. Colle-le tel quel dans Instagram.');
+    wrap.append(row1, row2, ta, note);
+    const copy = el('button', 'btn pri', 'Copier'); copy.type = 'button';
+    const share = el('button', 'btn', 'Partager'); share.type = 'button'; share.hidden = !navigator.share;
+    copy.onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(ta.value); ok = true; } catch (_) { ta.select(); try { ok = document.execCommand('copy'); } catch (__) {} } M.toast(ok ? 'Rapport copié ✅' : 'Copie impossible — sélectionne le texte à la main', ok ? 'ok' : 'bad'); };
+    share.onclick = async () => { try { await navigator.share({ text: ta.value }); } catch (_) {} };
+    let seq = 0;
+    const refresh = async () => { const my = ++seq; const p = data.players.find((x) => x.tag === REP.tag) || data.players[0]; const arch = await repArchive(); if (my !== seq) return; ta.value = repText(p, repBattles(p, arch), REP.short); ta.rows = REP.short ? 10 : 16; };
+    pick.onchange = () => { REP.tag = pick.value; refresh(); };
+    M.modal({ title: 'Rapport automatique', body: wrap, actions: [copy, share] });
+    const m = wrap.closest('.modal'); if (m) m.classList.add('wide');
+    refresh();
+  }
+  $('report').onclick = openReport;
+  const repBtn = $('repBtn'); if (repBtn) repBtn.onclick = openReport;
+
   // ---------- tabs: move each tagged section into its pane, then switch panes ----------
   (function introCard() { const c = $('introCard'); if (!c) return; let seenIt = false; try { seenIt = localStorage.getItem('cf-intro2') === '1'; } catch (_) {} c.hidden = seenIt; $('introX').onclick = () => { c.hidden = true; try { localStorage.setItem('cf-intro2', '1'); } catch (_) {} }; })();
   (function guides() {
@@ -1080,7 +1187,7 @@
   setInterval(load, 60 * 1000); setInterval(checkStale, 60 * 1000);
   setInterval(tick, 20 * 1000);
   // Mise à jour automatique : dès qu'une nouvelle version de l'app prend le relais, la page se recharge une seule fois.
-  const BUILD = 'v26';
+  const BUILD = 'v27';
   if ('serviceWorker' in navigator) {
     const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadController || reloaded) return; reloaded = true; location.reload(); });

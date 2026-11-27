@@ -75,3 +75,12 @@ body .modal-x { border-radius: 14px; }
 @media (prefers-reduced-motion: reduce) { body .seg button, body .chip, body .flt button, body .rng button, body .btn, body .gd-in, body select { transition: none; } .seg-pill { transition: none; } }
 @media (prefers-reduced-motion: no-preference) { .seg-pill { transition: transform .42s var(--spring); } }
 html[data-motion="off"] .seg-pill, html[data-motion="off"] .chip, html[data-motion="off"] .btn { transition: none !important; }
+
+/* ---- rapport automatique ---- */
+body .modal.wide { width: min(580px, 100%); }
+.rep { display: grid; gap: 10px; }
+.rep-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.rep-txt { width: 100%; box-sizing: border-box; resize: vertical; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--g-line); background: color-mix(in srgb, var(--panel) 70%, transparent); color: inherit; font: 14px/1.5 ui-sans-serif, system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif; white-space: pre-wrap; }
+.rep-txt:focus-visible { outline: 2px solid var(--accent, #FFC93C); outline-offset: 2px; }
+.rep-note { margin: 0; font-size: 12.5px; opacity: .7; }
+.rep-btn { margin-left: auto; min-height: 36px; padding: 0 14px; }
