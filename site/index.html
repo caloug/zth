@@ -90,6 +90,7 @@
     <div class="card acc" style="--c: #FF8A2B"><p class="lbl">Meilleure série</p><div class="big" id="kStr">—</div><p class="note" id="kStrT">—</p><img class="kimg" id="kStrI" alt="" hidden></div>
   </section>
 
+  <section class="card" id="insCard" data-tab="overview" data-o="1.2" hidden><h2 id="insT">Analyse</h2><div class="ins-l" id="insL"></div><p class="note">Calculée automatiquement sur les combats archivés des 60 derniers jours.</p></section>
   <section class="card" id="rankedCard" data-tab="overview" data-o="1.5" hidden>
     <h2>Classé</h2>
     <div id="ranked"></div>
@@ -202,9 +203,12 @@
     <input id="gdFilter" class="gd-in" type="search" placeholder="Chercher un brawler…" aria-label="Chercher un guide de brawler" autocomplete="off">
     <div class="gd-grid" id="gdGrid"></div>
     <p class="note">Les guides sont hébergés sur powerleagueprodigy.com (Prodigy) et s'ouvrent sur leur site ; certains peuvent demander un compte ou un abonnement.</p></section>
-  <section class="card" data-tab="equipe" data-o="2"><h2>🏅 Trophées de l'équipe</h2><div class="awards" id="awards"></div></section>
+  <section class="card" id="palmares" data-tab="equipe" data-o="0"><h2>Palmarès de l'équipe</h2>
+    <h3 class="sub">Podium de la semaine</h3><div class="podium" id="podium"></div><p class="note">Qui a gagné le plus de trophées ces 7 derniers jours.</p>
+    <h3 class="sub">Records</h3><div class="awards" id="records"></div>
+    <h3 class="sub">Trophées</h3><div class="awards" id="awards"></div></section>
   <section class="card" data-tab="equipe" data-o="3"><h2>L'équipe au complet</h2><div class="grid" id="totals"></div></section>
-  <section class="card" data-tab="equipe" data-o="7"><h2>💡 Le savais-tu ?</h2><ul class="facts" id="facts"></ul></section>
+  <section class="card" data-tab="equipe" data-o="9"><h2>💡 Le savais-tu ?</h2><ul class="facts" id="facts"></ul></section>
 
   <section class="card" data-tab="brawlers" data-o="9">
     <h2>🎯 Prochain palier de trophées</h2>
@@ -226,7 +230,6 @@
 
   <div class="card" data-tab="combats" data-o="1.5"><h2 id="gDayT">Trophées par jour</h2><div class="chart" id="gDay"></div><p class="note">Variation de trophées jour par jour (vert = gain, rouge = perte).</p></div>
   <div class="card" data-tab="combats" data-o="6"><h2 id="gHoursT">Quand vous jouez</h2><div class="chart" id="gHours"></div><p class="note">Nombre de combats par heure (heure suisse).</p></div>
-  <section class="card" data-tab="equipe" data-o="0"><h2>🏆 Records de l'équipe</h2><div class="awards" id="records"></div></section>
   <section class="card" data-tab="combats" data-o="2.5">
     <div class="ghead"><h2 id="wrT">🎯 Taux de victoire</h2><div class="flt" id="wrView"></div></div>
     <div class="wr-now" id="wrNow"></div>
@@ -236,13 +239,10 @@
   <section class="card" data-tab="combats" data-o="7"><h2 id="mbT">🎯 Meilleur brawler par map</h2><div id="mapBr"></div><p class="note">Le brawler avec lequel ce joueur gagne le plus sur chaque map (min. 3 combats). Sous 10 combats, c'est une tendance provisoire : un échantillon limité ne prouve rien. Le nombre de combats est toujours affiché.</p></section>
   <section class="card" data-tab="combats" data-sub="trophy" data-o="101"><h2>📅 Calendrier — Trophées</h2><div id="calLad"></div><p class="note">Chaque jour coloré selon ton taux de victoire en parties normales (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
   <section class="card" data-tab="combats" data-sub="trophy" data-o="102"><div class="ghead"><h2>Taux de victoire — Trophées</h2><div class="flt" id="wrViewLad"></div></div><div class="chart" id="gWRlad"></div></section>
-  <section class="card" data-tab="combats" data-sub="trophy" data-o="103"><h2>🏆 Derniers combats Trophées</h2><div class="bl" id="batLad"></div></section>
   <section class="card" data-tab="combats" data-sub="trophy" data-o="104"><h2>🗺️ Maps — Trophées</h2><div id="mpLad"></div></section>
   <section class="card" data-tab="combats" data-sub="ranked" data-o="201"><h2>📅 Calendrier — Ranked</h2><div id="calRk"></div><p class="note">Chaque jour coloré selon ton taux de victoire en Classé (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
   <section class="card" data-tab="combats" data-sub="ranked" data-o="202"><div class="ghead"><h2>Taux de victoire — Classé</h2><div class="flt" id="wrViewRk"></div></div><div class="chart" id="gWRrk"></div></section>
-  <section class="card" data-tab="combats" data-sub="ranked" data-o="203"><h2>⚔️ Derniers combats Classé</h2><div class="bl" id="batRk"></div></section>
   <section class="card" data-tab="combats" data-sub="ranked" data-o="204"><h2>🗺️ Maps — Classé</h2><div id="mpRk"></div></section>
-  <section class="card" data-tab="equipe" data-o="0.5"><h2>🏆 Podium de la semaine</h2><div class="podium" id="podium"></div><p class="note">Qui a gagné le plus de trophées ces 7 derniers jours.</p></section>
   <section class="card" data-tab="equipe" data-o="7">
     <h2>Comparer les joueurs</h2>
     <div class="tablewrap"><table>

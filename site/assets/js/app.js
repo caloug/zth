@@ -205,6 +205,8 @@
     const r = el('div', 'r', sd && b.rank ? 'Top ' + b.rank : res === 'win' ? 'Victoire' : res === 'loss' ? 'Défaite' : 'Égalité');
     r.style.color = res === 'win' ? 'var(--ok)' : res === 'loss' ? 'var(--bad)' : 'var(--muted)';
     r.append(el('small', null, (b.trophyChange != null ? (b.trophyChange >= 0 ? '+' : '') + b.trophyChange + ' 🏆 · ' : '') + ago(b.time))); row.append(r);
+    row.dataset.b = JSON.stringify({ time: b.time, mode: b.mode, modeId: b.modeId, map: b.map, type: b.type, result: b.result, rank: b.rank, trophyChange: b.trophyChange, brawler: b.brawler, brawlerId: b.brawlerId });
+    row.tabIndex = 0; row.setAttribute('role', 'button'); row.setAttribute('aria-label', 'Détail du combat : ' + (b.map || mode(b.mode || 'unknown')));
     return row;
   }
   function mapRowEl(m) {
@@ -321,7 +323,7 @@
     $('batT').textContent = '🕹️ Derniers combats · ' + p.name;
     const list = [...((p.recent && p.recent.list) || [])].reverse(); // newest first
     const counts = { all: list.length, rk: list.filter((b) => (TYPES[b.type] || [])[1] === 'rk2').length, tr: list.filter((b) => b.type === 'ranked').length };
-    const fl = $('batF'); fl.replaceChildren(...[['all', 'Tout'], ['rk', 'Classé'], ['tr', 'Trophées']].map(([k, lab]) => { const b = el('button', null, `${lab} (${counts[k]})`); b.type = 'button'; b.setAttribute('aria-pressed', batFilter === k); b.onclick = () => { batFilter = k; batAll = false; renderExtras(p, ps); }; return b; }));
+    const fl = $('batF'); fl.replaceChildren(...[['all', 'Tout'], ['rk', 'Classé'], ['tr', 'Trophées']].map(([k, lab]) => { const b = el('button', null, `${lab} (${counts[k]})`); b.type = 'button'; b.setAttribute('aria-pressed', batFilter === k); b.onclick = () => setSub(k === 'rk' ? 'ranked' : k === 'tr' ? 'trophy' : 'all'); return b; }));
     const shown = list.filter((b) => batFilter === 'all' || (batFilter === 'rk' ? (TYPES[b.type] || [])[1] === 'rk2' : b.type === 'ranked'));
     const bl = $('batL'); bl.replaceChildren();
     if (!shown.length) bl.append(el('div', 'empty', 'Aucun combat de ce type récemment.'));
@@ -821,7 +823,7 @@
     rc.brawlers.forEach((m, i) => { const id = bid(m.name); bd.append(barRow(m.name, m.battles, bMax, PAL[i % PAL.length], null, id ? IMG.brawler(id) : null)); });
     if (!rc.brawlers.length) bd.append(el('p', 'empty', 'Aucun combat récent.'));
 
-    renderExtras(p, ps);
+    renderExtras(p, ps); renderInsights(p);
 
     // awards
     const aw = $('awards'); aw.replaceChildren();
@@ -1023,10 +1025,11 @@
   let repArch = null;
   const repBrawler = (s) => String(s || '?').toLowerCase().replace(/(^|[\s.\-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
   const repPlural = (n, one, many) => n + ' ' + (n > 1 ? many : one);
+  let repAt = 0, repPend = null;
   async function repArchive() {
-    if (repArch) return repArch;
-    try { const r = await fetch('battles.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const j = await r.json(); repArch = Array.isArray(j.battles) ? j.battles : []; } } catch (_) {}
-    return repArch || [];
+    if (repArch && Date.now() - repAt < 3 * 6e4) return repArch;
+    if (!repPend) repPend = (async () => { try { const r = await fetch('battles.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const j = await r.json(); repArch = Array.isArray(j.battles) ? j.battles : []; repAt = Date.now(); } } catch (_) {} repPend = null; return repArch || []; })();
+    return repPend;
   }
   function repBattles(p, archive) {
     const want = (t) => REP.kind === 'rk' ? (t === 'soloRanked' || t === 'teamRanked') : t === 'ranked';
@@ -1125,6 +1128,61 @@
   $('report').onclick = openReport;
   const repBtn = $('repBtn'); if (repBtn) repBtn.onclick = openReport;
 
+  // ---------- analyse automatique + détail d'un combat ----------
+  const insMine = (arch, tag) => arch.filter((b) => b.g === tag && b.ty !== 'friendly' && b.ty !== 'challenge' && (b.r === 'win' || b.r === 'loss')).sort((a, b) => a.t < b.t ? -1 : a.t > b.t ? 1 : 0);
+  const insSessions = (list) => { const out = []; let cur = []; list.forEach((b, i) => { if (i && battleDate(b.t) - battleDate(list[i - 1].t) > 30 * 6e4) { out.push(cur); cur = []; } cur.push(b); }); if (cur.length) out.push(cur); return out; };
+  const insRate = (l) => l.length ? Math.round(100 * l.filter((x) => x.r === 'win').length / l.length) : null;
+  function insights(list, name) {
+    const out = [];
+    if (list.length < 15) return out;
+    const last = list.slice(-20), prev = list.slice(-40, -20), a = insRate(last), b = prev.length >= 10 ? insRate(prev) : null;
+    if (b != null && a - b >= 8) out.push(['📈', 'Forme en hausse', a + ' % de victoires sur les 20 derniers combats, contre ' + b + ' % juste avant.', 'good']);
+    else if (b != null && b - a >= 8) out.push(['📉', 'Forme en baisse', a + ' % de victoires sur les 20 derniers combats, contre ' + b + ' % juste avant.', 'bad']);
+    else out.push(['➖', 'Forme stable', a + ' % de victoires sur les 20 derniers combats.', '']);
+    const ses = insSessions(list), early = [], late = []; ses.forEach((s) => s.forEach((x, i) => (i < 8 ? early : late).push(x)));
+    if (early.length >= 12 && late.length >= 12) { const e = insRate(early), l = insRate(late); if (e - l >= 10) out.push(['😴', 'Fatigue', 'Après 8 combats d\'affilée, ton taux de victoire passe de ' + e + ' % à ' + l + ' %. Une pause ferait du bien.', 'bad']); }
+    const by = (key) => { const m = {}; list.forEach((x) => { const o = m[x[key]] || (m[x[key]] = { k: x[key], n: 0, w: 0 }); o.n++; if (x.r === 'win') o.w++; }); return Object.values(m).map((o) => ({ ...o, wr: Math.round(100 * o.w / o.n) })); };
+    const bw = by('b').filter((x) => x.n >= 6).sort((x, y) => y.wr - x.wr || y.n - x.n);
+    if (bw.length) { const t = bw[0]; if (t.wr >= 50) out.push(['⭐', 'Point fort', repBrawler(t.k) + ' : ' + t.wr + ' % de victoires sur ' + t.n + ' combats.', 'good']); const w = bw[bw.length - 1]; if (bw.length > 1 && w.wr < 45) out.push(['🔧', 'À revoir', repBrawler(w.k) + ' : seulement ' + w.wr + ' % sur ' + w.n + ' combats.', 'bad']); }
+    const parts = [['le matin', 6, 12], ['l\'après-midi', 12, 18], ['le soir', 18, 24], ['la nuit', 0, 6]].map(([lab, h0, h1]) => { const l = list.filter((x) => { const h = battleDate(x.t).getHours(); return h >= h0 && h < h1; }); return { lab, n: l.length, wr: insRate(l) }; }).filter((x) => x.n >= 10).sort((x, y) => y.wr - x.wr);
+    if (parts.length > 1 && parts[0].wr - parts[parts.length - 1].wr >= 12) out.push(['🕒', 'Meilleur moment', name + ' joue mieux ' + parts[0].lab + ' (' + parts[0].wr + ' %) que ' + parts[parts.length - 1].lab + ' (' + parts[parts.length - 1].wr + ' %).', '']);
+    const md = by('m').filter((x) => x.n >= 8).sort((x, y) => y.wr - x.wr);
+    if (md.length && md[0].wr >= 55) out.push(['🎮', 'Meilleur mode', mode(md[0].k) + ' : ' + md[0].wr + ' % sur ' + md[0].n + ' combats.', 'good']);
+    let cur = 0; const lastR = list[list.length - 1].r; for (let i = list.length - 1; i >= 0 && list[i].r === lastR; i--) cur++;
+    if (cur >= 3) out.push([lastR === 'win' ? '🔥' : '🧊', 'Série en cours', cur + (lastR === 'win' ? ' victoires' : ' défaites') + ' d\'affilée.', lastR === 'win' ? 'good' : 'bad']);
+    return out.slice(0, 5);
+  }
+  let insSeq = 0;
+  async function renderInsights(p) {
+    const card = $('insCard'); if (!card) return; const my = ++insSeq, arch = await repArchive(); if (my !== insSeq) return;
+    const name = String(p.name || '').replace(/^[^|]*\|/, '').trim() || p.name, items = insights(insMine(arch, p.tag), name), box = $('insL'); box.replaceChildren();
+    card.hidden = !items.length; if (!items.length) return;
+    $('insT').textContent = 'Analyse de ' + name;
+    items.forEach(([ic, t, tx, tone]) => { const r = el('div', 'ins ' + tone); r.append(el('span', 'ins-i', ic)); const d = el('div'); d.append(el('b', null, t), el('p', null, tx)); r.append(d); box.append(r); });
+  }
+  async function battleContext(b, box) {
+    const arch = await repArchive(), list = insMine(arch, sel), i = list.findIndex((x) => x.t === b.time && x.m === b.mode && x.mp === b.map);
+    const out = []; if (i >= 0) {
+      const ses = insSessions(list).find((s) => s.includes(list[i])), k = ses.indexOf(list[i]) + 1, w = ses.filter((x) => x.r === 'win').length;
+      out.push('Combat n°' + k + ' d\'une séance de ' + ses.length + ' combats (' + w + ' V / ' + (ses.length - w) + ' D).');
+      const same = list.filter((x) => x.b === list[i].b && x.mp === list[i].mp); if (same.length >= 2) out.push(repBrawler(list[i].b) + ' sur ' + list[i].mp + ' : ' + same.filter((x) => x.r === 'win').length + ' V / ' + same.filter((x) => x.r === 'loss').length + ' D sur ' + same.length + ' combats archivés.');
+    }
+    box.textContent = ''; if (!out.length) { box.hidden = true; return; } out.forEach((t) => box.append(el('p', null, t)));
+  }
+  function openBattle(b) {
+    const win = b.result === 'win', loss = b.result === 'loss', sd = /Showdown/i.test(b.mode || ''), wrap = el('div', 'bd ' + (win ? 'win' : loss ? 'loss' : ''));
+    const head = el('div', 'bd-head'); if (b.brawlerId) head.append(img(IMG.brawler(b.brawlerId), 'bd-img', b.brawler || ''));
+    const t = el('div', 'bd-t'); t.append(el('b', null, sd && b.rank ? 'Top ' + b.rank : win ? 'Victoire' : loss ? 'Défaite' : 'Égalité'), el('small', null, ((TYPES[b.type] || [])[0] ? TYPES[b.type][0] + ' · ' : '') + mode(b.mode || 'unknown'))); head.append(t); wrap.append(head);
+    const d = battleDate(b.time), rows = [['Carte', b.map || '—'], ['Brawler', b.brawler ? repBrawler(b.brawler) : '—'], ['Heure', d.toLocaleString('fr-CH', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })]];
+    if (b.trophyChange != null) rows.push(['Trophées', (b.trophyChange >= 0 ? '+' : '') + b.trophyChange + ' 🏆']);
+    const dl = el('dl', 'bd-grid'); rows.forEach(([k, v]) => dl.append(el('dt', null, k), el('dd', null, v))); wrap.append(dl);
+    const ctx = el('div', 'bd-ctx', 'Analyse du contexte…'); wrap.append(ctx); battleContext(b, ctx).catch(() => { ctx.hidden = true; });
+    M.ret = document.activeElement; M.modal({ title: 'Détail du combat', body: wrap, actions: [] });
+  }
+  const openRow = (e) => { const r = e.target.closest && e.target.closest('.bt[data-b]'); if (!r) return false; try { openBattle(JSON.parse(r.dataset.b)); } catch (_) {} return true; };
+  document.addEventListener('click', openRow);
+  document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.bt[data-b]')) { e.preventDefault(); openRow(e); } });
+
   // ---------- tabs: move each tagged section into its pane, then switch panes ----------
   (function introCard() { const c = $('introCard'); if (!c) return; let seenIt = false; try { seenIt = localStorage.getItem('cf-intro2') === '1'; } catch (_) {} c.hidden = seenIt; $('introX').onclick = () => { c.hidden = true; try { localStorage.setItem('cf-intro2', '1'); } catch (_) {} }; })();
   (function guides() {
@@ -1173,7 +1231,8 @@
     document.querySelectorAll('#cSeg button').forEach((b) => b.classList.toggle('on', b.dataset.sub === sub));
     $('cSeg').style.setProperty('--i', ['all', 'trophy', 'ranked'].indexOf(sub));
     try { localStorage.setItem('cf-sub', sub); } catch (_) {}
-    if (data) { try { drawGraphs(); } catch (_) {} }
+    batFilter = sub === 'ranked' ? 'rk' : sub === 'trophy' ? 'tr' : 'all'; batAll = false;
+    if (data) { try { drawGraphs(); } catch (_) {} try { renderExtras(player(), data.players); } catch (_) {} }
   }
   document.querySelectorAll('#cSeg button').forEach((b) => { b.onclick = () => setSub(b.dataset.sub); });
   (function initSub() { let h = '', sub = 'all'; try { h = location.hash.replace('#', ''); sub = localStorage.getItem('cf-sub') || 'all'; } catch (_) {} if (h === 'trophy' || h === 'ranked') sub = h; setSub(sub); })();
@@ -1187,7 +1246,7 @@
   setInterval(load, 60 * 1000); setInterval(checkStale, 60 * 1000);
   setInterval(tick, 20 * 1000);
   // Mise à jour automatique : dès qu'une nouvelle version de l'app prend le relais, la page se recharge une seule fois.
-  const BUILD = 'v27';
+  const BUILD = 'v28';
   if ('serviceWorker' in navigator) {
     const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadController || reloaded) return; reloaded = true; location.reload(); });
