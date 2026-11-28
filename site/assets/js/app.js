@@ -314,7 +314,7 @@
     // weekly podium
     const pod = $('podium'); pod.replaceChildren();
     const wk = ps.filter((x) => x.week).map((x) => ({ x, t: x.week.trophies })).sort((a, b) => b.t - a.t);
-    const medal = ['🥇', '🥈', '🥉'];
+    const medal = ['1', '2', '3'];
     if (!wk.length) pod.append(el('div', 'empty', 'Pas encore de données cette semaine.'));
     wk.slice(0, 3).forEach((e, i) => { const r = el('div', 'pod-row'); r.dataset.k = e.x.tag; r.append(el('span', 'pod-m', medal[i] || '•')); if (e.x.icon) r.append(img(IMG.icon(e.x.icon), null, '')); else r.append(el('span')); r.append(el('b', null, e.x.name)); const v = el('span', 'pod-v', (e.t >= 0 ? '+' : '') + F(e.t) + ' 🏆'); v.style.color = e.t >= 0 ? 'var(--ok)' : 'var(--bad)'; r.append(v); pod.append(r); });
     renderTypeTabs(p);
@@ -717,6 +717,7 @@
     if (p.fameTier) pill(null, '⭐ ' + p.fameTier.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()));
     if (p.currentStreak >= 3) pill(null, "🔥 " + p.currentStreak + " victoires d'affilée");
     else if (p.currentStreak <= -3) pill(null, "🧊 " + (-p.currentStreak) + " défaites d'affilée");
+    [...pills.children].slice(2).forEach((n) => n.remove()); // deux pastilles au maximum
     const hs = $('hSeen'), sv = seen(p.lastBattle); hs.replaceChildren(el('span', 'sdot ' + sv.cls), el('span', null, sv.label)); hs.title = "D'apres la derniere partie - l'API Brawl Stars ne donne pas le statut en ligne"; hs.hidden = false;
     M.hero(p);
     const nearRec = !p.highestTrophies || p.trophies / p.highestTrophies >= 0.99;
@@ -784,7 +785,7 @@
     listBlock('Voir les gadgets manquants (brawlers débloqués)', p.missing.gadgets, (s, x) => { if (x.id) s.append(img(IMG.gadget(x.id), 'ico s', '')); s.append(' ' + x.name + ' '); s.append(el('small', null, '· ' + x.brawler + (x.power < 7 ? ' (niv. ' + x.power + ')' : ''))); });
     listBlock('Voir les brawlers manquants', p.missing.brawlers.map((n, i) => ({ n, id: (p.missing.brawlerIds || [])[i] })), (s, x) => { if (x.id) s.append(img(IMG.brawler(x.id), 'ico s', '')); s.append(' ' + x.n); });
     const cp = $('completion'); cp.replaceChildren();
-    ps.map((x) => ({ x, c: completion(x) })).sort((a, b) => b.c - a.c).forEach(({ x, c }, i) => cp.append(barRow((['🥇 ', '🥈 ', '🥉 '][i] || '') + x.name, c, 100, 'linear-gradient(90deg,#FFC93C,#FF9F1C)', c + ' %')));
+    ps.map((x) => ({ x, c: completion(x) })).sort((a, b) => b.c - a.c).forEach(({ x, c }, i) => cp.append(barRow((['1. ', '2. ', '3. '][i] || '') + x.name, c, 100, 'linear-gradient(90deg,#FFC93C,#FF9F1C)', c + ' %')));
 
     // ranked
     const R = p.ranked || {};
@@ -808,7 +809,7 @@
     const rmax = Math.max(1, ...rr.map((x) => Math.max(elo(x), x.ranked.highestAllTimeRankedElo || 0)));
     rr.forEach((x, i) => {
       const t = rankTier(x.ranked.rankedRank);
-      const row = barRow((i === 0 ? '👑 ' : '') + x.name, elo(x), rmax, t.bg, t.name + ' · ' + F(elo(x)), IMG.rank(x.ranked.rankedRank)); row.querySelector('.fill').style.background = t.bg;
+      const row = barRow('' + x.name, elo(x), rmax, t.bg, t.name + ' · ' + F(elo(x)), IMG.rank(x.ranked.rankedRank)); row.querySelector('.fill').style.background = t.bg;
       const tr = row.querySelector('.track'); tr.style.overflow = 'visible';
       if (x.ranked.highestAllTimeRankedElo) { const mk = el('div', 'race-mk'); mk.style.left = `calc(${x.ranked.highestAllTimeRankedElo / rmax * 100}% - 1px)`; tr.append(mk); }
       row.dataset.k = x.tag; race.append(row);
@@ -905,7 +906,7 @@
     const sm = $('sqModes'); sm.replaceChildren(); const smx = Math.max(1, ...sqM.map((m) => m.n));
     sqM.forEach((m) => sm.append(barRow(mode(m.k), m.n, smx, MCOL[m.k] || '#8A8FA8', null, modeId(m.k) != null ? IMG.mode(modeId(m.k)) : null)));
     const sb = $('sqBrawlers'); sb.replaceChildren(); const top8 = sqB.slice(0, 8); const sbx = Math.max(1, ...top8.map((m) => m.n));
-    top8.forEach((m, i) => sb.append(barRow(m.k + (m.who > 1 ? ' 👥' : ''), m.n, sbx, PAL[i % PAL.length])));
+    top8.forEach((m, i) => sb.append(barRow(m.k + (m.who > 1 ? ' · partagé' : ''), m.n, sbx, PAL[i % PAL.length])));
 
     // compare
     const cb = $('cmp'); cb.replaceChildren();
@@ -1243,10 +1244,18 @@
   function checkStale() { const b = $('staleBar'); if (!b || !data) return; const m = Math.floor((Date.now() - new Date(data.updatedAt)) / 6e4); if (m < 30) { b.hidden = true; return; } b.hidden = false; b.textContent = '⚠️ Ces stats datent d\'il y a ' + (m < 120 ? m + ' min' : Math.round(m / 60) + ' h') + ' : la mise à jour automatique est peut-être en panne.'; }
   const plainHeads = () => document.querySelectorAll('h2').forEach((h) => { const n = h.firstChild; if (n && n.nodeType === 3) { const t = n.textContent.replace(/^[\p{Extended_Pictographic}\uFE0F\u200d\s]+/u, ''); if (t !== n.textContent) n.textContent = t; } });
   plainHeads(); setInterval(plainHeads, 1500);
+  // Interface sans emojis : les textes dynamiques sont nettoyés au fur et à mesure (le rapport à copier garde ses emojis).
+  (function noEmoji() {
+    const EMO = /\p{Extended_Pictographic}|\uFE0F|\u200D|\p{Regional_Indicator}/gu, KEEP = '★✓✕✔';
+    const fix = (t) => { const v = t.nodeValue, o = v.replace(EMO, (m) => KEEP.includes(m) ? m : ''); if (o !== v) t.nodeValue = o.replace(/ {2,}/g, ' ').replace(/^ (?=\S)/, ''); };
+    const walk = (n) => { if (!n) return; if (n.nodeType === 3) { fix(n); return; } if (n.nodeType !== 1 || /^(SCRIPT|STYLE|TEXTAREA)$/.test(n.tagName)) return; for (let c = n.firstChild; c; c = c.nextSibling) walk(c); };
+    walk(document.body);
+    new MutationObserver((ms) => ms.forEach((m) => { if (m.type === 'characterData') { if (m.target.parentNode && m.target.parentNode.tagName !== 'TEXTAREA') fix(m.target); } else m.addedNodes.forEach(walk); })).observe(document.body, { childList: true, subtree: true, characterData: true });
+  })();
   setInterval(load, 60 * 1000); setInterval(checkStale, 60 * 1000);
   setInterval(tick, 20 * 1000);
   // Mise à jour automatique : dès qu'une nouvelle version de l'app prend le relais, la page se recharge une seule fois.
-  const BUILD = 'v28';
+  const BUILD = 'v29';
   if ('serviceWorker' in navigator) {
     const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadController || reloaded) return; reloaded = true; location.reload(); });

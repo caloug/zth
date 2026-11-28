@@ -7,7 +7,7 @@
 <meta name="description" content="Stats Brawl Stars de l'équipe, mises à jour toutes les 5 minutes.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://caloug.github.io/zth/">
-<meta property="og:title" content="ZTH Stats — Ton escouade, tes stats, votre rivalité">
+<meta property="og:title" content="ZTH Stats — Stats Brawl Stars de l'escouade">
 <meta property="og:description" content="Trophées, classé, face-à-face et records de l'équipe. Mis à jour toutes les 5 minutes.">
 <meta property="og:image" content="https://caloug.github.io/zth/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
@@ -23,9 +23,10 @@
 <link rel="stylesheet" href="assets/css/styles.css">
 <link rel="stylesheet" href="assets/css/chrome.css">
 <link rel="stylesheet" href="assets/css/bars.css">
+<link rel="stylesheet" href="assets/css/clean.css">
 </head>
 <body class="loading">
-<div id="splash" class="splash" role="presentation" aria-hidden="true"><img src="icon-192.png" alt="" width="96" height="96"><b>ZTH <span>Stats</span></b><small>Ton escouade. Tes stats.</small></div>
+<div id="splash" class="splash" role="presentation" aria-hidden="true"><img src="icon-192.png" alt="" width="96" height="96"><b>ZTH <span>Stats</span></b><small>Stats de l'escouade</small></div>
 <div class="wrap">
   <header class="topbar" id="topbar">
     <div class="tb-brand"><img class="logo" src="icon-192.png" alt="" width="28" height="28"><span><b>ZTH</b> Stats</span></div>
@@ -49,12 +50,12 @@
       <div class="hero-id">
         <img class="avatar" id="hAva" alt="" hidden>
         <div>
-          <p class="kicker">★ Joueur Brawl Stars</p>
+          <p class="kicker">Joueur Brawl Stars</p>
           <h1 class="name" id="hName">Chargement…</h1>
           <p class="meta" id="hMeta">Récupération des stats de l'équipe</p>
           <div class="pills" id="hPills"></div>
           <p class="seen" id="hSeen" hidden></p>
-          <p class="warnbox" id="hWarn" hidden>⚠️ Les combats n'ont pas pu être chargés pour l'instant : les stats de combats peuvent être incomplètes.</p>
+          <p class="warnbox" id="hWarn" hidden>Les combats n'ont pas pu être chargés pour l'instant : les stats de combats peuvent être incomplètes.</p>
         </div>
       </div>
       <div class="tro"><div class="tro-num" id="hTro">—</div><p class="tro-lbl">trophées</p></div>
@@ -82,7 +83,7 @@
   <div class="pane" data-pane="equipe"></div>
   <div class="pane" data-pane="tierlist"></div>
 
-  <section class="card intro-card" id="introCard" data-tab="overview" data-o="0" hidden><button type="button" class="x" id="introX" aria-label="Fermer">✕</button><h2>ZTH — Ton escouade. Tes stats. Votre rivalité.</h2><p>Suis la progression de tes amis sur Brawl Stars, compare vos performances, découvre vos meilleurs brawlers et vise le podium de la semaine.</p></section>
+  <section class="card intro-card" id="introCard" data-tab="overview" data-o="0" hidden><button type="button" class="x" id="introX" aria-label="Fermer"></button><h2>Les stats de l'escouade ZTH</h2><p>Trophées, victoires et brawlers de chaque joueur, côte à côte. Mis à jour toutes les 5 minutes depuis l'API officielle de Brawl Stars.</p></section>
   <section class="grid" data-tab="overview" data-o="1">
     <div class="card acc" style="--c: var(--purple)"><p class="lbl">Victoires récentes</p><div class="wr" id="kWr">—</div></div>
     <div class="card acc" style="--c: #2BB673"><p class="lbl">Victoires 3c3</p><div class="big" id="k3">—</div><p class="note" id="kSd">—</p></div>
@@ -104,7 +105,7 @@
 
   <section class="card" data-tab="overview" data-o="2.5" id="homeBat"><div class="ghead"><h2>Derniers combats</h2><button type="button" class="lnk" id="homeAll">Tout voir →</button></div><div class="bl" id="batHome"></div></section>
   <section class="card" id="wkCard" data-tab="overview" data-o="2">
-    <h2>📅 Résumé de la semaine</h2>
+    <h2>Résumé de la semaine</h2>
     <div class="awards" id="wkHi"></div>
     <div class="wk-cards" id="wkC"></div>
     <p class="note" id="wkN"></p>
@@ -112,13 +113,13 @@
 
   <div class="seg" id="cSeg" data-tab="combats" data-o="0" role="group" aria-label="Type de combats"><span class="seg-pill" aria-hidden="true"><i></i></span><button type="button" class="on" data-sub="all">Tout</button><button type="button" data-sub="trophy">Trophées</button><button type="button" data-sub="ranked">Ranked</button></div>
   <section class="card" data-tab="combats" data-o="1">
-    <div class="ghead"><h2 id="batT">🕹️ Derniers combats</h2><div class="flt" id="batF"></div><button type="button" class="btn rep-btn" id="repBtn">Rapport</button></div>
+    <div class="ghead"><h2 id="batT">Derniers combats</h2><div class="flt" id="batF"></div><button type="button" class="btn rep-btn" id="repBtn">Rapport</button></div>
     <div class="bl" id="batL"></div>
     <button class="btn more" id="batMore" hidden>Afficher plus</button>
   </section>
 
   <section class="card" data-tab="combats" data-o="2">
-    <div class="ghead"><h2 id="mpT">🗺️ Taux de victoire par map</h2>
+    <div class="ghead"><h2 id="mpT">Taux de victoire par map</h2>
       <div class="ctl" style="margin:0"><div class="flt" id="mpScope"></div><select id="mpS" aria-label="Trier les maps"><option value="n">Plus jouées</option><option value="best">Meilleur %</option><option value="worst">Pire %</option></select></div></div>
     <div id="mpL"></div>
     <div id="mpWorst"></div>
@@ -127,7 +128,7 @@
   </section>
 
   <section class="card" id="evCard" data-tab="combats" data-o="3" hidden>
-    <h2>🗺️ Événements en cours</h2>
+    <h2>Événements en cours</h2>
     <div class="evs" id="evs"></div>
     <p class="note">Rotation officielle des cartes en ce moment.</p>
   </section>
@@ -135,11 +136,11 @@
   <section class="two" data-tab="equipe" data-o="1">
     <div class="card" id="chCard"><h2>🇨🇭 Classements suisses</h2><div class="chr" id="chr"></div>
       <p class="note">Top 200 de Suisse, par joueur et par brawler.</p></div>
-    <div class="card" id="clubCard" hidden><h2 id="clubT">🛡️ Club</h2><div class="club-h" id="clubH"></div><div class="cl" id="clubL"></div></div>
+    <div class="card" id="clubCard" hidden><h2 id="clubT">Club</h2><div class="club-h" id="clubH"></div><div class="cl" id="clubL"></div></div>
   </section>
 
   <section class="gsec" id="graphs">
-    <h2>📈 Graphiques</h2>
+    <h2>Graphiques</h2>
     <div class="card" data-tab="overview" data-o="3">
       <div class="ghead"><h2>Trophées dans le temps</h2><div class="rng" data-rng></div></div>
       <div class="chart" id="gTro"></div><div class="legend" id="gTroL"></div>
@@ -164,7 +165,7 @@
     <div class="card acc" style="--c: var(--y)"><p class="lbl">Collection</p><div class="big" id="kOwn">—</div><p class="note" id="kMax">—</p></div>
   </section>
   <section class="card" data-tab="brawlers" data-o="1">
-    <div class="ghead"><h2 id="bgT">🧱 Brawlers</h2>
+    <div class="ghead"><h2 id="bgT">Brawlers</h2>
       <label class="ctl" style="margin:0">Trier : <select id="bgS"><option value="tr">Trophées</option><option value="pw">Niveau</option><option value="st">Meilleure série</option><option value="nm">Nom</option></select></label></div>
     <div class="bgrid" id="bg"></div>
     <div class="bc-info" id="bcInfo" aria-live="polite" hidden></div>
@@ -172,7 +173,7 @@
   </section>
 
   <section class="card" data-tab="brawlers" data-o="2">
-    <h2>🧩 Ce qui manque</h2>
+    <h2>Ce qui manque</h2>
     <div class="miss-grid" id="missBars"></div>
     <div id="missLists"></div>
     <h3>Progression de l'équipe</h3>
@@ -185,21 +186,21 @@
     <div class="card"><h2>Brawlers des derniers combats</h2><div class="bars" id="brawlers"></div></div>
   </section>
 
-  <section class="card" data-tab="tierlist" data-o="1"><h2>📊 Tier List des Brawlers</h2>
+  <section class="card" data-tab="tierlist" data-o="1"><h2>Tier List des Brawlers</h2>
     <a class="tl-link" href="tierlist.webp" target="_blank" rel="noopener"><img class="tl-img" src="tierlist.webp" alt="Tier list des Brawlers (Compétitif), mise à jour le 24 novembre 2026" width="2247" height="2576" loading="lazy"></a>
     <p class="note">Contenu externe, non produit par ZTH · source : Prodigy · tier list datée du 24 nov. 2026, ajoutée le même jour · peut être dépassée après une mise à jour du jeu. Touche l'image pour l'ouvrir en grand.</p></section>
-  <section class="card" data-tab="tierlist" data-o="1.2"><h2>🏆 Objectif Master</h2>
+  <section class="card" data-tab="tierlist" data-o="1.2"><h2>Objectif Master</h2>
     <p class="note" style="margin:0 0 10px">Résumé d'un guide de Prodigy sur la montée en Ranked. L'auteur précise qu'il n'est pas pro et ne détient pas la vérité absolue : prends ça comme des conseils, pas des règles.</p>
-    <div class="pk"><h3>🧍 Solo Ranked</h3><p>Le matchmaking cherche à équilibrer les gains et pertes d'ELO, mais les résultats varient beaucoup. Tu peux aussi tomber contre des équipes avec des duos.</p></div>
-    <div class="pk"><h3>🧍🧍 Duo Ranked</h3><p>Tu affrontes surtout d'autres duos. Le point faible : le troisième joueur de ton équipe, parfois très faible. C'est voulu : c'est le mécanisme d'équilibrage du jeu en duo.</p></div>
+    <div class="pk"><h3>Solo Ranked</h3><p>Le matchmaking cherche à équilibrer les gains et pertes d'ELO, mais les résultats varient beaucoup. Tu peux aussi tomber contre des équipes avec des duos.</p></div>
+    <div class="pk"><h3>Duo Ranked</h3><p>Tu affrontes surtout d'autres duos. Le point faible : le troisième joueur de ton équipe, parfois très faible. C'est voulu : c'est le mécanisme d'équilibrage du jeu en duo.</p></div>
     <p class="note">Source : Prodigy (powerleagueprodigy.com), reformulé. D'autres parties pourront être ajoutées.</p></section>
-  <section class="card" data-tab="tierlist" data-o="1.5"><h2>🧠 Picks par mode</h2>
+  <section class="card" data-tab="tierlist" data-o="1.5"><h2>Picks par mode</h2>
     <p class="note" style="margin:0 0 10px">Idée : choisis un brawler qui répond directement à l'objectif du mode, quel que soit le draft. Avec des alliés aléatoires, on ne peut pas compter sur la synergie : mieux vaut avoir un impact personnel.</p>
-    <div class="pk"><h3>🔐 Braquage</h3><p>Objectif : faire un maximum de dégâts au coffre adverse (brawlers DPS).</p><div class="gd-grid"><span>Colt</span><span>Colette</span><span>Mélodie</span><span>Nori</span><span>Arkad</span><span>Polly</span><span>Kaze</span><span>Mico</span></div></div>
-    <div class="pk"><h3>🎯 Prime / Hors-jeu</h3><p>Objectif : prendre des éliminations et contrôler l'espace (snipers et assassins).</p><div class="gd-grid"><span>Mina</span><span>Polly</span><span>Belle</span><span>Angelo</span><span>Pierce</span><span>Pearl</span><span>Squeak</span><span>Mortis</span><span>Max</span><span>Vince</span><span>RT</span></div></div>
-    <div class="pk"><h3>💎 Zone réservée</h3><p>Objectif : contrôler la zone et accumuler les pourcentages (brawlers de contrôle).</p><div class="gd-grid"><span>Chester</span><span>Eliza</span><span>Kenji</span><span>Mina</span><span>Meg</span><span>Gaël</span><span>Lou</span><span>Max</span><span>Gus</span><span>Draco</span><span>Vince</span></div></div>
+    <div class="pk"><h3>Braquage</h3><p>Objectif : faire un maximum de dégâts au coffre adverse (brawlers DPS).</p><div class="gd-grid"><span>Colt</span><span>Colette</span><span>Mélodie</span><span>Nori</span><span>Arkad</span><span>Polly</span><span>Kaze</span><span>Mico</span></div></div>
+    <div class="pk"><h3>Prime / Hors-jeu</h3><p>Objectif : prendre des éliminations et contrôler l'espace (snipers et assassins).</p><div class="gd-grid"><span>Mina</span><span>Polly</span><span>Belle</span><span>Angelo</span><span>Pierce</span><span>Pearl</span><span>Squeak</span><span>Mortis</span><span>Max</span><span>Vince</span><span>RT</span></div></div>
+    <div class="pk"><h3>Zone réservée</h3><p>Objectif : contrôler la zone et accumuler les pourcentages (brawlers de contrôle).</p><div class="gd-grid"><span>Chester</span><span>Eliza</span><span>Kenji</span><span>Mina</span><span>Meg</span><span>Gaël</span><span>Lou</span><span>Max</span><span>Gus</span><span>Draco</span><span>Vince</span></div></div>
     <p class="note">Conseils inspirés de Prodigy (powerleagueprodigy.com), reformulés. Modes d'après la liste de départ — d'autres modes pourront s'ajouter.</p></section>
-  <section class="card" data-tab="tierlist" data-o="2"><h2>📖 Guides des Brawlers</h2>
+  <section class="card" data-tab="tierlist" data-o="2"><h2>Guides des Brawlers</h2>
     <input id="gdFilter" class="gd-in" type="search" placeholder="Chercher un brawler…" aria-label="Chercher un guide de brawler" autocomplete="off">
     <div class="gd-grid" id="gdGrid"></div>
     <p class="note">Les guides sont hébergés sur powerleagueprodigy.com (Prodigy) et s'ouvrent sur leur site ; certains peuvent demander un compte ou un abonnement.</p></section>
@@ -208,16 +209,16 @@
     <h3 class="sub">Records</h3><div class="awards" id="records"></div>
     <h3 class="sub">Trophées</h3><div class="awards" id="awards"></div></section>
   <section class="card" data-tab="equipe" data-o="3"><h2>L'équipe au complet</h2><div class="grid" id="totals"></div></section>
-  <section class="card" data-tab="equipe" data-o="9"><h2>💡 Le savais-tu ?</h2><ul class="facts" id="facts"></ul></section>
+  <section class="card" data-tab="equipe" data-o="9"><h2>Le savais-tu ?</h2><ul class="facts" id="facts"></ul></section>
 
   <section class="card" data-tab="brawlers" data-o="9">
-    <h2>🎯 Prochain palier de trophées</h2>
+    <h2>Prochain palier de trophées</h2>
     <div class="bars" id="milestones" style="gap:14px"></div>
     <p class="note">Un palier tous les 10 000 trophées au-dessus de 100 000, tous les 5 000 en dessous.</p>
   </section>
 
   <section class="card" data-tab="equipe" data-o="4">
-    <h2>⚔️ Face-à-face</h2>
+    <h2>Face-à-face</h2>
     <div class="ctl"><select id="hA" aria-label="Premier joueur"></select><span>contre</span><select id="hB" aria-label="Deuxième joueur"></select></div>
     <div class="h2h" id="h2h"></div>
     <p class="note">Le chiffre en gras gagne la ligne.</p>
@@ -226,23 +227,23 @@
   <section class="card" data-tab="equipe" data-o="5"><h2>Modes préférés de l'équipe</h2><div class="bars" id="sqModes"></div>
     <p class="note">Tous les derniers combats de chaque joueur, additionnés par mode.</p></section>
   <section class="card" data-tab="equipe" data-o="6"><h2>Brawlers préférés de l'équipe</h2><div class="bars" id="sqBrawlers"></div>
-    <p class="note">👥 = joué par plusieurs d'entre vous.</p></section>
+    <p class="note">« partagé » = joué par plusieurs d'entre vous.</p></section>
 
   <div class="card" data-tab="combats" data-o="1.5"><h2 id="gDayT">Trophées par jour</h2><div class="chart" id="gDay"></div><p class="note">Variation de trophées jour par jour (vert = gain, rouge = perte).</p></div>
   <div class="card" data-tab="combats" data-o="6"><h2 id="gHoursT">Quand vous jouez</h2><div class="chart" id="gHours"></div><p class="note">Nombre de combats par heure (heure suisse).</p></div>
   <section class="card" data-tab="combats" data-o="2.5">
-    <div class="ghead"><h2 id="wrT">🎯 Taux de victoire</h2><div class="flt" id="wrView"></div></div>
+    <div class="ghead"><h2 id="wrT">Taux de victoire</h2><div class="flt" id="wrView"></div></div>
     <div class="wr-now" id="wrNow"></div>
     <div class="chart" id="gWR"></div><div class="legend" id="gWRL"></div>
-    <p class="note">⚔️ Classé = parties Classé (pick & ban). 🏆 Trophées = parties normales (ladder). Calculé à partir des combats archivés au cours des 60 derniers jours (les graphes jour / semaine / mois gardent un historique plus long).</p>
+    <p class="note">Classé = parties Classé (pick & ban). Trophées = parties normales (ladder). Calculé à partir des combats archivés au cours des 60 derniers jours (les graphes jour / semaine / mois gardent un historique plus long).</p>
   </section>
-  <section class="card" data-tab="combats" data-o="7"><h2 id="mbT">🎯 Meilleur brawler par map</h2><div id="mapBr"></div><p class="note">Le brawler avec lequel ce joueur gagne le plus sur chaque map (min. 3 combats). Sous 10 combats, c'est une tendance provisoire : un échantillon limité ne prouve rien. Le nombre de combats est toujours affiché.</p></section>
-  <section class="card" data-tab="combats" data-sub="trophy" data-o="101"><h2>📅 Calendrier — Trophées</h2><div id="calLad"></div><p class="note">Chaque jour coloré selon ton taux de victoire en parties normales (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
+  <section class="card" data-tab="combats" data-o="7"><h2 id="mbT">Meilleur brawler par map</h2><div id="mapBr"></div><p class="note">Le brawler avec lequel ce joueur gagne le plus sur chaque map (min. 3 combats). Sous 10 combats, c'est une tendance provisoire : un échantillon limité ne prouve rien. Le nombre de combats est toujours affiché.</p></section>
+  <section class="card" data-tab="combats" data-sub="trophy" data-o="101"><h2>Calendrier — Trophées</h2><div id="calLad"></div><p class="note">Chaque jour coloré selon ton taux de victoire en parties normales (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
   <section class="card" data-tab="combats" data-sub="trophy" data-o="102"><div class="ghead"><h2>Taux de victoire — Trophées</h2><div class="flt" id="wrViewLad"></div></div><div class="chart" id="gWRlad"></div></section>
-  <section class="card" data-tab="combats" data-sub="trophy" data-o="104"><h2>🗺️ Maps — Trophées</h2><div id="mpLad"></div></section>
-  <section class="card" data-tab="combats" data-sub="ranked" data-o="201"><h2>📅 Calendrier — Ranked</h2><div id="calRk"></div><p class="note">Chaque jour coloré selon ton taux de victoire en Classé (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
+  <section class="card" data-tab="combats" data-sub="trophy" data-o="104"><h2>Maps — Trophées</h2><div id="mpLad"></div></section>
+  <section class="card" data-tab="combats" data-sub="ranked" data-o="201"><h2>Calendrier — Ranked</h2><div id="calRk"></div><p class="note">Chaque jour coloré selon ton taux de victoire en Classé (vert ≥ 50%, rouge < 50%). Touche un jour pour le détail.</p></section>
   <section class="card" data-tab="combats" data-sub="ranked" data-o="202"><div class="ghead"><h2>Taux de victoire — Classé</h2><div class="flt" id="wrViewRk"></div></div><div class="chart" id="gWRrk"></div></section>
-  <section class="card" data-tab="combats" data-sub="ranked" data-o="204"><h2>🗺️ Maps — Classé</h2><div id="mpRk"></div></section>
+  <section class="card" data-tab="combats" data-sub="ranked" data-o="204"><h2>Maps — Classé</h2><div id="mpRk"></div></section>
   <section class="card" data-tab="equipe" data-o="7">
     <h2>Comparer les joueurs</h2>
     <div class="tablewrap"><table>
